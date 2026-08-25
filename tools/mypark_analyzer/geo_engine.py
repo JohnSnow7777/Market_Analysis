@@ -73,5 +73,7 @@ class GeoEngine:
             'clear_height_spec': '권장 유효 층고 2.8m 이상 (※ 보/배관 간섭 현장 실측 필수)',
             'parking_spec': f"타석당 1~1.2대(약 {max(8, int(smart['rooms']*1.2))}대 이상) 주차 공간 확보 권장 (※ 건축물대장 확인 필요)",
             'accessibility_spec': '시니어 고객 특성상 승강기 완비 또는 완만한 접근 동선 점검 권장',
-            'zoning_spec': '제2종 근린생활시설 또는 운동시설 (※ 지자체 체육시설 인허가 및 건축물 용도 검토 필요)'
+            'zoning_spec': '제2종 근린생활시설 또는 운동시설 (※ 지자체 체육시설 인허가 및 건축물 용도 검토 필요)',
+            'electrical_spec': f"계약전력 최소 {max(25, smart['rooms']*3)}kW 이상 (타석당 1.5kW + 냉난방)",
+            'building_use_spec': '제2종 근린생활시설 또는 운동시설 (※ 건축물대장 용도 확인 필요)'
         }
