@@ -388,7 +388,7 @@
         .modal-card {
             background: white;
             border-radius: 16px;
-            max-width: 620px;
+            max-width: 680px;
             width: 100%;
             padding: 28px;
             box-shadow: var(--shadow-lg);
@@ -615,24 +615,24 @@
 
     <!-- 구글 시트 Webhook 연동 모달 -->
     <div class="modal-overlay" id="sheetModal">
-        <div class="modal-card" style="max-width: 680px;">
+        <div class="modal-card">
             <div class="modal-header">
-                <span>🔗 내 구글 계정 스프레드시트 실시간 자동 연동 (1분 완성)</span>
+                <span>🔗 내 구글 스프레드시트 실시간 자동 연동 (1분 완성)</span>
                 <span id="btnCloseModal" style="cursor:pointer; font-size:20px;">✕</span>
             </div>
             <div style="font-size:13px; color:var(--text-main); line-height: 1.6; margin-bottom: 14px; background: #EFF6FF; padding: 14px; border-radius: 10px; border: 1px solid #BFDBFE;">
-                <strong>💡 [간단 4단계 연결 방법]</strong><br>
-                1. <a href="https://sheets.new" target="_blank" style="color:var(--royal-blue); font-weight:bold; text-decoration:underline;">sheets.new (새 구글 시트 열기)</a>를 클릭하여 빈 시트를 엽니다.<br>
-                2. 구글 시트 상단 메뉴 <strong>[확장 프로그램] > [Apps Script]</strong>를 클릭합니다.<br>
-                3. 아래 <strong>[전용 연동 코드]</strong>를 복사하여 붙여넣고 상단 <strong>[배포] > [새 배포]</strong> (유형: 웹 앱, 액세스 권한: 모든 사용자)를 클릭합니다.<br>
-                4. 발급된 <strong>[웹 앱 URL]</strong>을 아래 입력창에 넣고 저장하면 끝!
+                <strong>💡 [초간단 4단계 연결 방법]</strong><br>
+                1. <a href="https://sheets.new" target="_blank" style="color:var(--royal-blue); font-weight:bold; text-decoration:underline;">sheets.new (새 구글 시트 만들기)</a>를 엽니다.<br>
+                2. 상단 메뉴 <strong>[확장 프로그램] > [Apps Script]</strong>를 엽니다.<br>
+                3. 아래 <strong>[연동 코드]</strong>를 붙여넣고 상단 <strong>[배포] > [새 배포]</strong> (유형: 웹 앱, 권한: 모든 사용자)를 클릭합니다.<br>
+                4. 생성된 <strong>[웹 앱 URL]</strong>을 아래 입력창에 넣고 저장하면 끝!
             </div>
             <div class="form-group">
-                <label>발급받은 Google Apps Script Web App URL <span style="color:#DC2626;">*</span></label>
+                <label>Google Apps Script Web App URL <span style="color:#DC2626;">*</span></label>
                 <input type="url" id="webhookUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
-                <p style="font-size:12.5px; font-weight:700; color:var(--primary);">📋 구글 Apps Script 전용 연동 코드:</p>
+                <p style="font-size:12.5px; font-weight:700; color:var(--primary);">📋 Apps Script 전용 연동 코드:</p>
                 <button type="button" id="btnCopyCode" style="padding:4px 10px; font-size:11.5px; font-weight:bold; background:#002B49; color:white; border:none; border-radius:6px; cursor:pointer;">코드 복사하기</button>
             </div>
             <div class="code-snippet" id="codeBlock">function doPost(e) {
@@ -655,7 +655,7 @@
   ]);
   return ContentService.createTextOutput("SUCCESS").setMimeType(ContentService.MimeType.TEXT);
 }</div>
-            <button class="btn-submit" id="btnSaveWebhook" style="padding:14px; font-size:15px; margin-top:14px;">💾 Webhook URL 저장 및 내 구글 시트 연동 완료</button>
+            <button class="btn-submit" id="btnSaveWebhook" style="padding:14px; font-size:15px; margin-top:14px;">💾 Webhook URL 저장 및 연동 완료</button>
         </div>
     </div>
 
@@ -679,66 +679,65 @@
         function formatPaybackPeriod(months) {
             const m = parseFloat(months);
             if (m < 12) {
-                return `약 ${m.toFixed(1)}개월 (1년 이내 회수)`;
+                return "약 " + m.toFixed(1) + "개월 (1년 이내 회수)";
             }
             const years = Math.floor(m / 12);
             const rem = Math.round(m % 12);
             if (rem === 0) {
-                return `약 ${years}년 (${m.toFixed(1)}개월)`;
+                return "약 " + years + "년 (" + m.toFixed(1) + "개월)";
             }
-            return `약 ${years}년 ${rem}개월 (${m.toFixed(1)}개월)`;
+            return "약 " + years + "년 " + rem + "개월 (" + m.toFixed(1) + "개월)";
         }
 
         function getHistory() {
             try {
                 return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-            } catch {
+            } catch (e) {
                 return [];
             }
         }
 
         function saveHistory(history) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(history.slice(0, 50)));
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(history.slice(0, 50)));
+            } catch (e) {
+                console.warn('Storage save error:', e);
+            }
             renderHistoryTable();
-
-        document.getElementById('btnCopyCode').addEventListener('click', () => {
-            const code = document.getElementById('codeBlock').innerText;
-            navigator.clipboard.writeText(code).then(() => {
-                alert('연동 코드가 클립보드에 복사되었습니다! Apps Script 화면에 붙여넣으세요.');
-            });
-        });
         }
 
         function renderHistoryTable() {
             const list = getHistory();
             const tbody = document.getElementById('historyTableBody');
-            document.getElementById('historyCount').innerText = `(${list.length}건)`;
+            document.getElementById('historyCount').innerText = "(" + list.length + "건)";
 
             if (list.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:var(--text-muted);">발행된 분석 이력이 없습니다. 상단에서 주소를 입력하고 분석을 실행해보세요.</td></tr>`;
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:30px; color:var(--text-muted);">발행된 분석 이력이 없습니다. 상단에서 주소를 입력하고 분석을 실행해보세요.</td></tr>';
                 return;
             }
 
-            tbody.innerHTML = list.map((item, idx) => `
-                <tr>
-                    <td style="font-size:12px; color:var(--text-muted);">${item.timestamp}</td>
-                    <td style="font-weight:700;">${item.address}</td>
-                    <td>${item.name || '-'}</td>
-                    <td>${item.rooms}타석 (${item.area}평)</td>
-                    <td><span class="${item.grade === 'S' ? 'badge-s' : 'badge-a'}">${item.grade} (${item.score}점)</span></td>
-                    <td style="font-weight:700; color:var(--emerald);">${(item.profit / 10000).toLocaleString()}만원</td>
-                    <td>약 ${item.payback}개월</td>
-                    <td>
-                        ${item.pdfBase64 ? `<a class="btn-table-dl" href="data:application/pdf;base64,${item.pdfBase64}" download="마이파크_${item.name || '상권분석'}_${item.dateSuffix}.pdf">📄 PDF</a>` : ''}
-                        ${item.pptxBase64 ? `<a class="btn-table-dl" href="data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,${item.pptxBase64}" download="마이파크_${item.name || '상권분석'}_${item.dateSuffix}.pptx">📥 PPT</a>` : ''}
-                        ${item.docxBase64 ? `<a class="btn-table-dl" href="data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,${item.docxBase64}" download="마이파크_${item.name || '출점보고서'}_${item.dateSuffix}.docx">📝 DOC</a>` : ''}
-                    </td>
-                    <td>
-                        <button onclick="loadFromHistory(${idx})" class="btn-table-dl" style="background:#EFF6FF; color:#1E40AF; border-color:#BFDBFE; cursor:pointer;">불러오기</button>
-                        <button onclick="deleteHistoryItem(${idx})" style="background:none; border:none; color:#DC2626; cursor:pointer; font-size:13px; margin-left:4px;">✕</button>
-                    </td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = list.map((item, idx) => {
+                const dlPdf = item.pdfBase64 ? '<a class="btn-table-dl" href="data:application/pdf;base64,' + item.pdfBase64 + '" download="마이파크_' + (item.name || '상권분석') + '_' + item.dateSuffix + '.pdf">📄 PDF</a>' : '';
+                const dlPptx = item.pptxBase64 ? '<a class="btn-table-dl" href="data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,' + item.pptxBase64 + '" download="마이파크_' + (item.name || '상권분석') + '_' + item.dateSuffix + '.pptx">📥 PPT</a>' : '';
+                const dlDocx = item.docxBase64 ? '<a class="btn-table-dl" href="data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,' + item.docxBase64 + '" download="마이파크_' + (item.name || '출점보고서') + '_' + item.dateSuffix + '.docx">📝 DOC</a>' : '';
+                const badgeCls = item.grade === 'S' ? 'badge-s' : 'badge-a';
+                const profitStr = (Math.floor(item.profit / 10000)).toLocaleString() + "만원";
+
+                return '<tr>' +
+                    '<td style="font-size:12px; color:var(--text-muted);">' + item.timestamp + '</td>' +
+                    '<td style="font-weight:700;">' + item.address + '</td>' +
+                    '<td>' + (item.name || '-') + '</td>' +
+                    '<td>' + item.rooms + '타석 (' + item.area + '평)</td>' +
+                    '<td><span class="' + badgeCls + '">' + item.grade + ' (' + item.score + '점)</span></td>' +
+                    '<td style="font-weight:700; color:var(--emerald);">' + profitStr + '</td>' +
+                    '<td>약 ' + item.payback + '개월</td>' +
+                    '<td>' + dlPdf + dlPptx + dlDocx + '</td>' +
+                    '<td>' +
+                        '<button onclick="loadFromHistory(' + idx + ')" class="btn-table-dl" style="background:#EFF6FF; color:#1E40AF; border-color:#BFDBFE; cursor:pointer;">불러오기</button>' +
+                        '<button onclick="deleteHistoryItem(' + idx + ')" style="background:none; border:none; color:#DC2626; cursor:pointer; font-size:13px; margin-left:4px;">✕</button>' +
+                    '</td>' +
+                '</tr>';
+            }).join('');
         }
 
         window.loadFromHistory = function(idx) {
@@ -749,30 +748,29 @@
             document.getElementById('address').value = item.address;
             if (item.name) document.getElementById('name').value = item.name;
 
-            // 결과 화면 즉시 복원
-            document.getElementById('gradeScore').innerText = `${item.grade}등급 (${item.score}점)`;
+            document.getElementById('gradeScore').innerText = item.grade + "등급 (" + item.score + "점)";
             document.getElementById('gradeDesc').innerText = item.gradeDesc || '출점 최우선 추천 (Golden Prime Spot)';
-            document.getElementById('specRooms').innerText = `${item.rooms}타석 (${item.area}평)`;
-            document.getElementById('specRent').innerText = `${(item.rent / 10000).toLocaleString()}만원/월`;
-            document.getElementById('specStaff').innerText = `${item.staff}명`;
+            document.getElementById('specRooms').innerText = item.rooms + "타석 (" + item.area + "평)";
+            document.getElementById('specRent').innerText = (Math.floor(item.rent / 10000)).toLocaleString() + "만원/월";
+            document.getElementById('specStaff').innerText = item.staff + "명";
             
-            document.getElementById('valSenior').innerText = `${item.seniorPop ? item.seniorPop.toLocaleString() : '72,400'}명 (${item.seniorRatio || '38.4'}%)`;
-            document.getElementById('valProfit').innerText = `${Math.floor(item.profit / 10000).toLocaleString()}만원/월`;
-            document.getElementById('valBEP').innerText = `타석당 일 0.8회전`;
-            document.getElementById('valBEPSub').innerText = `(1일 6.5명 / 월 240명 돌파 시 흑자)`;
+            document.getElementById('valSenior').innerText = (item.seniorPop ? item.seniorPop.toLocaleString() : '72,400') + "명 (" + (item.seniorRatio || '38.4') + "%)";
+            document.getElementById('valProfit').innerText = (Math.floor(item.profit / 10000)).toLocaleString() + "만원/월";
+            document.getElementById('valBEP').innerHTML = '일 0.8회전 <span style="font-size:13px; color:var(--royal-blue); font-weight:normal;">(직접운영 시 0.5회전)</span>';
+            document.getElementById('valBEPSub').innerText = '오토: 월 240명 | 직접운영: 월 135명 돌파 시 흑자';
             document.getElementById('valPayback').innerText = formatPaybackPeriod(item.payback);
 
             if (item.pdfBase64) {
                 document.getElementById('btnPdf').href = 'data:application/pdf;base64,' + item.pdfBase64;
-                document.getElementById('btnPdf').setAttribute('download', `마이파크_${item.name || '상권분석'}_${item.dateSuffix}.pdf`);
+                document.getElementById('btnPdf').setAttribute('download', '마이파크_' + (item.name || '상권분석') + '_' + item.dateSuffix + '.pdf');
             }
             if (item.pptxBase64) {
-                document.getElementById('btnPptx').href = 'data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,' + item.pptx_base64;
-                document.getElementById('btnPptx').setAttribute('download', `마이파크_${item.name || '상권분석'}_${item.dateSuffix}.pptx`);
+                document.getElementById('btnPptx').href = 'data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,' + item.pptxBase64;
+                document.getElementById('btnPptx').setAttribute('download', '마이파크_' + (item.name || '상권분석') + '_' + item.dateSuffix + '.pptx');
             }
             if (item.docxBase64) {
                 document.getElementById('btnDocx').href = 'data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,' + item.docxBase64;
-                document.getElementById('btnDocx').setAttribute('download', `마이파크_${item.name || '출점보고서'}_${item.dateSuffix}.docx`);
+                document.getElementById('btnDocx').setAttribute('download', '마이파크_' + (item.name || '출점보고서') + '_' + item.dateSuffix + '.docx');
             }
 
             document.getElementById('emptyState').style.display = 'none';
@@ -791,17 +789,10 @@
             if (confirm('모든 발행 이력을 삭제하시겠습니까?')) {
                 localStorage.removeItem(STORAGE_KEY);
                 renderHistoryTable();
-
-        document.getElementById('btnCopyCode').addEventListener('click', () => {
-            const code = document.getElementById('codeBlock').innerText;
-            navigator.clipboard.writeText(code).then(() => {
-                alert('연동 코드가 클립보드에 복사되었습니다! Apps Script 화면에 붙여넣으세요.');
-            });
-        });
             }
         });
 
-        // CSV 내보내기 (구글 시트 / 엑셀 완벽 호환)
+        // CSV 내보내기
         document.getElementById('btnExportCsv').addEventListener('click', () => {
             const list = getHistory();
             if (list.length === 0) {
@@ -809,19 +800,17 @@
                 return;
             }
 
-            let csv = '﻿'; // UTF-8 BOM
-            csv += '발행일시,사업지 주소,매장명,타석수,전용면적(평),월임대료(원),입지등급,입지점수,예상월영업익(원),회수기간(개월)
-';
+            let csv = '\uFEFF';
+            csv += '발행일시,사업지 주소,매장명,타석수,전용면적(평),월임대료(원),입지등급,입지점수,예상월영업익(원),회수기간(개월)\n';
             list.forEach(item => {
-                csv += `"${item.timestamp}","${item.address}","${item.name || ''}",${item.rooms},${item.area},${item.rent},"${item.grade}",${item.score},${item.profit},${item.payback}
-`;
+                csv += '"' + item.timestamp + '","' + item.address + '","' + (item.name || '') + '",' + item.rooms + ',' + item.area + ',' + item.rent + ',"' + item.grade + '",' + item.score + ',' + item.profit + ',' + item.payback + '\n';
             });
 
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `마이파크_상권분석_발행이력_${new Date().toISOString().slice(0,10)}.csv`;
+            a.download = '마이파크_상권분석_발행이력_' + (new Date().toISOString().slice(0,10)) + '.csv';
             a.click();
             URL.revokeObjectURL(url);
         });
@@ -840,6 +829,13 @@
             localStorage.setItem(WEBHOOK_KEY, url);
             alert('구글 스프레드시트 Webhook URL이 성공적으로 저장되었습니다!');
             modal.style.display = 'none';
+        });
+
+        document.getElementById('btnCopyCode').addEventListener('click', () => {
+            const code = document.getElementById('codeBlock').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                alert('연동 코드가 클립보드에 복사되었습니다! Apps Script 화면에 붙여넣으세요.');
+            });
         });
 
         // 폼 제출 분석 실행
@@ -881,19 +877,22 @@
                 }
 
                 const res = await response.json();
+                if (res.error) {
+                    throw new Error(res.error);
+                }
                 const site = res.bundle.site;
                 
-                document.getElementById('gradeScore').innerText = `${res.grade}등급 (${res.total_score}점)`;
+                document.getElementById('gradeScore').innerText = res.grade + "등급 (" + res.total_score + "점)";
                 document.getElementById('gradeDesc').innerText = res.bundle.scores.grade_desc;
                 
-                document.getElementById('specRooms').innerText = `${site.rooms}타석 (${site.area_pyeong}평)`;
-                document.getElementById('specRent').innerText = `${(site.monthly_rent / 10000).toLocaleString()}만원/월`;
-                document.getElementById('specStaff').innerText = `${site.staff_count}명`;
+                document.getElementById('specRooms').innerText = site.rooms + "타석 (" + site.area_pyeong + "평)";
+                document.getElementById('specRent').innerText = (Math.floor(site.monthly_rent / 10000)).toLocaleString() + "만원/월";
+                document.getElementById('specStaff').innerText = site.staff_count + "명";
                 
-                document.getElementById('valSenior').innerText = `${res.bundle.demographics.senior_50_plus.toLocaleString()}명 (${res.bundle.demographics.senior_ratio}%)`;
-                document.getElementById('valProfit').innerText = `${Math.floor(res.operating_profit_moderate / 10000).toLocaleString()}만원/월`;
-                document.getElementById('valBEP').innerText = `타석당 일 0.8회전`;
-                document.getElementById('valBEPSub').innerText = `(1일 6.5명 / 월 240명 돌파 시 흑자)`;
+                document.getElementById('valSenior').innerText = res.bundle.demographics.senior_50_plus.toLocaleString() + "명 (" + res.bundle.demographics.senior_ratio + "%)";
+                document.getElementById('valProfit').innerText = (Math.floor(res.operating_profit_moderate / 10000)).toLocaleString() + "만원/월";
+                document.getElementById('valBEP').innerHTML = '일 0.8회전 <span style="font-size:13px; color:var(--royal-blue); font-weight:normal;">(직접운영 시 0.5회전)</span>';
+                document.getElementById('valBEPSub').innerText = '오토: 월 240명 | 직접운영: 월 135명 돌파 시 흑자';
                 document.getElementById('valPayback').innerText = formatPaybackPeriod(res.payback_months);
                 
                 document.getElementById('valueFranchisee').innerText = res.bundle.scores.value_franchisee || res.bundle.scores.pitch_franchisee;
@@ -904,20 +903,20 @@
                 const yy = String(now.getFullYear()).slice(-2);
                 const m = now.getMonth() + 1;
                 const d = now.getDate();
-                const dateSuffix = `${yy}년${m}월${d}일`;
-                const fileBase = `마이파크_${payload.name || site.sigungu || '상권분석'}_상권및사업분석_${dateSuffix}`;
+                const dateSuffix = yy + "년" + m + "월" + d + "일";
+                const fileBase = '마이파크_' + (payload.name || site.sigungu || '상권분석') + '_상권및사업분석_' + dateSuffix;
 
                 if (res.pdf_base64) {
                     document.getElementById('btnPdf').href = 'data:application/pdf;base64,' + res.pdf_base64;
-                    document.getElementById('btnPdf').setAttribute('download', `${fileBase}.pdf`);
+                    document.getElementById('btnPdf').setAttribute('download', fileBase + '.pdf');
                 }
                 if (res.pptx_base64) {
                     document.getElementById('btnPptx').href = 'data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,' + res.pptx_base64;
-                    document.getElementById('btnPptx').setAttribute('download', `${fileBase}.pptx`);
+                    document.getElementById('btnPptx').setAttribute('download', fileBase + '.pptx');
                 }
                 if (res.docx_base64) {
                     document.getElementById('btnDocx').href = 'data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,' + res.docx_base64;
-                    document.getElementById('btnDocx').setAttribute('download', `마이파크_${payload.name || site.sigungu || '상권분석'}_출점타당성보고서_${dateSuffix}.docx`);
+                    document.getElementById('btnDocx').setAttribute('download', '마이파크_' + (payload.name || site.sigungu || '상권분석') + '_출점타당성보고서_' + dateSuffix + '.docx');
                 }
 
                 // 히스토리에 자동 추가
@@ -974,13 +973,6 @@
 
         // 초기 히스토리 렌더링
         renderHistoryTable();
-
-        document.getElementById('btnCopyCode').addEventListener('click', () => {
-            const code = document.getElementById('codeBlock').innerText;
-            navigator.clipboard.writeText(code).then(() => {
-                alert('연동 코드가 클립보드에 복사되었습니다! Apps Script 화면에 붙여넣으세요.');
-            });
-        });
     </script>
 </body>
 </html>
