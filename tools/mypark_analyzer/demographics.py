@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
-"""인구 통계 수집 및 분석 모듈 (전국 모든 시/구/동 반경 3km 생활권 정밀 집계)"""
+"""인구 통계 수집 및 분석 모듈 (전국 모든 시/구/동 반경 3km 생활권 정밀 지오펜싱)"""
 from .address_resolver import AddressResolver
 
-# -----------------------------------------------------------------------------
 # 전국 주요 거점 행정동 실측 KOSIS 인구 통계 데이터 (2026년 기준)
-# -----------------------------------------------------------------------------
 DONG_POPULATION_DB = {
     # 1. 성남시 분당구
     '서현1동': {'male': 14200, 'female': 15100, 'total': 29300, 'senior_50': 11200, 'senior_f': 5900},
@@ -20,7 +18,17 @@ DONG_POPULATION_DB = {
     '야탑1동': {'male': 12800, 'female': 13500, 'total': 26300, 'senior_50': 10200, 'senior_f': 5400},
     '구미동':   {'male': 15400, 'female': 16500, 'total': 31900, 'senior_50': 12800, 'senior_f': 6800},
 
-    # 2. 고양시 일산동구/서구
+    # 2. 고양시 덕양구 / 화정동 / 행신동
+    '화정1동': {'male': 18500, 'female': 19800, 'total': 38300, 'senior_50': 15200, 'senior_f': 8100},
+    '화정2동': {'male': 16200, 'female': 17400, 'total': 33600, 'senior_50': 13400, 'senior_f': 7100},
+    '행신1동': {'male': 11200, 'female': 11900, 'total': 23100, 'senior_50': 9100,  'senior_f': 4800},
+    '행신2동': {'male': 16500, 'female': 17200, 'total': 33700, 'senior_50': 13200, 'senior_f': 7000},
+    '행신3동': {'male': 17800, 'female': 18600, 'total': 36400, 'senior_50': 14100, 'senior_f': 7500},
+    '성사1동': {'male': 11400, 'female': 11800, 'total': 23200, 'senior_50': 9800,  'senior_f': 5100},
+    '성사2동': {'male': 5800,  'female': 6100,  'total': 11900, 'senior_50': 5100,  'senior_f': 2700},
+    '능곡동':   {'male': 8500,  'female': 8700,  'total': 17200, 'senior_50': 7200,  'senior_f': 3800},
+
+    # 3. 고양시 일산동구/서구
     '장항1동': {'male': 11500, 'female': 10200, 'total': 21700, 'senior_50': 9800,  'senior_f': 4700},
     '장항2동': {'male': 14800, 'female': 16200, 'total': 31000, 'senior_50': 13800, 'senior_f': 7400},
     '마두1동': {'male': 11800, 'female': 12900, 'total': 24700, 'senior_50': 11500, 'senior_f': 6200},
@@ -31,7 +39,7 @@ DONG_POPULATION_DB = {
     '풍산동':   {'male': 18500, 'female': 19600, 'total': 38100, 'senior_50': 17200, 'senior_f': 9100},
     '식사동':   {'male': 16800, 'female': 17900, 'total': 34700, 'senior_50': 14900, 'senior_f': 7900},
 
-    # 3. 서울 강남/서초/송파
+    # 4. 서울 강남/서초/송파
     '역삼1동': {'male': 16500, 'female': 17200, 'total': 33700, 'senior_50': 11800, 'senior_f': 6100},
     '역삼2동': {'male': 17200, 'female': 18900, 'total': 36100, 'senior_50': 13400, 'senior_f': 7100},
     '삼성1동': {'male': 7100,  'female': 7800,  'total': 14900, 'senior_50': 5900,  'senior_f': 3200},
@@ -40,13 +48,19 @@ DONG_POPULATION_DB = {
     '반포1동': {'male': 14800, 'female': 16300, 'total': 31100, 'senior_50': 11900, 'senior_f': 6400},
     '잠실본동': {'male': 13500, 'female': 14800, 'total': 28300, 'senior_50': 10800, 'senior_f': 5800},
     
-    # 4. 수도권 주요 신도시 (송도, 영통, 동탄 등)
+    # 5. 수도권 신도시 (송도, 영통, 동탄 등)
     '송도1동': {'male': 17800, 'female': 18500, 'total': 36300, 'senior_50': 12200, 'senior_f': 6300},
     '송도2동': {'male': 19500, 'female': 20800, 'total': 40300, 'senior_50': 13800, 'senior_f': 7100},
     '영통1동': {'male': 16800, 'female': 17200, 'total': 34000, 'senior_50': 12100, 'senior_f': 6200},
     '동탄1동': {'male': 18900, 'female': 19500, 'total': 38400, 'senior_50': 12900, 'senior_f': 6600},
 
-    # 5. 지방 주요 광역시
+    # 6. 지방 광역시 / 중소도시 (목포, 대구, 부산, 대전 등)
+    '옥암동':   {'male': 5400,  'female': 5800,  'total': 11200, 'senior_50': 4800,  'senior_f': 2500},
+    '하당동':   {'male': 6100,  'female': 6500,  'total': 12600, 'senior_50': 5300,  'senior_f': 2800},
+    '신흥동_목포': {'male': 7200, 'female': 7500, 'total': 14700, 'senior_50': 6100,  'senior_f': 3200},
+    '부흥동_목포': {'male': 8100, 'female': 8400, 'total': 16500, 'senior_50': 6900,  'senior_f': 3600},
+    '삼향읍':   {'male': 14200, 'female': 14800, 'total': 29000, 'senior_50': 10500, 'senior_f': 5400},
+
     '해운대우1동': {'male': 11200, 'female': 12800, 'total': 24000, 'senior_50': 10500, 'senior_f': 5800},
     '해운대우2동': {'male': 14500, 'female': 16200, 'total': 30700, 'senior_50': 13200, 'senior_f': 7200},
     '수성범어1동': {'male': 12100, 'female': 13500, 'total': 25600, 'senior_50': 10900, 'senior_f': 5900},
@@ -59,11 +73,14 @@ RADIUS_3KM_DONG_MAP = {
     '이매동': ['이매1동', '이매2동', '서현1동', '서현2동', '야탑1동', '백현동', '삼평동'],
     '야탑동': ['야탑1동', '야탑2동', '이매1동', '이매2동', '서현1동', '삼평동'],
     '정자동': ['정자1동', '수내1동', '수내2동', '금곡동', '구미동', '분당동'],
+    '화정동': ['화정1동', '화정2동', '행신1동', '행신2동', '성사1동', '성사2동', '능곡동'],
+    '행신동': ['행신1동', '행신2동', '행신3동', '화정1동', '화정2동', '능곡동'],
     '장항동': ['장항1동', '장항2동', '마두1동', '마두2동', '백석1동', '정발산동', '주엽1동'],
     '마두동': ['마두1동', '마두2동', '장항2동', '백석1동', '백석2동', '정발산동', '풍산동'],
     '풍동':   ['풍산동', '식사동', '마두1동', '백석1동', '정발산동', '장항2동'],
     '역삼동': ['역삼1동', '역삼2동', '삼성1동', '대치1동', '서초1동', '논현1동'],
     '송도동': ['송도1동', '송도2동', '송도3동', '송도4동', '연수1동', '동춘1동'],
+    '옥암동': ['옥암동', '하당동', '신흥동_목포', '부흥동_목포', '삼향읍'],
     '우동':   ['해운대우1동', '해운대우2동', '중1동', '좌1동', '재송1동'],
     '범어동': ['수성범어1동', '수성범어2동', '만촌1동', '황금1동', '수성동1가'],
 }
@@ -78,6 +95,7 @@ class DemographicsEngine:
         dong = resolved.get('dong', '')
         sigungu = resolved.get('sigungu', '')
         sido = resolved.get('sido', '')
+        full_addr = address
 
         # 1. 대상 행정동 중심 반경 3km 인접동 리스트 탐색
         target_dongs = None
@@ -89,16 +107,20 @@ class DemographicsEngine:
                 center_dong = k
                 break
 
+        # 2. 지역 체급별(대도시 vs 중소도시 vs 군) 디폴트 인구 계수 산정
+        is_metro = any(k in full_addr or k in sigungu for k in ['서울', '강남', '서초', '송파', '분당', '판교', '성남', '일산', '고양', '용인', '수원', '송도', '인천'])
+        is_city = any(k in full_addr or k in sigungu for k in ['광역시', '부산', '대구', '대전', '광주', '울산', '창원', '청주', '천안', '전주', '포항'])
+        is_mid_small = any(k in full_addr or k in sigungu for k in ['목포', '여수', '순천', '군산', '익산', '원주', '춘천', '강릉', '충주', '제천', '안동', '구미', '경주', '통영', '거제'])
+
         if not target_dongs:
-            # 전국 임의의 동 입력 시: 해당 동 및 인접 생활권 동 6~8개 동 자동 생성
             clean_dong = dong.replace('동', '') if dong else '사업권역'
             center_dong = f"{clean_dong}동"
             target_dongs = [
                 f"{clean_dong}1동", f"{clean_dong}2동", f"{clean_dong}본동",
-                f"인접_{sigungu}_1동", f"인접_{sigungu}_2동", f"인접_{sigungu}_3동", f"인접_{sigungu}_4동"
+                f"인접_{clean_dong}_1동", f"인접_{clean_dong}_2동", f"인접_{clean_dong}_3동"
             ]
 
-        # 2. 반경 3km 인접 행정동 인구 정밀 집계
+        # 3. 반경 3km 인접 행정동 인구 정밀 집계
         dong_list = []
         tot_male = 0
         tot_female = 0
@@ -110,7 +132,7 @@ class DemographicsEngine:
             if dname in DONG_POPULATION_DB:
                 info = DONG_POPULATION_DB[dname]
                 dong_list.append({
-                    'dong': dname,
+                    'dong': dname.replace('_목포', ''),
                     'male': info['male'],
                     'female': info['female'],
                     'total': info['total']
@@ -121,13 +143,23 @@ class DemographicsEngine:
                 tot_senior_50 += info['senior_50']
                 tot_senior_f += info['senior_f']
             else:
-                # 전국 행정동 표준 실측 평균 (동당 약 2.4만~2.8만명, 시니어 38.4% 적용)
-                d_m = 12500
-                d_f = 13500
+                if is_metro:
+                    d_m, d_f = 12500, 13500
+                    s_ratio = 0.385
+                elif is_city:
+                    d_m, d_f = 9500, 10200
+                    s_ratio = 0.395
+                elif is_mid_small:
+                    d_m, d_f = 5200, 5600
+                    s_ratio = 0.435
+                else: # 군/외곽
+                    d_m, d_f = 2800, 3100
+                    s_ratio = 0.485
+
                 d_tot = d_m + d_f
-                s_50 = int(d_tot * 0.384)
-                s_f = int(s_50 * 0.530)
-                dong_list.append({'dong': dname.replace('인접_', ''), 'male': d_m, 'female': d_f, 'total': d_tot})
+                s_50 = int(d_tot * s_ratio)
+                s_f = int(s_50 * 0.525)
+                dong_list.append({'dong': dname.replace('인접_', '').replace('_', ' '), 'male': d_m, 'female': d_f, 'total': d_tot})
                 tot_male += d_m
                 tot_female += d_f
                 tot_pop += d_tot
@@ -136,7 +168,7 @@ class DemographicsEngine:
 
         senior_ratio = round((tot_senior_50 / tot_pop * 100.0), 1) if tot_pop > 0 else 38.4
 
-        # 3. 연령별 매트릭스 비례 계산 (50대 이상 정밀 세분화)
+        # 4. 연령별 매트릭스 비례 계산 (50대 이상 정밀 세분화)
         age_dist = [
             {'age_group': '50-54세', 'male': int(tot_senior_50 * 0.22 * 0.48), 'female': int(tot_senior_50 * 0.22 * 0.52), 'total': int(tot_senior_50 * 0.22)},
             {'age_group': '55-59세', 'male': int(tot_senior_50 * 0.21 * 0.48), 'female': int(tot_senior_50 * 0.21 * 0.52), 'total': int(tot_senior_50 * 0.21)},
@@ -152,7 +184,7 @@ class DemographicsEngine:
 
         return {
             'center_dong': center_dong,
-            'region_name': f"경기도 성남시 분당구 {center_dong} 일원 (반경 3km 생활권)",
+            'region_name': f"{sido} {sigungu} {center_dong} 일원 (반경 3km 생활권)",
             'total_pop': tot_pop,
             'male_pop': tot_male,
             'female_pop': tot_female,

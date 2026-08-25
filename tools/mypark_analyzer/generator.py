@@ -33,7 +33,9 @@ class MyParkReportGenerator:
             rooms=site_info['rooms'],
             monthly_rent=site_info['monthly_rent'],
             area_pyeong=site_info['area_pyeong'],
-            staff_count=site_info['staff_count']
+            staff_count=site_info['staff_count'],
+            demographics=demographics,
+            commercial=commercial
         )
         
         scores = ScoringEngine.evaluate_site(demographics, commercial, site_info, financials)

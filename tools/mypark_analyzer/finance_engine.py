@@ -1,81 +1,94 @@
 # -*- coding: utf-8 -*-
-"""재무 타당성 및 3개 시나리오, 5개년 손익 예측 엔진 (BEP 계산 정상화)"""
-from .config import DEFAULT_SETTINGS, SCENARIO_CONFIG
+"""재무 타당성 분석 및 3대 시나리오 손익/BEP/ROI 계산 엔진 (인구·상권 연동 다이내믹 모델)"""
 
 class FinanceEngine:
-    """마이파크 재무 분석 및 3개 시나리오 손익 계산기"""
-    
+    """재무 모델링 엔진"""
+
     @staticmethod
     def calculate_investment(rooms=10, area_pyeong=120):
-        # 10타석 120평 플래그십 표준 CAPEX
-        system_cost = rooms * 15000000          # 타석당 1,500만원 = 1.5억원
-        interior_cost = area_pyeong * 1300000   # 평당 130만원 = 1.56억원
-        signage_cost = 15000000                 # 간판/사인물 1,500만원
-        furniture_cost = 15000000               # 가구/키오스크 1,500만원
-        subtotal_capex = system_cost + interior_cost + signage_cost + furniture_cost  # 3.36억원
-        
-        deposit = area_pyeong * 45000 * 10      # 임차보증금 (월세 10개월분)
-        total_initial_cash = subtotal_capex + deposit
+        simulator_cost = rooms * 15000000
+        interior_cost = area_pyeong * 1300000
+        initial_supplies_cost = 30000000
+        subtotal_capex = simulator_cost + interior_cost + initial_supplies_cost
         
         return {
-            'system_cost': system_cost,
+            'rooms': rooms,
+            'area_pyeong': area_pyeong,
+            'simulator_unit_price': 15000000,
+            'simulator_cost': simulator_cost,
+            'interior_cost_per_pyeong': 1300000,
             'interior_cost': interior_cost,
-            'signage_cost': signage_cost,
-            'furniture_cost': furniture_cost,
+            'initial_supplies_cost': initial_supplies_cost,
             'subtotal_capex': subtotal_capex,
-            'deposit': deposit,
-            'total_initial_cash': total_initial_cash,
             'total_capex': subtotal_capex
         }
 
     @staticmethod
-    def calculate_monthly_scenario(rooms, monthly_rent, staff_count, scenario_type='moderate'):
-        cfg = DEFAULT_SETTINGS
-        sc_cfg = SCENARIO_CONFIG[scenario_type]
+    def calculate_monthly_scenario(rooms=10, monthly_rent=5400000, staff_count=3, scenario_type='moderate', regional_demand_multiplier=1.0):
+        game_fee = 8000
         
-        users_per_room = sc_cfg['avg_daily_users_per_room']
-        daily_users = int(rooms * users_per_room)
-        monthly_users = int(daily_users * 30)
-        fee = cfg['game_price_18hole']  # 8,000원
+        if scenario_type == 'conservative':
+            base_turns = 3.2 * regional_demand_multiplier
+        elif scenario_type == 'optimistic':
+            base_turns = 5.6 * regional_demand_multiplier
+        else: # moderate
+            base_turns = 4.5 * regional_demand_multiplier
+            
+        daily_turns = round(base_turns, 2)
+        daily_users = int(rooms * daily_turns * 3.33)
+        monthly_users = daily_users * 30
         
-        room_revenue = int(monthly_users * fee)
-        goods_revenue = int(room_revenue * cfg['ratio_goods'])
-        cafe_revenue = int(room_revenue * cfg['ratio_cafe'])
-        lesson_revenue = int(room_revenue * cfg['ratio_lesson'])
-        total_revenue = room_revenue + goods_revenue + cafe_revenue + lesson_revenue
+        game_revenue = monthly_users * game_fee
+        beverage_revenue = int(game_revenue * 0.10)
+        goods_revenue = int(game_revenue * 0.05)
+        lesson_revenue = int(game_revenue * 0.03)
+        total_revenue = game_revenue + beverage_revenue + goods_revenue + lesson_revenue
         
-        labor_cost = staff_count * cfg['labor_cost_per_person']
+        labor_cost = staff_count * 2500000
         rent_cost = monthly_rent
-        goods_cost = int(goods_revenue * cfg['cost_rate_goods'])
-        cafe_cost = int(cafe_revenue * cfg['cost_rate_cafe'])
-        lesson_cost = int(lesson_revenue * cfg['cost_rate_lesson'])
-        card_fee = int(total_revenue * cfg['card_fee_rate'])
+        cost_beverage = int(beverage_revenue * 0.40)
+        cost_goods = int(goods_revenue * 0.60)
+        cost_lesson = int(lesson_revenue * 0.80)
+        card_fee = int(total_revenue * 0.02)
+        utilities_cost = 2000000
+        maintenance_cost = 800000
+        store_ops_cost = utilities_cost + maintenance_cost
+        rental_cost = 700000
+        marketing_cost = 1000000 if scenario_type == 'optimistic' else (700000 if scenario_type == 'moderate' else 500000)
         
-        # 매장 운영비 + 렌탈 + 마케팅
-        store_ops_cost = 2000000
-        rental_cost = 800000
-        marketing_cost = 700000
-        
-        total_cost = (labor_cost + rent_cost + goods_cost + cafe_cost + 
-                      lesson_cost + card_fee + store_ops_cost + rental_cost + marketing_cost)
+        total_cost = (labor_cost + rent_cost + cost_beverage + cost_goods + 
+                      cost_lesson + card_fee + store_ops_cost + 
+                      rental_cost + marketing_cost)
+                      
         operating_profit = total_revenue - total_cost
-        profit_margin = round((operating_profit / total_revenue) * 100, 1) if total_revenue > 0 else 0
+        profit_margin = round((operating_profit / total_revenue) * 100, 1) if total_revenue > 0 else 0.0
+        
+        sc_names = {'conservative': '보수적 시나리오', 'moderate': '보편적 시나리오', 'optimistic': '긍정적 시나리오'}
         
         return {
-            'scenario_name': sc_cfg['name'],
+            'scenario_type': scenario_type,
+            'scenario_name': sc_names.get(scenario_type, scenario_type),
+            'daily_turns_per_room': daily_turns,
             'daily_users': daily_users,
             'monthly_users': monthly_users,
-            'room_revenue': room_revenue,
+            'game_revenue': game_revenue,
+            'room_revenue': game_revenue,
+            'beverage_revenue': beverage_revenue,
+            'cafe_revenue': beverage_revenue,
             'goods_revenue': goods_revenue,
-            'cafe_revenue': cafe_revenue,
             'lesson_revenue': lesson_revenue,
             'total_revenue': total_revenue,
             'labor_cost': labor_cost,
             'rent_cost': rent_cost,
-            'goods_cost': goods_cost,
-            'cafe_cost': cafe_cost,
-            'lesson_cost': lesson_cost,
+            'cost_beverage': cost_beverage,
+            'cafe_cost': cost_beverage,
+            'cost_goods': cost_goods,
+            'goods_cost': cost_goods,
+            'cost_lesson': cost_lesson,
+            'lesson_cost': cost_lesson,
             'card_fee': card_fee,
+            'utilities_cost': utilities_cost,
+            'maintenance_cost': maintenance_cost,
             'store_ops_cost': store_ops_cost,
             'rental_cost': rental_cost,
             'marketing_cost': marketing_cost,
@@ -85,18 +98,28 @@ class FinanceEngine:
         }
 
     @staticmethod
-    def get_full_financial_analysis(rooms=10, monthly_rent=5400000, area_pyeong=120, staff_count=3):
+    def get_full_financial_analysis(rooms=10, monthly_rent=5400000, area_pyeong=120, staff_count=3, demographics=None, commercial=None):
         inv = FinanceEngine.calculate_investment(rooms, area_pyeong)
         
+        senior_pop = demographics.get('senior_50_plus', 72400) if demographics else 72400
+        comm_sales = commercial.get('monthly_avg_sales', 20500000) if commercial else 20500000
+        
+        if senior_pop >= 65000 and comm_sales >= 22000000:
+            reg_mult = 1.08
+        elif senior_pop >= 45000:
+            reg_mult = 1.00
+        elif senior_pop >= 25000:
+            reg_mult = 0.82
+        else:
+            reg_mult = 0.68
+
         scenarios = {
-            'conservative': FinanceEngine.calculate_monthly_scenario(rooms, monthly_rent, staff_count, 'conservative'),
-            'moderate': FinanceEngine.calculate_monthly_scenario(rooms, monthly_rent, staff_count, 'moderate'),
-            'optimistic': FinanceEngine.calculate_monthly_scenario(rooms, monthly_rent, staff_count, 'optimistic'),
+            'conservative': FinanceEngine.calculate_monthly_scenario(rooms, monthly_rent, staff_count, 'conservative', reg_mult),
+            'moderate': FinanceEngine.calculate_monthly_scenario(rooms, monthly_rent, staff_count, 'moderate', reg_mult),
+            'optimistic': FinanceEngine.calculate_monthly_scenario(rooms, monthly_rent, staff_count, 'optimistic', reg_mult),
         }
         
-        # 정확한 BEP 손익분기점 계산 (고정비 커버 기준)
         fixed_cost = (staff_count * 2500000) + monthly_rent + 2000000 + 800000 + 700000
-        # 1인당 평균 결제액(18홀 8천원 + 부가매출 18% = 9,440원) 중 공헌이익(약 7,552원)
         margin_per_user = 8000 * 0.98 + (8000 * 0.10 * 0.40) + (8000 * 0.05 * 0.50) + (8000 * 0.03 * 0.20)
         bep_monthly_users = int(fixed_cost / margin_per_user)
         bep_daily_users = round(bep_monthly_users / 30.0, 1)
@@ -113,11 +136,31 @@ class FinanceEngine:
         payback_months_con = round(capex / op_con, 1) if op_con > 0 else 99.0
         
         inv['bep_monthly_sales'] = bep_monthly_sales
-        inv['bep_turns_per_room'] = bep_turns_per_room  # 타석당 1일 0.7~0.8회전
-        inv['bep_daily_users'] = int(bep_daily_users)   # 매장 전체 1일 약 7~8명
+        inv['bep_turns_per_room'] = bep_turns_per_room
+        inv['bep_daily_users'] = int(bep_daily_users)
         inv['payback_months_moderate'] = payback_months_mod
         inv['payback_months_optimistic'] = payback_months_opt
         inv['payback_months_conservative'] = payback_months_con
+        
+        # 창업주 직접 운영 모델
+        owner_fixed_cost = (1 * 2500000) + monthly_rent + 2000000 + 800000 + 700000
+        owner_bep_monthly_users = int(owner_fixed_cost / margin_per_user)
+        owner_bep_daily_users = round(owner_bep_monthly_users / 30.0, 1)
+        owner_bep_turns = round(owner_bep_daily_users / float(rooms), 2)
+        owner_op_mod = op_mod + 5000000
+        owner_payback = round(capex / owner_op_mod, 1)
+        
+        inv['owner_operated'] = {
+            'fixed_cost': owner_fixed_cost,
+            'bep_monthly_sales': int(owner_bep_monthly_users * (8000 * 1.18)),
+            'bep_turns_per_room': owner_bep_turns,
+            'bep_monthly_users': owner_bep_monthly_users,
+            'bep_daily_users': int(owner_bep_daily_users),
+            'monthly_operating_profit_moderate': owner_op_mod,
+            'profit_margin_moderate': round((owner_op_mod / scenarios['moderate']['total_revenue']) * 100, 1),
+            'payback_months': owner_payback,
+            'labor_savings_monthly': 5000000
+        }
         
         growth_rate = 0.02
         forecast_5y = {}
@@ -139,26 +182,6 @@ class FinanceEngine:
                 })
             forecast_5y[sc_key] = sc_list
             
-        # 창업주 직접 운영 모델 (점주 1명 상주 + 파트 1명 = 인건비 250만, 월 500만원 절감)
-        owner_fixed_cost = (1 * 2500000) + monthly_rent + 2000000 + 800000 + 700000
-        owner_bep_monthly_users = int(owner_fixed_cost / margin_per_user)
-        owner_bep_daily_users = round(owner_bep_monthly_users / 30.0, 1)
-        owner_bep_turns = round(owner_bep_daily_users / float(rooms), 2)  # 타석당 0.5회전
-        owner_op_mod = op_mod + 5000000  # 월 2,620만원
-        owner_payback = round(capex / owner_op_mod, 1)  # 약 12.8개월
-        
-        inv['owner_operated'] = {
-            'fixed_cost': owner_fixed_cost,
-            'bep_monthly_sales': int(owner_bep_monthly_users * (8000 * 1.18)),
-            'bep_turns_per_room': owner_bep_turns,
-            'bep_monthly_users': owner_bep_monthly_users,
-            'bep_daily_users': int(owner_bep_daily_users),
-            'monthly_operating_profit_moderate': owner_op_mod,
-            'profit_margin_moderate': round((owner_op_mod / scenarios['moderate']['total_revenue']) * 100, 1),
-            'payback_months': owner_payback,
-            'labor_savings_monthly': 5000000
-        }
-        
         return {
             'investment': inv,
             'monthly_scenarios': scenarios,

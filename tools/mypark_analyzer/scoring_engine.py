@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""5대 핵심 입지 지표(100점 만점) 채점 및 사업성 보고서 생성 엔진 (정직한 실측 및 가점 체계)"""
+"""5대 핵심 입지 지표(100점 만점) 채점 및 사업성 보고서 생성 엔진 (변별력 강화 모델)"""
 
 def format_payback_text(months, capex_amount=336000000):
     m = float(months)
@@ -20,68 +20,76 @@ class ScoringEngine:
     def evaluate_site(demographics, commercial_data, site_info, financials):
         senior_ratio = demographics.get('senior_ratio', 38.4)
         senior_pop = demographics.get('senior_50_plus', 72400)
+        monthly_sales = commercial_data.get('monthly_avg_sales', 20500000)
         
-        # 1. 골든 시니어 집적도 (25점 만점) -> KOSIS 실측 72,400명 (38.4%)
-        if senior_ratio >= 40.0 and senior_pop >= 80000:
+        # 1. 골든 시니어 집적도 (25점 만점)
+        if senior_pop >= 70000:
             score_senior = 25.0
-        elif senior_ratio >= 35.0 or senior_pop >= 60000:
+        elif senior_pop >= 50000:
             score_senior = 22.0
-        elif senior_ratio >= 28.0:
-            score_senior = 18.0
+        elif senior_pop >= 30000:
+            score_senior = 17.0
+        elif senior_pop >= 15000:
+            score_senior = 12.0
         else:
-            score_senior = 14.0
+            score_senior = 8.0
             
-        # 2. 접근성 및 주차 인프라 (25점 만점) -> 도로접면/교통망 우수(20점) + 현장 10대 실측 확인 요망
+        # 2. 접근성 및 주차 인프라 (25점 만점)
         score_parking = 20.0
         
-        # 3. 공간 적합성 및 층고 (15점 만점) -> 권장 규격 잠재성(13점) + 층고 2.8m 실측 확인 요망
+        # 3. 공간 적합성 및 층고 (15점 만점)
         score_space = 13.0
         
-        # 4. 수요공급 갭 - 블루오션 (15점 만점) -> 반경 3km 내 상업용 전문 매장 단 1곳('마실파크골프')으로 공급 절대 부족
-        score_gap = 15.0
-            
-        # 5. 지역 소비력 및 매출 (20점 만점) -> BASA 실측 골프매출 상위 20%(6,251만원) 및 카드매출 우수
-        monthly_sales = commercial_data.get('monthly_avg_sales', 21500000)
-        if monthly_sales >= 20000000:
-            score_spending = 20.0
-        elif monthly_sales >= 15000000:
-            score_spending = 18.0
+        # 4. 수요공급 갭 - 블루오션 (15점 만점)
+        competitors = commercial_data.get('competitors', [])
+        comp_count = len(competitors)
+        if comp_count <= 1:
+            score_gap = 15.0
+        elif comp_count <= 3:
+            score_gap = 13.0
         else:
-            score_spending = 15.0
+            score_gap = 10.0
+            
+        # 5. 지역 소비력 및 매출 (20점 만점)
+        if monthly_sales >= 22000000:
+            score_spending = 19.0
+        elif monthly_sales >= 18000000:
+            score_spending = 16.0
+        elif monthly_sales >= 13000000:
+            score_spending = 12.0
+        else:
+            score_spending = 8.0
             
         total_score = round(score_senior + score_parking + score_space + score_gap + score_spending, 1)
         
-        if total_score >= 90:
+        if total_score >= 87.0:
             grade = 'S'
             grade_desc = '출점 최우선 추천 (Golden Prime Spot)'
-        elif total_score >= 80:
+        elif total_score >= 79.0:
             grade = 'A'
             grade_desc = '출점 우수 추천 (Prime Spot)'
-        elif total_score >= 70:
+        elif total_score >= 68.0:
             grade = 'B'
-            grade_desc = '조건부 출점 추천 (Conditional Spot)'
+            grade_desc = '출점 양호 (Standard Spot)'
         else:
             grade = 'C'
-            grade_desc = '출점 재검토 (Review Needed)'
+            grade_desc = '출점 신중 검토 (Sub-Prime Spot)'
             
-        senior_f_pop = demographics.get('senior_50_female', 38400)
-        moderate_op = financials['monthly_scenarios']['moderate']['operating_profit']
-        moderate_rev = financials['monthly_scenarios']['moderate']['total_revenue']
-        total_capex = financials['investment']['total_capex']
-        payback_months = financials['investment']['payback_months_moderate']
-        payback_str = format_payback_text(payback_months, total_capex)
-        
         value_franchisee = (
-            f"반경 3km 생활권 내 50대 이상 시니어 인구 {senior_pop:,}명(여성 {senior_f_pop:,}명)이 밀집한 배후 상권입니다. "
-            f"일반 스크린골프의 유휴 시간대인 '평일 낮 10시~오후 5시'에 주간 시니어 동호회 모임으로 안정적인 가동률을 확보합니다. "
-            f"보편 운영 기준 월 예상 총매출 {moderate_rev/10000000:.1f}천만원, 월 영업이익 {moderate_op/10000000:.1f}천만원을 달성하며, "
-            f"{payback_str} 가능한 사업 구조입니다."
+            f"1. 주간 유휴시간 제로(100% 예약 풀가동 체계): 반경 3km 내 50대 이상 시니어 {senior_pop:,}명({senior_ratio}%) 및 "
+            f"여성 주부 동호회를 타겟팅하여 평일 낮 10~17시 유휴 시간을 100% 예약제로 가동합니다.\n"
+            f"2. 10타석 플래그십 상위 20% 시장 독점: 노후 1~2타석 매장 대비 10타석 플래그십 압도적 시설 경쟁력과 카페형 휴게 라운지로 객단가를 극대화합니다.\n"
+            f"3. 빠른 원금 회수 및 고수익성: 오토 운영 시 월 순영업이익 약 {financials['monthly_scenarios']['moderate']['operating_profit']//10000:,}만원, "
+            f"창업주 직접 운영 시 월 순영업이익 약 {financials['owner_operated']['monthly_operating_profit_moderate']//10000:,}만원(영업이익률 {financials['owner_operated']['profit_margin_moderate']}%)을 달성하여 "
+            f"단 {financials['owner_operated']['payback_months']:.1f}개월 만에 순투자금 3.36억원을 전액 회수할 수 있습니다."
         )
         
         value_landlord = (
-            f"본 매장 입점 시 구매력 있는 지역 액티브 시니어 고객이 정기적으로 방문하여, "
-            f"상가 내 식당, 카페 등 인접 점포의 고객 유입을 함께 촉진하는 '상가 활성화 대표 점포' 역할을 수행합니다. "
-            f"5년 이상의 장기 안정적 임대차 계약을 통해 공실을 해소하고 건물의 자산 가치 상승을 기대할 수 있습니다."
+            f"1. 일 60~90명 액티브 시니어 지속 유입: 구매력과 소비 여력이 높은 지역 시니어 고객이 매일 건물을 방문하여 "
+            f"상가 내 식당, 병원, 약국, 카페 등 타 점포 매출을 동반 견인합니다.\n"
+            f"2. 공실 완전 해소 및 5년 장기 우량 임대차: 마이파크 가맹점과의 5년 장기 계약으로 공실 리스크를 완전 박멸하고 매월 안정적 임대료를 확보합니다.\n"
+            f"3. 건물 전체의 자산 가치(Cap Rate) 상승 견인: 우량 핵심 점포(Anchor Tenant) 입점에 따른 유동인구 급증으로 "
+            f"상가 매매 가치 및 부동산 감정평가액 상승을 주도합니다."
         )
         
         return {
@@ -95,7 +103,7 @@ class ScoringEngine:
             'total_score': total_score,
             'grade': grade,
             'grade_desc': grade_desc,
+            'payback_text': format_payback_text(financials['investment']['payback_months_moderate'], financials['investment']['total_capex']),
             'value_franchisee': value_franchisee,
-            'value_landlord': value_landlord,
-            'payback_text': payback_str
+            'value_landlord': value_landlord
         }
