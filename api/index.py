@@ -4,6 +4,7 @@ import os
 import sys
 import json
 import base64
+import traceback
 from http.server import BaseHTTPRequestHandler
 
 curr_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -19,7 +20,7 @@ class handler(BaseHTTPRequestHandler):
         self.wfile.write(json.dumps({
             'status': 'OK',
             'service': 'MYPARK Commercial & Feasibility Analysis API (Smart Estimates)',
-            'version': '1.1.0'
+            'version': '1.2.0'
         }).encode('utf-8'))
 
     def do_POST(self):
@@ -47,10 +48,10 @@ class handler(BaseHTTPRequestHandler):
             if 'pdf_path' in result and os.path.exists(result['pdf_path']):
                 with open(result['pdf_path'], 'rb') as f:
                     pdf_b64 = base64.b64encode(f.read()).decode('utf-8')
-            if os.path.exists(result['pptx_path']):
+            if 'pptx_path' in result and os.path.exists(result['pptx_path']):
                 with open(result['pptx_path'], 'rb') as f:
                     pptx_b64 = base64.b64encode(f.read()).decode('utf-8')
-            if os.path.exists(result['docx_path']):
+            if 'docx_path' in result and os.path.exists(result['docx_path']):
                 with open(result['docx_path'], 'rb') as f:
                     docx_b64 = base64.b64encode(f.read()).decode('utf-8')
                     
@@ -63,7 +64,12 @@ class handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps(result, ensure_ascii=False).encode('utf-8'))
         except Exception as e:
+            err_trace = traceback.format_exc()
+            print("[SERVER ERROR]", err_trace)
             self.send_response(500)
             self.send_header('Content-Type', 'application/json; charset=utf-8')
             self.end_headers()
-            self.wfile.write(json.dumps({'error': str(e)}).encode('utf-8'))
+            self.wfile.write(json.dumps({
+                'error': str(e),
+                'traceback': err_trace
+            }, ensure_ascii=False).encode('utf-8'))

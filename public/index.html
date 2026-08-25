@@ -874,7 +874,12 @@
                 });
                 
                 if (!response.ok) {
-                    throw new Error('서버 응답 오류: ' + response.status);
+                    let errDetail = response.statusText;
+                    try {
+                        const errJson = await response.json();
+                        if (errJson && errJson.error) errDetail = errJson.error;
+                    } catch(e) {}
+                    throw new Error('서버 응답 오류 (' + response.status + '): ' + errDetail);
                 }
 
                 const res = await response.json();

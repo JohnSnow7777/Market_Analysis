@@ -14,9 +14,15 @@ FONT_REGULAR = "Pretendard"
 FONT_BOLD = "Pretendard-Bold"
 
 def init_fonts():
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    bundled_reg = os.path.join(base_dir, "fonts", "MalgunGothic.ttf")
+    bundled_bold = os.path.join(base_dir, "fonts", "MalgunGothicBold.ttf")
+    
     font_paths = [
+        (bundled_reg, bundled_bold),
         ("C:/Windows/Fonts/malgun.ttf", "C:/Windows/Fonts/malgunbd.ttf"),
         ("C:/Windows/Fonts/NanumGothic.ttf", "C:/Windows/Fonts/NanumGothicBold.ttf"),
+        ("/usr/share/fonts/truetype/nanum/NanumGothic.ttf", "/usr/share/fonts/truetype/nanum/NanumGothicBold.ttf"),
         ("/System/Library/Fonts/AppleSDGothicNeo.ttc", "/System/Library/Fonts/AppleSDGothicNeo.ttc"),
     ]
     for r_path, b_path in font_paths:
@@ -27,6 +33,12 @@ def init_fonts():
                 return True
             except Exception:
                 continue
+    # 최후의 수단: Helvetica 기본 폰트 등록
+    try:
+        from reportlab.pdfbase.pdfmetrics import registerFontFamily
+        registerFontFamily("Pretendard", normal="Helvetica", bold="Helvetica-Bold")
+    except Exception:
+        pass
     return False
 
 init_fonts()
