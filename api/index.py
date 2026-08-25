@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Vercel Serverless Python Handler"""
+"""Vercel Serverless Python Handler (Smart Auto-Estimates)"""
 import os
 import sys
 import json
 import base64
 from http.server import BaseHTTPRequestHandler
 
-# Set current dir to path
 curr_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, curr_dir)
 
@@ -19,8 +18,8 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps({
             'status': 'OK',
-            'service': 'MYPARK Commercial & Feasibility Analysis API',
-            'version': '1.0.0'
+            'service': 'MYPARK Commercial & Feasibility Analysis API (Smart Estimates)',
+            'version': '1.1.0'
         }).encode('utf-8'))
 
     def do_POST(self):
@@ -29,7 +28,6 @@ class handler(BaseHTTPRequestHandler):
             post_data = self.rfile.read(content_length)
             params = json.loads(post_data.decode('utf-8'))
             
-            # Vercel /tmp writable output directory
             output_dir = '/tmp/output' if os.path.exists('/tmp') else 'output'
             os.makedirs(output_dir, exist_ok=True)
             
@@ -37,13 +35,12 @@ class handler(BaseHTTPRequestHandler):
             result = generator.analyze_and_generate(
                 address=params['address'],
                 building_name=params.get('name'),
-                rooms=int(params.get('rooms', 12)),
-                monthly_rent=int(params.get('rent', 5000000)),
-                staff_count=int(params.get('staff', 4)),
-                area_pyeong=int(params.get('area', 100))
+                rooms=int(params['rooms']) if params.get('rooms') else None,
+                monthly_rent=int(params['rent']) if params.get('rent') else None,
+                staff_count=int(params['staff']) if params.get('staff') else None,
+                area_pyeong=int(params['area']) if params.get('area') else None
             )
             
-            # Read generated PPTX and DOCX into base64 for direct browser download
             pptx_b64 = None
             docx_b64 = None
             if os.path.exists(result['pptx_path']):

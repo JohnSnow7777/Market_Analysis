@@ -19,9 +19,20 @@ class MyParkReportGenerator:
         self.output_dir = output_dir
         os.makedirs(self.output_dir, exist_ok=True)
         
-    def analyze_and_generate(self, address, building_name=None, rooms=12, monthly_rent=5000000, staff_count=4, area_pyeong=100):
-        # 1. 지리 및 입지 스펙
-        site_info = GeoEngine.analyze_site(address, building_name, area_pyeong, rooms)
+    def analyze_and_generate(self, address, building_name=None, rooms=None, monthly_rent=None, staff_count=None, area_pyeong=None):
+        # 1. 지리 및 입지 스펙 (미입력 파라미터는 상권/지역 시세 기반 스마트 자동 추정)
+        site_info = GeoEngine.analyze_site(
+            address=address,
+            building_name=building_name,
+            area_pyeong=area_pyeong,
+            rooms=rooms,
+            monthly_rent=monthly_rent,
+            staff_count=staff_count
+        )
+        
+        actual_rooms = site_info['rooms']
+        actual_rent = site_info['monthly_rent']
+        actual_staff = site_info['staff_count']
         
         # 2. 인구 통계 데이터
         demographics = DemographicsEngine.get_demographics(address)
@@ -30,7 +41,7 @@ class MyParkReportGenerator:
         commercial = CommercialDataEngine.get_commercial_trends(address)
         
         # 4. 정밀 재무 시뮬레이션
-        financials = FinanceEngine.get_full_financial_analysis(rooms, monthly_rent, staff_count)
+        financials = FinanceEngine.get_full_financial_analysis(actual_rooms, actual_rent, actual_staff)
         
         # 5. 5대 지표 채점 및 피칭 생성
         scores = ScoringEngine.evaluate_site(demographics, commercial, site_info, financials)
@@ -64,7 +75,7 @@ class MyParkReportGenerator:
         }
         
         # 파일명 생성 (한국어 지원)
-        raw_name = building_name or site_info['sigungu']
+        raw_name = site_info['building_name']
         clean_name = re.sub(r'[^0-9a-zA-Z가-힣_]', '_', str(raw_name))
         clean_name = re.sub(r'_+', '_', clean_name).strip('_')
         

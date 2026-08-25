@@ -39,18 +39,24 @@
         .header-content p { color: var(--gold); font-size: 15px; font-weight: 600; }
         .header-badge { background: rgba(255,255,255,0.15); padding: 8px 16px; border-radius: 30px; font-size: 13px; font-weight: 600; border: 1px solid rgba(255,255,255,0.2); }
 
-        .layout { display: grid; grid-template-columns: 380px 1fr; gap: 25px; }
+        .layout { display: grid; grid-template-columns: 390px 1fr; gap: 25px; }
         @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
 
         .card { background: var(--card-bg); border-radius: 14px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05); border: 1px solid var(--border); }
         .card-header { font-size: 18px; font-weight: 700; color: var(--primary); padding-bottom: 12px; margin-bottom: 20px; border-bottom: 2px solid var(--primary); display: flex; justify-content: space-between; align-items: center; }
 
+        .info-tip { background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 12px; font-size: 12.5px; color: #1E40AF; margin-bottom: 16px; line-height: 1.5; }
+
         .form-group { margin-bottom: 16px; }
         label { display: block; font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+        .label-optional { font-size: 11px; font-weight: normal; color: var(--text-muted); margin-left: 4px; }
         input, select { width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; color: var(--text-main); background: #FAFBFD; transition: 0.2s; }
         input:focus, select:focus { outline: none; border-color: var(--accent); background: #FFF; box-shadow: 0 0 0 3px rgba(30,136,229,0.15); }
 
-        .btn-submit { width: 100%; background: var(--primary); color: white; border: none; padding: 15px; font-size: 16px; font-weight: 700; border-radius: 8px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 12px rgba(0, 51, 102, 0.2); margin-top: 10px; }
+        .advanced-toggle { font-size: 13px; color: var(--accent); font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; margin-bottom: 15px; user-select: none; }
+        .advanced-fields { display: none; background: #F8FAFC; border: 1px dashed var(--border); padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+
+        .btn-submit { width: 100%; background: var(--primary); color: white; border: none; padding: 15px; font-size: 16px; font-weight: 700; border-radius: 8px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 12px rgba(0, 51, 102, 0.2); }
         .btn-submit:hover { background: var(--accent); transform: translateY(-1px); }
         .btn-submit:disabled { background: #94A3B8; cursor: not-allowed; transform: none; box-shadow: none; }
 
@@ -65,6 +71,10 @@
         .grade-banner { background: linear-gradient(135deg, #003366, #1E88E5); color: white; padding: 20px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .grade-title { font-size: 14px; opacity: 0.9; }
         .grade-badge { font-size: 28px; font-weight: 900; color: var(--gold); }
+
+        .specs-tag-bar { background: #F1F5F9; border-radius: 8px; padding: 10px 14px; font-size: 12.5px; color: var(--text-main); margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 12px; font-weight: 600; }
+        .spec-item { display: flex; align-items: center; gap: 4px; }
+        .spec-highlight { color: var(--primary); font-weight: 800; }
 
         .metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
         .metric-card { background: #F8FAFC; border: 1px solid var(--border); border-left: 4px solid var(--primary); padding: 15px; border-radius: 8px; }
@@ -87,50 +97,67 @@
         <header>
             <div class="header-content">
                 <h1>⛳ 마이파크(MYPARK) 스크린 파크골프 상권 & 사업분석 시스템</h1>
-                <p>KOSIS 인구통계 + 소상공인365 + 5대 입지 지표 + 3대 시나리오 5개년 손익 자동화 엔진</p>
+                <p>주소만 입력해도 KOSIS 인구 + 시세 임대료 + 5대 지표 + 5개년 손익 자동 스마트 분석</p>
             </div>
-            <div class="header-badge">v1.0 Vercel Production</div>
+            <div class="header-badge">Smart Auto-Estimate v1.1</div>
         </header>
 
         <div class="layout">
             <!-- Left: Input Form -->
             <div class="card">
                 <div class="card-header">
-                    <span>📍 분석 조건 입력</span>
+                    <span>📍 분석 사업지 입력</span>
                 </div>
+
+                <div class="info-tip">
+                    💡 <strong>주소만 입력하셔도 즉시 분석 가능합니다!</strong><br>
+                    타석수/임대료/면적을 모르실 경우 해당 상권의 표준 플래그십 모델(12타석, 시세 임대료, 120평)로 자동 산정됩니다.
+                </div>
+
                 <form id="analyzeForm">
                     <div class="form-group">
-                        <label>사업지 주소 (도로명/지번)</label>
+                        <label>사업지 주소 (도로명 또는 지번) <span style="color:#E53935;">*필수</span></label>
                         <input type="text" id="address" value="경기도 고양시 일산동구 숲속마을로 22" placeholder="예: 서울시 강남구 역삼동 123" required>
                     </div>
+
                     <div class="form-group">
-                        <label>매장 / 건물명 (선택)</label>
-                        <input type="text" id="name" value="일산풍동점_진넥스블루오션" placeholder="예: 강남역점">
+                        <label>매장 / 건물명 <span class="label-optional">(선택)</span></label>
+                        <input type="text" id="name" placeholder="미입력 시 행정구역명 자동 부여">
                     </div>
-                    <div class="form-group">
-                        <label>예정 타석 수</label>
-                        <select id="rooms">
-                            <option value="4">4 타석 (소형 매장)</option>
-                            <option value="6">6 타석 (표준 매장)</option>
-                            <option value="8">8 타석 (중형 매장)</option>
-                            <option value="10">10 타석 (중대형 매장)</option>
-                            <option value="12" selected>12 타석 (대형 플래그십 - 권장)</option>
-                            <option value="16">16 타석 (초대형 센터)</option>
-                        </select>
+
+                    <div class="advanced-toggle" id="btnToggleAdvanced">
+                        <span>⚙️ 타석수 / 임대료 직접 지정하기 (선택)</span>
+                        <span id="toggleIcon">▼</span>
                     </div>
-                    <div class="form-group">
-                        <label>월 예상 임대료 (원)</label>
-                        <input type="number" id="rent" value="5000000" step="500000">
+
+                    <div class="advanced-fields" id="advancedFields">
+                        <div class="form-group">
+                            <label>예정 타석 수</label>
+                            <select id="rooms">
+                                <option value="" selected>자동 추천 (마이파크 표준 12타석)</option>
+                                <option value="4">4 타석 (소형 거점)</option>
+                                <option value="6">6 타석 (표준 매장)</option>
+                                <option value="8">8 타석 (중형 매장)</option>
+                                <option value="10">10 타석 (중대형 매장)</option>
+                                <option value="12">12 타석 (대형 플래그십 - 권장)</option>
+                                <option value="16">16 타석 (초대형 센터)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>월 예상 임대료 (원)</label>
+                            <input type="number" id="rent" placeholder="미입력 시 지역 시세 평당 임대료 자동 산정" step="100000">
+                        </div>
+                        <div class="form-group">
+                            <label>전용면적 (평)</label>
+                            <input type="number" id="area" placeholder="미입력 시 타석당 최적 면적 자동 산출">
+                        </div>
+                        <div class="form-group">
+                            <label>운영 인력 수 (명)</label>
+                            <input type="number" id="staff" placeholder="미입력 시 타석 규모별 최적 인력 자동 산정">
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>전용면적 (평)</label>
-                        <input type="number" id="area" value="120">
-                    </div>
-                    <div class="form-group">
-                        <label>운영 인력 수 (명)</label>
-                        <input type="number" id="staff" value="4">
-                    </div>
-                    <button type="submit" id="btnSubmit" class="btn-submit">⚡ 상권 및 사업분석 즉시 실행</button>
+
+                    <button type="submit" id="btnSubmit" class="btn-submit">⚡ 상권 및 사업분석 즉시 실행 (1초)</button>
                 </form>
             </div>
 
@@ -143,14 +170,14 @@
 
                 <div id="emptyState" class="empty-state">
                     <div class="empty-icon">🏢</div>
-                    <p style="font-weight:700; margin-bottom:6px;">분석할 사업지 조건을 입력해주세요</p>
-                    <p style="font-size:13px;">주소를 입력하고 실행 버튼을 누르면 정밀 인구통계와 3대 손익 시나리오가 실시간 산출됩니다.</p>
+                    <p style="font-weight:700; margin-bottom:6px;">분석할 사업지 주소를 입력해주세요</p>
+                    <p style="font-size:13px;">주소만 입력하시면 KOSIS 인구통계와 3대 손익 시나리오, 12슬라이드 PPTX가 실시간 자동 조립됩니다.</p>
                 </div>
 
                 <div id="loadingBox" class="loading-box">
                     <div class="spinner"></div>
                     <p style="font-weight:700; color:var(--primary); margin-bottom:6px;">공공데이터 및 재무 시뮬레이션 분석 중...</p>
-                    <p style="font-size:13px; color:var(--text-muted);">16:9 와이드 PPTX 및 DOCX 보고서를 조립하고 있습니다.</p>
+                    <p style="font-size:13px; color:var(--text-muted);">16:9 와이드 PPTX 및 DOCX 기획서를 실시간 생성하고 있습니다.</p>
                 </div>
 
                 <div id="resultContent" class="result-content">
@@ -160,6 +187,13 @@
                             <div style="font-size:16px; font-weight:700;" id="gradeDesc">출점 최우선 추천 (Golden Prime Spot)</div>
                         </div>
                         <div class="grade-badge" id="gradeScore">S등급 (98.0점)</div>
+                    </div>
+
+                    <div class="specs-tag-bar">
+                        <div class="spec-item">📐 규모: <span class="spec-highlight" id="specRooms">12타석 (120평)</span></div>
+                        <div class="spec-item">🏢 월 임대료: <span class="spec-highlight" id="specRent">500만원</span></div>
+                        <div class="spec-item">👥 운영 인력: <span class="spec-highlight" id="specStaff">4명</span></div>
+                        <div class="spec-item" id="tagAutoEstimated" style="color:#2E7D32; background:#E8F5E9; padding:2px 8px; border-radius:4px;">✨ 상권 시세 스마트 자동 산정 모델</div>
                     </div>
 
                     <div class="metrics-grid">
@@ -205,6 +239,20 @@
     </div>
 
     <script>
+        // Advanced fields toggle
+        const toggleBtn = document.getElementById('btnToggleAdvanced');
+        const advancedFields = document.getElementById('advancedFields');
+        const toggleIcon = document.getElementById('toggleIcon');
+        toggleBtn.addEventListener('click', () => {
+            if (advancedFields.style.display === 'block') {
+                advancedFields.style.display = 'none';
+                toggleIcon.innerText = '▼';
+            } else {
+                advancedFields.style.display = 'block';
+                toggleIcon.innerText = '▲';
+            }
+        });
+
         document.getElementById('analyzeForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btn = document.getElementById('btnSubmit');
@@ -217,13 +265,18 @@
             loading.style.display = 'block';
             btn.disabled = true;
 
+            const roomsVal = document.getElementById('rooms').value;
+            const rentVal = document.getElementById('rent').value;
+            const areaVal = document.getElementById('area').value;
+            const staffVal = document.getElementById('staff').value;
+
             const payload = {
                 address: document.getElementById('address').value,
-                name: document.getElementById('name').value,
-                rooms: parseInt(document.getElementById('rooms').value),
-                rent: parseInt(document.getElementById('rent').value),
-                area: parseInt(document.getElementById('area').value),
-                staff: parseInt(document.getElementById('staff').value)
+                name: document.getElementById('name').value || null,
+                rooms: roomsVal ? parseInt(roomsVal) : null,
+                rent: rentVal ? parseInt(rentVal) : null,
+                area: areaVal ? parseInt(areaVal) : null,
+                staff: staffVal ? parseInt(staffVal) : null
             };
 
             try {
@@ -238,9 +291,15 @@
                 }
 
                 const res = await response.json();
+                const site = res.bundle.site;
                 
                 document.getElementById('gradeScore').innerText = `${res.grade}등급 (${res.total_score}점)`;
                 document.getElementById('gradeDesc').innerText = res.bundle.scores.grade_desc;
+                
+                document.getElementById('specRooms').innerText = `${site.rooms}타석 (${site.area_pyeong}평)`;
+                document.getElementById('specRent').innerText = `${(site.monthly_rent / 10000).toLocaleString()}만원/월`;
+                document.getElementById('specStaff').innerText = `${site.staff_count}명`;
+                
                 document.getElementById('valSenior').innerText = `${res.bundle.demographics.senior_50_plus.toLocaleString()}명 (${res.bundle.demographics.senior_ratio}%)`;
                 document.getElementById('valProfit').innerText = `${Math.floor(res.operating_profit_moderate / 10000).toLocaleString()}만원/월`;
                 document.getElementById('valBEP').innerText = `일 ${res.bundle.financials.investment.bep_turns_per_room}회전/타석`;
@@ -251,11 +310,11 @@
 
                 if (res.pptx_base64) {
                     document.getElementById('btnPptx').href = 'data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,' + res.pptx_base64;
-                    document.getElementById('btnPptx').setAttribute('download', `마이파크_${payload.name || '상권분석'}_사업분석.pptx`);
+                    document.getElementById('btnPptx').setAttribute('download', `마이파크_${payload.name || site.sigungu || '상권분석'}_사업분석.pptx`);
                 }
                 if (res.docx_base64) {
                     document.getElementById('btnDocx').href = 'data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,' + res.docx_base64;
-                    document.getElementById('btnDocx').setAttribute('download', `마이파크_${payload.name || '상권분석'}_출점타당성보고서.docx`);
+                    document.getElementById('btnDocx').setAttribute('download', `마이파크_${payload.name || site.sigungu || '상권분석'}_출점타당성보고서.docx`);
                 }
 
                 loading.style.display = 'none';
