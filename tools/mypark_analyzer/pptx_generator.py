@@ -357,7 +357,7 @@ class PPTXGenerator:
         p_inf2.space_before = Pt(4)
         p_inf2.text = (
             f"• 주변 인프라: 관공서 {infra.get('관공서', 8)}개  |  교육기관 {infra.get('교육기관', 15)}개  |  금융기관 {infra.get('금융기관', 18)}개\n"
-            f"• 대중 교통망: 버스정류장 {infra.get('버스정류장', 48)}개 노선망  |  지하철 {infra.get('지하철', '분당선 서현역')}\n"
+            f"• 대중 교통망: 버스정류장 {infra.get('버스정류장', 48)}개 노선망  |  지하철 {infra.get('지하철', '대중교통망 인접')}\n"
             f"• 상권 구성: 주거지역 93% 압도적 밀집으로 탄탄한 배후 생활권 형성"
         )
         p_inf2.font.size = Pt(9.2)
@@ -381,7 +381,8 @@ class PPTXGenerator:
         tf5_1 = c5_1.text_frame
         tf5_1.word_wrap = True
         p = tf5_1.paragraphs[0]
-        p.text = "■ 서현1동 매출 증가율 TOP 5 (소상공인365 실측)"
+        target_dong = site.get("dong", "사업권역")
+        p.text = f"■ {target_dong} 매출 증가율 TOP 5 (소상공인365 실측)"
         p.font.size = Pt(11)
         p.font.bold = True
         p.font.color.rgb = self.c_mck_navy
@@ -406,10 +407,11 @@ class PPTXGenerator:
         p.font.size = Pt(11)
         p.font.bold = True
         p.font.color.rgb = self.c_mck_navy
+        target_dong = site.get("dong", "사업권역")
         p_d1 = tf5_2.add_paragraph()
         p_d1.space_before = Pt(4)
         p_d1.text = (
-            f"• 서현1동 내 스크린골프 점포: {golf_den.get('store_count', 10)}개 (전체 {golf_den.get('total_stores_in_dong', 1526)}개 점포 중)\n"
+            f"• {target_dong} 내 스크린골프 점포: {golf_den.get('store_count', 10)}개 (전체 {golf_den.get('total_stores_in_dong', 1526)}개 점포 중)\n"
             f"• 스크린골프 업종 비중: {golf_den.get('density_ratio', 0.7)}% (전국 평균 {golf_den.get('national_avg_density', 0.3)}% 대비 +0.4%p 높음)\n"
             f"• 전국 평균 대비 2.3배 밀집된 '골프·파크골프 소비 문화 최상위 특화 상권'\n"
             f"• 성장 단계: {golf_den.get('growth_stage', '집중 성장 단계')}"

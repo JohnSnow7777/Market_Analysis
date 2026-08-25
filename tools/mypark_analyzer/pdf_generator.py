@@ -268,7 +268,7 @@ class PDFGenerator:
         c.setFont(FONT_REGULAR, 8.8)
         c.setFillColor(self.c_charcoal)
         c.drawString(335, 430, f"• 주변 시설: 관공서 {infra.get('관공서', 8)}개  |  교육기관 {infra.get('교육기관', 15)}개  |  금융기관 {infra.get('금융기관', 18)}개")
-        c.drawString(335, 408, f"• 대중 교통: 버스정류장 {infra.get('버스정류장', 48)}개 노선망  |  지하철 {infra.get('지하철', '분당선 서현역')}")
+        c.drawString(335, 408, f"• 대중 교통: 버스정류장 {infra.get('버스정류장', 48)}개 노선망  |  지하철 {infra.get('지하철', '대중교통망 인접')}")
         c.drawString(335, 386, "• 상권 구성: 주거지역 93% 압도적 밀집으로 탄탄한 배후 생활권 형성")
         
         if 'sales_trend' in charts and os.path.exists(charts['sales_trend']):
@@ -287,7 +287,8 @@ class PDFGenerator:
         c.rect(40, 268, 425, 212, fill=1, stroke=1)
         c.setFont(FONT_BOLD, 10.5)
         c.setFillColor(self.c_mck_navy)
-        c.drawString(56, 460, "■ 서현1동 매출 증가율 TOP 5 (소상공인365 실측)")
+        target_dong = site.get("dong", "사업권역")
+        c.drawString(56, 460, f"■ {target_dong} 매출 증가율 TOP 5 (소상공인365 실측)")
         growths = comm.get('top_growth_industries', [])
         y_g = 432
         for g in growths:
@@ -305,7 +306,8 @@ class PDFGenerator:
         c.drawString(511, 460, "■ 지역 골프 문화 및 유사 레저 밀집도 (BASA 실측)")
         c.setFont(FONT_REGULAR, 8.8)
         c.setFillColor(self.c_charcoal)
-        c.drawString(511, 428, f"• 서현1동 내 스크린골프 점포: {golf_den.get('store_count', 10)}개 (전체 {golf_den.get('total_stores_in_dong', 1526)}개 중)")
+        target_dong = site.get("dong", "사업권역")
+        c.drawString(511, 428, f"• {target_dong} 내 스크린골프 점포: {golf_den.get('store_count', 10)}개 (전체 {golf_den.get('total_stores_in_dong', 1526)}개 중)")
         c.drawString(511, 400, f"• 스크린골프 업종 비중: {golf_den.get('density_ratio', 0.7)}% (전국 평균 {golf_den.get('national_avg_density', 0.3)}% 대비 2.3배)")
         c.drawString(511, 372, "• 전국 평균 대비 2.3배 밀집된 '골프·파크골프 소비 문화 특화 상권'")
         c.drawString(511, 344, f"• 성장 단계: {golf_den.get('growth_stage', '집중 성장 단계')}")
