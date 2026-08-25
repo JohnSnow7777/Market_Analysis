@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""상세 출점 타당성 검토 기획서 DOCX 생성기 (고객 친화적 쉬운 비즈니스 텍스트)"""
+"""상세 출점 타당성 검토 기획서 DOCX 생성기 (객관적 실측 체크리스트 반영)"""
 import os
 import docx
 from docx.shared import Inches, Pt, RGBColor
@@ -56,12 +56,15 @@ class DOCXGenerator:
         
         doc.add_paragraph().paragraph_format.space_after = Pt(15)
         
-        # 1. 개요
-        h1 = doc.add_heading("1. 사업지 개요 및 물리적 입지 환경", level=1)
+        # 1. 개요 및 출점 점검 기준
+        h1 = doc.add_heading("1. 사업지 개요 및 출점 점검 요건 (현장 실측 기준)", level=1)
         h1.runs[0].font.color.rgb = RGBColor(0, 51, 102)
         p = doc.add_paragraph()
-        p.add_run(f"본 사업지는 {site['full_address']}에 위치하며, 전용면적 약 {site['area_pyeong']}평 공간에 {site['rooms']}개의 마이파크 스크린 파크골프 타석 및 라운지/카페가 구축되는 구조입니다. ")
-        p.add_run(f"순수 유효 층고 {site['clear_height']}m로 스크린 파크골프 권장 기준(2.8m 이상)을 충족하며, {site['parking_type']}이 확보되어 시니어 고객의 자차 접근성이 매우 우수합니다.")
+        p.add_run(f"본 사업지는 {site['full_address']}에 위치하며, 전용면적 약 {site['area_pyeong']}평 공간에 {site['rooms']}개의 마이파크 스크린 파크골프 타석 및 라운지/카페가 구축되는 구조입니다.\n\n")
+        p.add_run(f"• 층고 요건: {site['clear_height_spec']}\n")
+        p.add_run(f"• 주차 요건: {site['parking_spec']}\n")
+        p.add_run(f"• 이동 편의: {site['accessibility_spec']}\n")
+        p.add_run(f"• 인허가 및 용도: {site['zoning_spec']}")
         
         # 2. 인구
         h2 = doc.add_heading("2. 배후 상권 인구 및 시니어 타겟 분석", level=1)

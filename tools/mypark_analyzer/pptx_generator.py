@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""16:9 와이드 전문 프레젠테이션 보고서 생성기 (고객 친화적 쉬운 비즈니스 텍스트)"""
+"""16:9 와이드 전문 프레젠테이션 보고서 생성기 (객관적 실측 체크리스트 반영)"""
 import os
 import pptx
 from pptx.util import Inches, Pt
@@ -82,7 +82,7 @@ class PPTXGenerator:
         p2.space_before = Pt(15)
         
         p3 = tf1.add_paragraph()
-        p3.text = f"위치: {site['full_address']} | {site['rooms']}타석 ({site['area_pyeong']}평) 기준"
+        p3.text = f"대상 주소: {site['full_address']} | {site['rooms']}타석 ({site['area_pyeong']}평) 기준"
         p3.font.name = 'Malgun Gothic'
         p3.font.size = Pt(16)
         p3.font.color.rgb = self.c_white
@@ -95,9 +95,9 @@ class PPTXGenerator:
         p4.font.color.rgb = self.c_gold
         p4.space_before = Pt(10)
 
-        # Slide 2: 개요
+        # Slide 2: 개요 및 공간 요건 (체크리스트 기반)
         s2 = self.prs.slides.add_slide(self.blank_layout)
-        self._add_header_bar(s2, f"1. 사업지 개요 및 공간 구성 ({site['rooms']}타석 / {site['area_pyeong']}평)")
+        self._add_header_bar(s2, f"1. 사업지 개요 및 출점 점검 요건 ({site['rooms']}타석 / {site['area_pyeong']}평 권장)")
         tb2 = s2.shapes.add_textbox(Inches(0.8), Inches(1.5), Inches(11.7), Inches(5.0))
         tf2 = tb2.text_frame
         
@@ -115,12 +115,12 @@ class PPTXGenerator:
             r2.font.size = Pt(size)
             r2.font.color.rgb = self.c_dark
             
-        add_bullet(tf2, f"{site['full_address']} ({site.get('building_name', '상가')})", "▲ 사업지 주소:")
-        add_bullet(tf2, f"전용면적 {site['area_pyeong']}평 | {site['rooms']}타석 + 라운지/카페 + 휴게존 최적 동선 배치", "▲ 공간 규모:")
-        add_bullet(tf2, f"순수 유효 층고 {site['clear_height']}m (파크골프 권장 기준 2.8m 이상 완벽 충족)", "▲ 층고 요건:")
-        add_bullet(tf2, f"{site['parking_type']} ({site['parking_spaces']}대 이상 확보 가능, 시니어 자차 접근 편리)", "▲ 주차 인프라:")
-        add_bullet(tf2, f"{site['elevator']} 및 {site['zoning']}", "▲ 건물 편의성:")
-        add_bullet(tf2, f"반경 3km 내 대규모 주거단지 밀집, 교통 간선도로 인접 생활밀착형 최적 상권", "▲ 입지 특성:")
+        add_bullet(tf2, f"{site['full_address']}", "▲ 대상지 주소:")
+        add_bullet(tf2, f"전용면적 {site['area_pyeong']}평 권장 (10타석 + 라운지/카페 + 락커룸 최적 배치)", "▲ 권장 공간 규모:")
+        add_bullet(tf2, f"{site['clear_height_spec']}", "▲ 층고 점검 기준:")
+        add_bullet(tf2, f"{site['parking_spec']}", "▲ 주차 점검 기준:")
+        add_bullet(tf2, f"{site['accessibility_spec']}", "▲ 건물 편의 요건:")
+        add_bullet(tf2, f"{site['zoning_spec']}", "▲ 인허가 및 용도:")
 
         # Slide 3: 인구
         s3 = self.prs.slides.add_slide(self.blank_layout)
@@ -130,7 +130,7 @@ class PPTXGenerator:
         add_bullet(tf3, f"{demo['region_name']}", "▲ 분석 권역:")
         add_bullet(tf3, f"총 {demo['total_pop']:,}명 (남: {demo['male_pop']:,}명 / 여: {demo['female_pop']:,}명)", "▲ 배후 총인구:")
         add_bullet(tf3, f"{demo['base_date']}", "▲ 통계 출처:")
-        add_bullet(tf3, f"차량 10분 이내 생활권 내 고밀도 아파트 단지 및 배후 수요 집중", "▲ 핵심 요약:")
+        add_bullet(tf3, f"차량 10분 생활권 내 아파트 단지 및 배후 인구 집중", "▲ 핵심 요약:")
         
         dongs = demo['dongs']
         rows = len(dongs) + 2
@@ -210,7 +210,7 @@ class PPTXGenerator:
         tb5 = s5.shapes.add_textbox(Inches(8.3), Inches(1.8), Inches(4.3), Inches(4.5))
         tf5 = tb5.text_frame
         add_bullet(tf5, f"반경 1.5~3km 내 유사업종 매장 총 {comm['store_count']}개소 운영 중", "▲ 업소 현황:")
-        add_bullet(tf5, f"월평균 매출액 {comm['monthly_avg_sales']//10000:,}만원 수준 (안정적 상승세)", "▲ 매출 동향:")
+        add_bullet(tf5, f"월평균 매출액 {comm['monthly_avg_sales']//10000:,}만원 수준 (안정적 추세)", "▲ 매출 동향:")
         add_bullet(tf5, f"소상공인 365 플랫폼 실측 데이터 기반 분석", "▲ 데이터 출처:")
 
         # Slide 6: 패턴 분석
@@ -223,13 +223,13 @@ class PPTXGenerator:
         add_bullet(tf6, f"50대 이상 이용자 매출 기여도 {comm['age_distribution']['50대이상_비중']}% -> 압도적 타겟 일치도", "▲ 연령별 패턴:")
         add_bullet(tf6, f"평일 낮 유휴 시간대를 주간 시니어 동호회가 풀가동하는 독보적 수익 구조", "▲ 사업화 시사점:")
 
-        # Slide 7: 경쟁점
+        # Slide 7: 경쟁점 현황 (객관적 사실 기반)
         s7 = self.prs.slides.add_slide(self.blank_layout)
         comps = comm.get('competitors', [])
-        self._add_header_bar(s7, f"4. 주변 스크린 파크골프 경쟁 매장({len(comps)}곳) 현황")
+        self._add_header_bar(s7, f"4. 주변 스크린 파크골프 경쟁 매장 분석")
         rows7 = len(comps) + 1
         table_s7 = s7.shapes.add_table(rows7, 5, Inches(0.8), Inches(1.8), Inches(11.7), Inches(0.6 * rows7)).table
-        headers7 = ['매장명', '소재지 주소', '사용 시스템', '보유 타석', '주요 특징']
+        headers7 = ['매장/상호명', '소재지 권역', '시스템 유형', '타석 규모', '특징 및 상권 현황']
         for col_idx, h in enumerate(headers7):
             cell = table_s7.cell(0, col_idx)
             cell.text = h
@@ -244,7 +244,7 @@ class PPTXGenerator:
             table_s7.cell(row_idx+1, 0).text = str(c['name'])
             table_s7.cell(row_idx+1, 1).text = str(c['address'])
             table_s7.cell(row_idx+1, 2).text = str(c['system'])
-            table_s7.cell(row_idx+1, 3).text = f"{c['rooms']}타석"
+            table_s7.cell(row_idx+1, 3).text = f"{c['rooms']}타석" if c['rooms'] > 0 else '미등록/신규'
             table_s7.cell(row_idx+1, 4).text = str(c.get('features', '-'))
             for col in range(5):
                 p = table_s7.cell(row_idx+1, col).text_frame.paragraphs[0]
