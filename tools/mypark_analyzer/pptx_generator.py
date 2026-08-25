@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-"""16:9 와이드 최고급 비즈니스 컨설팅 프레젠테이션 생성기 (하이엔드 디자인)"""
+"""16:9 와이드 최고급 비즈니스 컨설팅 프레젠테이션 생성기 (표 및 글자 깨짐 방지 최적화)"""
 import os
 import pptx
 from pptx.util import Inches, Pt
-from pptx.enum.text import PP_ALIGN
+from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
 
@@ -31,7 +31,6 @@ class PPTXGenerator:
         self.c_pink_bg = RGBColor(254, 242, 242)
 
     def _add_header_bar(self, slide, white_prefix, gold_highlight, white_suffix=""):
-        # 상단 슬릭 헤더 바
         header = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.6), Inches(0.4), Inches(12.133), Inches(0.75))
         header.fill.solid()
         header.fill.fore_color.rgb = self.c_navy
@@ -40,6 +39,7 @@ class PPTXGenerator:
         
         tf = header.text_frame
         tf.word_wrap = True
+        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
         p = tf.paragraphs[0]
         p.alignment = PP_ALIGN.CENTER
         
@@ -76,6 +76,28 @@ class PPTXGenerator:
         p.font.color.rgb = self.c_slate_gray
         p.alignment = PP_ALIGN.RIGHT
 
+    def _format_cell(self, cell, text, font_size=10, bold=False, color=None, bg_color=None, align=PP_ALIGN.CENTER):
+        cell.text = ""
+        cell.vertical_anchor = MSO_ANCHOR.MIDDLE
+        cell.margin_top = Pt(3)
+        cell.margin_bottom = Pt(3)
+        cell.margin_left = Pt(5)
+        cell.margin_right = Pt(5)
+        
+        if bg_color:
+            cell.fill.solid()
+            cell.fill.fore_color.rgb = bg_color
+            
+        p = cell.text_frame.paragraphs[0]
+        p.alignment = align
+        run = p.add_run()
+        run.text = str(text)
+        run.font.name = 'Malgun Gothic'
+        run.font.size = Pt(font_size)
+        run.font.bold = bold
+        if color:
+            run.font.color.rgb = color
+
     def generate(self, data, output_pptx_path):
         site = data['site']
         demo = data['demographics']
@@ -85,7 +107,7 @@ class PPTXGenerator:
         charts = data['charts']
         
         # =========================================================================
-        # Slide 1: 프리미엄 다크 네이비 표지
+        # Slide 1: 표지
         # =========================================================================
         s1 = self.prs.slides.add_slide(self.blank_layout)
         bg = s1.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(13.333), Inches(7.5))
@@ -93,15 +115,14 @@ class PPTXGenerator:
         bg.fill.fore_color.rgb = self.c_navy_dark
         bg.line.fill.background()
         
-        # 골드 데코 라인
         line = s1.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(1.5), Inches(1.8), Inches(10.333), Inches(0.04))
         line.fill.solid()
         line.fill.fore_color.rgb = self.c_gold
         line.line.fill.background()
         
-        # 표지 텍스트
         tb1 = s1.shapes.add_textbox(Inches(1.5), Inches(2.1), Inches(10.333), Inches(3.2))
         tf1 = tb1.text_frame
+        tf1.word_wrap = True
         
         p1 = tf1.paragraphs[0]
         p1.text = "MYPARK SCREEN PARK GOLF  |  출점 타당성 분석 보고서"
@@ -125,7 +146,6 @@ class PPTXGenerator:
         p3.font.size = Pt(15)
         p3.font.color.rgb = self.c_border
         
-        # 하단 3개 메타 뱃지 카드
         badges = [
             (Inches(1.5), "입지 최적성 등급", f"{score['grade']}등급 ({score['total_score']}점)", self.c_gold),
             (Inches(5.1), "예상 월 영업이익 (보편)", f"{fin['monthly_scenarios']['moderate']['operating_profit']//10000:,}만원/월", self.c_emerald),
@@ -137,6 +157,7 @@ class PPTXGenerator:
             b_card.fill.fore_color.rgb = self.c_navy
             b_card.line.color.rgb = self.c_royal_blue
             tf_b = b_card.text_frame
+            tf_b.vertical_anchor = MSO_ANCHOR.MIDDLE
             p_bt = tf_b.paragraphs[0]
             p_bt.text = btitle
             p_bt.font.size = Pt(10)
@@ -148,7 +169,7 @@ class PPTXGenerator:
             p_bv.font.color.rgb = bcol
 
         # =========================================================================
-        # Slide 2: 4대 출점 점검 요건 (2x2 그리드 카드)
+        # Slide 2: 4대 출점 점검 요건 (2x2 그리드)
         # =========================================================================
         s2 = self.prs.slides.add_slide(self.blank_layout)
         self._add_header_bar(s2, "1. 사업지 개요 및 ", "출점 점검 체크리스트", f" ({site['rooms']}타석 / {site['area_pyeong']}평 권장)")
@@ -186,6 +207,9 @@ class PPTXGenerator:
             box.line.color.rgb = self.c_border
             tf = box.text_frame
             tf.word_wrap = True
+            tf.margin_left = Inches(0.18)
+            tf.margin_right = Inches(0.18)
+            tf.margin_top = Inches(0.15)
             p0 = tf.paragraphs[0]
             p0.text = ctitle
             p0.font.name = 'Malgun Gothic'
@@ -220,43 +244,28 @@ class PPTXGenerator:
         dongs = demo['dongs']
         rows3 = len(dongs) + 2
         table_s3 = s3.shapes.add_table(rows3, 4, Inches(6.6), Inches(2.2), Inches(6.1), Inches(0.42 * rows3)).table
-        headers = ['행정구역(동)', '남자(명)', '여자(명)', '합계(명)']
-        for col_idx, h in enumerate(headers):
-            cell = table_s3.cell(0, col_idx)
-            cell.text = h
-            cell.fill.solid()
-            cell.fill.fore_color.rgb = self.c_navy
-            for p in cell.text_frame.paragraphs:
-                p.font.color.rgb = self.c_white
-                p.font.bold = True
-                p.font.size = Pt(10.5)
-                p.alignment = PP_ALIGN.CENTER
-                
+        
+        # 열 너비 명시적 배분
+        col_w3 = [Inches(1.8), Inches(1.4), Inches(1.4), Inches(1.5)]
+        for c_idx, w in enumerate(col_w3):
+            table_s3.columns[c_idx].width = w
+            
+        headers3 = ['행정구역(동)', '남자(명)', '여자(명)', '합계(명)']
+        for col_idx, h in enumerate(headers3):
+            self._format_cell(table_s3.cell(0, col_idx), h, font_size=10.5, bold=True, color=self.c_white, bg_color=self.c_navy)
+            
         for idx, d in enumerate(dongs):
             r = idx + 1
-            table_s3.cell(r, 0).text = str(d['dong'])
-            table_s3.cell(r, 1).text = f"{d['male']:,}"
-            table_s3.cell(r, 2).text = f"{d['female']:,}"
-            table_s3.cell(r, 3).text = f"{d['total']:,}"
-            for c in range(4):
-                p = table_s3.cell(r, c).text_frame.paragraphs[0]
-                p.font.size = Pt(10)
-                p.alignment = PP_ALIGN.CENTER
-                
+            self._format_cell(table_s3.cell(r, 0), d['dong'], font_size=10, color=self.c_slate_dark)
+            self._format_cell(table_s3.cell(r, 1), f"{d['male']:,}", font_size=10, color=self.c_slate_dark)
+            self._format_cell(table_s3.cell(r, 2), f"{d['female']:,}", font_size=10, color=self.c_slate_dark)
+            self._format_cell(table_s3.cell(r, 3), f"{d['total']:,}", font_size=10, color=self.c_slate_dark)
+            
         last_r = rows3 - 1
-        table_s3.cell(last_r, 0).text = "합계"
-        table_s3.cell(last_r, 1).text = f"{demo['male_pop']:,}"
-        table_s3.cell(last_r, 2).text = f"{demo['female_pop']:,}"
-        table_s3.cell(last_r, 3).text = f"{demo['total_pop']:,}"
-        for c in range(4):
-            cell = table_s3.cell(last_r, c)
-            cell.fill.solid()
-            cell.fill.fore_color.rgb = self.c_pink_bg
-            p = cell.text_frame.paragraphs[0]
-            p.font.bold = True
-            p.font.size = Pt(10.5)
-            p.font.color.rgb = self.c_red
-            p.alignment = PP_ALIGN.CENTER
+        self._format_cell(table_s3.cell(last_r, 0), "합계", font_size=10.5, bold=True, color=self.c_red, bg_color=self.c_pink_bg)
+        self._format_cell(table_s3.cell(last_r, 1), f"{demo['male_pop']:,}", font_size=10.5, bold=True, color=self.c_red, bg_color=self.c_pink_bg)
+        self._format_cell(table_s3.cell(last_r, 2), f"{demo['female_pop']:,}", font_size=10.5, bold=True, color=self.c_red, bg_color=self.c_pink_bg)
+        self._format_cell(table_s3.cell(last_r, 3), f"{demo['total_pop']:,}", font_size=10.5, bold=True, color=self.c_red, bg_color=self.c_pink_bg)
             
         self._add_source_footer(s3, f"* 출처 : {demo['base_date']}")
 
@@ -266,13 +275,14 @@ class PPTXGenerator:
         s4 = self.prs.slides.add_slide(self.blank_layout)
         self._add_header_bar(s4, "파크골프 메인 타겟 장·노년층 인구 수 (", f"약 {demo['senior_50_plus']:,}명_{demo['senior_ratio']}%", ")")
         
-        # 좌측 인사이트 카드
         c4_1 = s4.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.6), Inches(1.5), Inches(5.0), Inches(2.3))
         c4_1.fill.solid()
         c4_1.fill.fore_color.rgb = self.c_pink_bg
         c4_1.line.color.rgb = self.c_red
         tf_c4_1 = c4_1.text_frame
         tf_c4_1.word_wrap = True
+        tf_c4_1.margin_left = Inches(0.18)
+        tf_c4_1.margin_right = Inches(0.18)
         p = tf_c4_1.paragraphs[0]
         p.text = "🎯 핵심 소비층: 50대 이상 여성"
         p.font.size = Pt(13)
@@ -290,6 +300,8 @@ class PPTXGenerator:
         c4_2.line.color.rgb = self.c_royal_blue
         tf_c4_2 = c4_2.text_frame
         tf_c4_2.word_wrap = True
+        tf_c4_2.margin_left = Inches(0.18)
+        tf_c4_2.margin_right = Inches(0.18)
         p = tf_c4_2.paragraphs[0]
         p.text = "💡 시니어 상권 사업화 시사점"
         p.font.size = Pt(13)
@@ -301,45 +313,29 @@ class PPTXGenerator:
         p2.font.size = Pt(10.5)
         p2.font.color.rgb = self.c_slate_dark
         
-        # 우측 연령별 상세 매트릭스 표
         ages = demo['age_distribution']
         rows4 = len(ages) + 2
         table_s4 = s4.shapes.add_table(rows4, 4, Inches(5.8), Inches(1.5), Inches(6.9), Inches(0.44 * rows4)).table
+        
+        col_w4 = [Inches(2.0), Inches(1.6), Inches(1.6), Inches(1.7)]
+        for c_idx, w in enumerate(col_w4):
+            table_s4.columns[c_idx].width = w
+            
         headers4 = ['연령대', '남자(명)', '여자(명)', '합계(명)']
         for col_idx, h in enumerate(headers4):
-            cell = table_s4.cell(0, col_idx)
-            cell.text = h
-            cell.fill.solid()
-            cell.fill.fore_color.rgb = self.c_navy
-            for p in cell.text_frame.paragraphs:
-                p.font.color.rgb = self.c_white
-                p.font.bold = True
-                p.font.size = Pt(10.5)
-                p.alignment = PP_ALIGN.CENTER
+            self._format_cell(table_s4.cell(0, col_idx), h, font_size=10.5, bold=True, color=self.c_white, bg_color=self.c_navy)
+            
         for row_idx, a in enumerate(ages):
-            table_s4.cell(row_idx+1, 0).text = str(a['age_group'])
-            table_s4.cell(row_idx+1, 1).text = f"{int(a['male']):,}"
-            table_s4.cell(row_idx+1, 2).text = f"{int(a['female']):,}"
-            table_s4.cell(row_idx+1, 3).text = f"{int(a['total']):,}"
-            for c in range(4):
-                p = table_s4.cell(row_idx+1, c).text_frame.paragraphs[0]
-                p.font.size = Pt(10)
-                p.alignment = PP_ALIGN.CENTER
-                
+            self._format_cell(table_s4.cell(row_idx+1, 0), a['age_group'], font_size=10, color=self.c_slate_dark)
+            self._format_cell(table_s4.cell(row_idx+1, 1), f"{int(a['male']):,}", font_size=10, color=self.c_slate_dark)
+            self._format_cell(table_s4.cell(row_idx+1, 2), f"{int(a['female']):,}", font_size=10, color=self.c_slate_dark)
+            self._format_cell(table_s4.cell(row_idx+1, 3), f"{int(a['total']):,}", font_size=10, color=self.c_slate_dark)
+            
         last_r4 = rows4 - 1
-        table_s4.cell(last_r4, 0).text = "총계 (50대이상)"
-        table_s4.cell(last_r4, 1).text = f"{demo['senior_50_plus'] - demo['senior_50_female']:,}"
-        table_s4.cell(last_r4, 2).text = f"{demo['senior_50_female']:,}"
-        table_s4.cell(last_r4, 3).text = f"{demo['senior_50_plus']:,}"
-        for c in range(4):
-            cell = table_s4.cell(last_r4, c)
-            cell.fill.solid()
-            cell.fill.fore_color.rgb = self.c_pink_bg
-            p = cell.text_frame.paragraphs[0]
-            p.font.bold = True
-            p.font.size = Pt(10.5)
-            p.font.color.rgb = self.c_red
-            p.alignment = PP_ALIGN.CENTER
+        self._format_cell(table_s4.cell(last_r4, 0), "총계 (50대이상)", font_size=10.5, bold=True, color=self.c_red, bg_color=self.c_pink_bg)
+        self._format_cell(table_s4.cell(last_r4, 1), f"{demo['senior_50_plus'] - demo['senior_50_female']:,}", font_size=10.5, bold=True, color=self.c_red, bg_color=self.c_pink_bg)
+        self._format_cell(table_s4.cell(last_r4, 2), f"{demo['senior_50_female']:,}", font_size=10.5, bold=True, color=self.c_red, bg_color=self.c_pink_bg)
+        self._format_cell(table_s4.cell(last_r4, 3), f"{demo['senior_50_plus']:,}", font_size=10.5, bold=True, color=self.c_red, bg_color=self.c_pink_bg)
             
         self._add_source_footer(s4, f"* 출처 : {demo['base_date']}")
 
@@ -362,6 +358,8 @@ class PPTXGenerator:
             cbox.line.color.rgb = self.c_border
             tf = cbox.text_frame
             tf.word_wrap = True
+            tf.margin_left = Inches(0.15)
+            tf.margin_right = Inches(0.15)
             p0 = tf.paragraphs[0]
             p0.text = f"{ctitle}\n\n{clabel}"
             p0.font.size = Pt(11)
@@ -417,6 +415,9 @@ class PPTXGenerator:
             box.line.color.rgb = self.c_border
             tf = box.text_frame
             tf.word_wrap = True
+            tf.margin_left = Inches(0.18)
+            tf.margin_right = Inches(0.18)
+            tf.margin_top = Inches(0.15)
             p0 = tf.paragraphs[0]
             p0.text = ctitle
             p0.font.name = 'Malgun Gothic'
@@ -450,7 +451,9 @@ class PPTXGenerator:
             hdr_box.fill.solid()
             hdr_box.fill.fore_color.rgb = self.c_navy
             hdr_box.line.color.rgb = self.c_royal_blue
-            p_hdr = hdr_box.text_frame.paragraphs[0]
+            tf_h = hdr_box.text_frame
+            tf_h.vertical_anchor = MSO_ANCHOR.MIDDLE
+            p_hdr = tf_h.paragraphs[0]
             p_hdr.text = str(c['name'])[:16]
             p_hdr.font.name = 'Malgun Gothic'
             p_hdr.font.size = Pt(10.5)
@@ -464,6 +467,9 @@ class PPTXGenerator:
             body_box.line.color.rgb = self.c_border
             tf_body = body_box.text_frame
             tf_body.word_wrap = True
+            tf_body.margin_left = Inches(0.14)
+            tf_body.margin_right = Inches(0.14)
+            tf_body.margin_top = Inches(0.12)
             
             p1 = tf_body.paragraphs[0]
             p1.space_before = Pt(6)
@@ -502,6 +508,7 @@ class PPTXGenerator:
             
         tb8 = s8.shapes.add_textbox(Inches(6.2), Inches(1.5), Inches(6.5), Inches(5.1))
         tf8 = tb8.text_frame
+        tf8.word_wrap = True
         
         indicators = [
             ("1) 골든 시니어 집적도", score['scores']['senior_population'], 25, "반경 3km 내 50대 이상 시니어 인구 및 여성 비중"),
@@ -539,76 +546,72 @@ class PPTXGenerator:
         self._add_source_footer(s8, "* 평가 기준: 마이파크 가맹 입지선정 5대 다이아몬드 스코어링 모델")
 
         # =========================================================================
-        # Slide 9: 월 매출
+        # Slide 9: 월 매출 표 (열 너비 최적화 & 글자 깨짐 완전 방지)
         # =========================================================================
         s9 = self.prs.slides.add_slide(self.blank_layout)
         m_scen = fin['monthly_scenarios']
         self._add_header_bar(s9, "6. 마이파크 사업 타당성 분석 (", f"{site['rooms']}타석 / {site['area_pyeong']}평", ") - 월 예상 매출")
         table_s9 = s9.shapes.add_table(4, 7, Inches(0.6), Inches(2.0), Inches(12.133), Inches(2.4)).table
+        
+        # 정밀 비례 열 너비 (합계 12.133인치)
+        col_w9 = [Inches(1.3), Inches(1.6), Inches(1.4), Inches(1.4), Inches(1.4), Inches(2.3), Inches(2.733)]
+        for c_idx, w in enumerate(col_w9):
+            table_s9.columns[c_idx].width = w
+            
         h9 = ['구분', '타석 이용료', '용품(10%)', '카페(5%)', '레슨(3%)', '월 총매출 합계', '비고 (1일 이용자)']
         for col_idx, h in enumerate(h9):
-            cell = table_s9.cell(0, col_idx)
-            cell.text = h
-            cell.fill.solid()
-            cell.fill.fore_color.rgb = self.c_navy
-            for p in cell.text_frame.paragraphs:
-                p.font.color.rgb = self.c_white
-                p.font.bold = True
-                p.font.size = Pt(11)
-                p.alignment = PP_ALIGN.CENTER
+            self._format_cell(table_s9.cell(0, col_idx), h, font_size=10.5, bold=True, color=self.c_white, bg_color=self.c_navy)
+            
         for row_idx, k in enumerate(['conservative', 'moderate', 'optimistic']):
             sc = m_scen[k]
-            table_s9.cell(row_idx+1, 0).text = sc['scenario_name']
-            table_s9.cell(row_idx+1, 1).text = f"{sc['room_revenue']:,}원"
-            table_s9.cell(row_idx+1, 2).text = f"{sc['goods_revenue']:,}원"
-            table_s9.cell(row_idx+1, 3).text = f"{sc['cafe_revenue']:,}원"
-            table_s9.cell(row_idx+1, 4).text = f"{sc['lesson_revenue']:,}원"
-            table_s9.cell(row_idx+1, 5).text = f"{sc['total_revenue']:,}원"
-            table_s9.cell(row_idx+1, 6).text = f"1일 {sc['daily_users']}명 (월 {sc['monthly_users']:,}명)"
-            for c in range(7):
-                p = table_s9.cell(row_idx+1, c).text_frame.paragraphs[0]
-                p.font.size = Pt(10)
-                p.alignment = PP_ALIGN.CENTER
-                if c == 5:
-                    p.font.bold = True
-                    p.font.color.rgb = self.c_royal_blue
+            r = row_idx + 1
+            self._format_cell(table_s9.cell(r, 0), sc['scenario_name'], font_size=10, bold=True, color=self.c_navy)
+            self._format_cell(table_s9.cell(r, 1), f"{sc['room_revenue']:,}원", font_size=10, color=self.c_slate_dark)
+            self._format_cell(table_s9.cell(r, 2), f"{sc['goods_revenue']:,}원", font_size=10, color=self.c_slate_dark)
+            self._format_cell(table_s9.cell(r, 3), f"{sc['cafe_revenue']:,}원", font_size=10, color=self.c_slate_dark)
+            self._format_cell(table_s9.cell(r, 4), f"{sc['lesson_revenue']:,}원", font_size=10, color=self.c_slate_dark)
+            self._format_cell(table_s9.cell(r, 5), f"{sc['total_revenue']:,}원", font_size=10.5, bold=True, color=self.c_royal_blue)
+            self._format_cell(table_s9.cell(r, 6), f"1일 {sc['daily_users']}명 (월 {sc['monthly_users']:,}명)", font_size=10, color=self.c_slate_dark)
+            
         self._add_source_footer(s9, "* 산출 근거: 18홀 8,000원, 부가매출 18%, 월 30일 가동 기준")
 
         # =========================================================================
-        # Slide 10: 운영 비용
+        # Slide 10: 운영 비용 표 (열 너비 최적화 & 세부내역 4.23인치 확대)
         # =========================================================================
         s10 = self.prs.slides.add_slide(self.blank_layout)
         self._add_header_bar(s10, "6. 마이파크 사업 타당성 분석 (", f"{site['rooms']}타석", ") - 예상 운영 비용")
         table_s10 = s10.shapes.add_table(5, 5, Inches(0.6), Inches(1.8), Inches(12.133), Inches(3.2)).table
+        
+        # 정밀 비례 열 너비 (세부 산출 내역 대폭 확대)
+        col_w10 = [Inches(2.2), Inches(1.9), Inches(1.9), Inches(1.9), Inches(4.233)]
+        for c_idx, w in enumerate(col_w10):
+            table_s10.columns[c_idx].width = w
+            
         h10 = ['비용 구분', '보수적 시나리오', '보편적 시나리오', '긍정적 시나리오', '세부 산출 내역']
         for col_idx, h in enumerate(h10):
-            cell = table_s10.cell(0, col_idx)
-            cell.text = h
-            cell.fill.solid()
-            cell.fill.fore_color.rgb = self.c_navy
-            for p in cell.text_frame.paragraphs:
-                p.font.color.rgb = self.c_white
-                p.font.bold = True
-                p.font.size = Pt(11)
-                p.alignment = PP_ALIGN.CENTER
+            self._format_cell(table_s10.cell(0, col_idx), h, font_size=10.5, bold=True, color=self.c_white, bg_color=self.c_navy)
+            
         c_sc = m_scen['conservative']
         m_sc = m_scen['moderate']
         o_sc = m_scen['optimistic']
         cost_rows = [
-            ('인건비 + 임대료', f"{c_sc['labor_cost']+c_sc['rent_cost']:,}원", f"{m_sc['labor_cost']+m_sc['rent_cost']:,}원", f"{o_sc['labor_cost']+o_sc['rent_cost']:,}원", f"인력 {fin['staff_count']}명(월 750만) / 임대료 {fin['monthly_rent']//10000:,}만원"),
+            ('인건비 + 임대료', f"{c_sc['labor_cost']+c_sc['rent_cost']:,}원", f"{m_sc['labor_cost']+m_sc['rent_cost']:,}원", f"{o_sc['labor_cost']+o_sc['rent_cost']:,}원", f"인력 {fin['staff_count']}명(월 750만) / 임대료 {fin['monthly_rent']//10000:,}만원/월"),
             ('원가 3종 + 카드수수료', f"{c_sc['goods_cost']+c_sc['cafe_cost']+c_sc['lesson_cost']+c_sc['card_fee']:,}원", f"{m_sc['goods_cost']+m_sc['cafe_cost']+m_sc['lesson_cost']+m_sc['card_fee']:,}원", f"{o_sc['goods_cost']+o_sc['cafe_cost']+o_sc['lesson_cost']+o_sc['card_fee']:,}원", "용품60%, 식음50%, 레슨80%, 카드2%"),
             ('매장운영비 + 렌탈/마케팅', f"{c_sc['store_ops_cost']+c_sc['rental_cost']+c_sc['marketing_cost']:,}원", f"{m_sc['store_ops_cost']+m_sc['rental_cost']+m_sc['marketing_cost']:,}원", f"{o_sc['store_ops_cost']+o_sc['rental_cost']+o_sc['marketing_cost']:,}원", "수도광열, 소모품, 공청기, 보험 등"),
             ('월 총 비용 합계', f"{c_sc['total_cost']:,}원", f"{m_sc['total_cost']:,}원", f"{o_sc['total_cost']:,}원", "부가가치세(VAT) 별도 기준")
         ]
-        for row_idx, r in enumerate(cost_rows):
-            for col_idx in range(5):
-                table_s10.cell(row_idx+1, col_idx).text = r[col_idx]
-                p = table_s10.cell(row_idx+1, col_idx).text_frame.paragraphs[0]
-                p.font.size = Pt(10)
-                p.alignment = PP_ALIGN.CENTER
-                if row_idx == 3:
-                    p.font.bold = True
-                    p.font.color.rgb = self.c_navy
+        for row_idx, r_data in enumerate(cost_rows):
+            r = row_idx + 1
+            is_last = (row_idx == 3)
+            bg_col = self.c_pink_bg if is_last else None
+            txt_col = self.c_navy if is_last else self.c_slate_dark
+            
+            self._format_cell(table_s10.cell(r, 0), r_data[0], font_size=10, bold=is_last, color=txt_col, bg_color=bg_col)
+            self._format_cell(table_s10.cell(r, 1), r_data[1], font_size=10, bold=is_last, color=txt_col, bg_color=bg_col)
+            self._format_cell(table_s10.cell(r, 2), r_data[2], font_size=10, bold=is_last, color=txt_col, bg_color=bg_col)
+            self._format_cell(table_s10.cell(r, 3), r_data[3], font_size=10, bold=is_last, color=txt_col, bg_color=bg_col)
+            self._format_cell(table_s10.cell(r, 4), r_data[4], font_size=9.5, bold=is_last, color=txt_col, bg_color=bg_col, align=PP_ALIGN.LEFT)
+            
         self._add_source_footer(s10, "* 산출 근거: 마이파크 표준 운영 원가 및 가맹 매장 실측 비용 기준")
 
         # =========================================================================
@@ -618,37 +621,44 @@ class PPTXGenerator:
         self._add_header_bar(s11, "6. 마이파크 사업 타당성 분석 - ", "5개년 손익 예측", " (연 2% 성장률 반영)")
         if 'profit_forecast' in charts and os.path.exists(charts['profit_forecast']):
             s11.shapes.add_picture(charts['profit_forecast'], Inches(0.6), Inches(1.5), width=Inches(6.8))
-        tb11 = s11.shapes.add_textbox(Inches(7.6), Inches(1.5), Inches(5.1), Inches(4.8))
-        tf11 = tb11.text_frame
+            
         mod_1y = fin['forecast_5year']['moderate'][0]
         mod_5y = fin['forecast_5year']['moderate'][4]
         
-        c_kpi1 = s11.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(7.6), Inches(1.6), Inches(5.1), Inches(1.5))
+        c_kpi1 = s11.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(7.6), Inches(1.6), Inches(5.1), Inches(1.6))
         c_kpi1.fill.solid()
         c_kpi1.fill.fore_color.rgb = self.c_card_bg
         c_kpi1.line.color.rgb = self.c_royal_blue
         tf_k1 = c_kpi1.text_frame
+        tf_k1.word_wrap = True
+        tf_k1.margin_left = Inches(0.16)
+        tf_k1.margin_right = Inches(0.16)
         p = tf_k1.paragraphs[0]
         p.text = "📈 연간 실적 전망 (보편 시나리오)"
         p.font.size = Pt(12)
         p.font.bold = True
         p.font.color.rgb = self.c_navy
         p2 = tf_k1.add_paragraph()
+        p2.space_before = Pt(4)
         p2.text = f"• 1년차: 연매출 {mod_1y['total_revenue']//100000000:.1f}억원 / 영업이익 {mod_1y['operating_profit']//100000000:.1f}억원\n• 5년차: 연매출 {mod_5y['total_revenue']//100000000:.1f}억원 / 영업이익 {mod_5y['operating_profit']//100000000:.1f}억원"
         p2.font.size = Pt(10)
         p2.font.color.rgb = self.c_slate_dark
         
-        c_kpi2 = s11.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(7.6), Inches(3.3), Inches(5.1), Inches(1.5))
+        c_kpi2 = s11.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(7.6), Inches(3.4), Inches(5.1), Inches(1.6))
         c_kpi2.fill.solid()
         c_kpi2.fill.fore_color.rgb = self.c_card_bg
         c_kpi2.line.color.rgb = self.c_emerald
         tf_k2 = c_kpi2.text_frame
+        tf_k2.word_wrap = True
+        tf_k2.margin_left = Inches(0.16)
+        tf_k2.margin_right = Inches(0.16)
         p = tf_k2.paragraphs[0]
         p.text = "⏱️ 투자금 회수 및 손익분기점"
         p.font.size = Pt(12)
         p.font.bold = True
         p.font.color.rgb = self.c_emerald
         p2 = tf_k2.add_paragraph()
+        p2.space_before = Pt(4)
         p2.text = f"• 손익분기점(BEP): 월매출 약 {fin['investment']['bep_monthly_sales']//10000:,}만원 (일 {fin['investment']['bep_turns_per_room']}회전)\n• 순투자금 회수: {score['payback_text']} 만에 전액 회수"
         p2.font.size = Pt(10)
         p2.font.color.rgb = self.c_slate_dark
@@ -668,6 +678,8 @@ class PPTXGenerator:
         card12_1.line.width = Pt(1.5)
         tf_12_1 = card12_1.text_frame
         tf_12_1.word_wrap = True
+        tf_12_1.margin_left = Inches(0.2)
+        tf_12_1.margin_right = Inches(0.2)
         p = tf_12_1.paragraphs[0]
         p.text = "🌟【 가맹점 출점 기대효과 및 핵심 경쟁력 】"
         p.font.size = Pt(14)
@@ -686,6 +698,8 @@ class PPTXGenerator:
         card12_2.line.width = Pt(1.5)
         tf_12_2 = card12_2.text_frame
         tf_12_2.word_wrap = True
+        tf_12_2.margin_left = Inches(0.2)
+        tf_12_2.margin_right = Inches(0.2)
         p = tf_12_2.paragraphs[0]
         p.text = "🏢【 상가 전체 상권 활성화 및 건물 가치 상승 효과 】"
         p.font.size = Pt(14)

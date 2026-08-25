@@ -59,8 +59,8 @@ class Visualizer:
         ax.set_facecolor('#F8FAFC')
         
         # 3km / 1.5km 반경 영역
-        circle_3km = plt.Circle((0, 0), 3.0, color='#3B82F6', fill=True, alpha=0.12, linestyle='-', linewidth=1.5, edgecolor='#2563EB')
-        circle_1km = plt.Circle((0, 0), 1.5, color='#6366F1', fill=True, alpha=0.08, linestyle='--', linewidth=1.2, edgecolor='#4F46E5')
+        circle_3km = plt.Circle((0, 0), 3.0, facecolor='#3B82F6', fill=True, alpha=0.12, linestyle='-', linewidth=1.5, edgecolor='#2563EB')
+        circle_1km = plt.Circle((0, 0), 1.5, facecolor='#6366F1', fill=True, alpha=0.08, linestyle='--', linewidth=1.2, edgecolor='#4F46E5')
         ax.add_patch(circle_3km)
         ax.add_patch(circle_1km)
         
