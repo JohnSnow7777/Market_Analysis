@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-"""마이파크 전역 설정 및 파라미터 모듈 (10타석 120평 플래그십 표준)"""
+"""마이파크 전역 설정 및 파라미터 모듈 (10타석 120평 플래그십 표준 SSOT)"""
 
 DEFAULT_SETTINGS = {
     # 기본 단가 및 이용료
-    'game_price_18hole': 7000,          # 파크골프 18홀 이용료 8,000원
+    'game_price_18hole': 7000,          # 파크골프 18홀 이용료 7,000원
     'screengolf_price_18hole': 15000,   # 일반 스크린골프 18홀 이용료 15,000원
     
     # 영업 및 공간 기준 (플래그십 표준: 10타석 120평)
@@ -12,99 +12,50 @@ DEFAULT_SETTINGS = {
     'default_rooms': 10,                # 기본 10타석 (플래그십 표준)
     'default_area_pyeong': 120,         # 기본 120평
     
-    # 부가 매출 비율
-    'ratio_goods': 0.10,                # 용품 매출 10%
-    'ratio_cafe': 0.05,                 # 카페 매출 5%
-    'ratio_lesson': 0.03,               # 레슨 매출 3%
-    'total_revenue_multiplier': 1.18,   # 총매출 1.18배
-    
-    # 변동 원가율
-    'cost_rate_goods': 0.60,            # 용품 원가율 60%
-    'cost_rate_cafe': 0.50,             # 식음 원가율 50%
-    'cost_rate_lesson': 0.80,           # 레슨 원가율 80%
+    # 3대 매출 항목 단가 및 비중 (엑셀 원본 일치)
+    'team_beverage_price': 3000,        # 팀당 음료 판매 3,000원
+    'cost_rate_goods': 0.50,            # 용품 원가율 50%
+    'cost_rate_beverage': 0.50,         # 식음료 원가율 50%
     'card_fee_rate': 0.02,              # 카드수수료 2.0%
     
     # 5개년 연간 매출 성장률
     'annual_growth_rate': 0.02,         # 연 2.0% 복리 성장
     
-    # 고정 및 운영비용 (10타석 기준 표준)
-    'labor_cost_per_person': 2500000,   # 인건비 1인당 250만원
-    'default_staff_count': 3,           # 10타석 표준 3~4명 (기본 3명)
-    'default_monthly_rent': 5000000,    # 임대료 월 500만원
+    # 초기 투자비 (SSOT: 3.19억원)
+    'simulator_unit_price': 15000000,   # 대당 1,500만원
+    'interior_cost_per_pyeong': 1200000,# 평당 120만원
+    'hvac_cost': 12000000,              # 냉난방기 4대 1,200만원
+    'signage_cost': 5000000,            # 간판/싸인물 500만원
+    'furniture_cost': 3000000,          # 가구/집기 300만원
+    'supplies_cost': 5000000,           # 초도용품 500만원
     
-    # 타석 연동 비용
-    'sensor_consumables_monthly': 20000,    # 타석당 소모품비 2만원 (10타석 20만)
-    'sensor_utilities_monthly': 50000,      # 타석당 수도광열비 5만원 (10타석 50만)
-    
-    # 매장 고정 관리비
-    'monthly_telecom': 100000,          # 통신비 10만원
-    'monthly_welfare': 800000,          # 복리후생비 80만원
-    'monthly_maintenance': 400000,      # 유지보수비 40만원
-    'monthly_air_cleaner_per_5rooms': 400000, # 공기청정기 렌탈 (5타석당 40만원)
-    'monthly_water_purifier': 100000,   # 정수기 10만원
-    'monthly_insurance': 200000,        # 영업배상보험료 20만원
-    'monthly_marketing': 500000,        # 광고선전비 50만원
+    # 운영 비용
+    'labor_cost_manager': 2500000,      # 실장(점주) 1인 250만원
+    'pos_telecom_monthly': 300000,      # 통신/POS 30만원
+    'store_ops_monthly': 1500000,       # 매장운영비 (수도광열비/소모품) 150만원
+    'marketing_monthly': 500000,        # 마케팅비 50만원
 }
 
 SCENARIO_CONFIG = {
     'conservative': {
-        'name': '보수적',
-        'name_en': 'Conservative',
-        'avg_daily_users_per_room': 12.5,   # 타석당 1일 12.5명 (10타석=125명/일, 월 3,750명)
-        'daily_operating_hours': 5.0,       # 1일 5시간 가동
+        'name': '보수적 시나리오 (3회전)',
+        'turns': 3.0,
+        'daily_users': 100,             # 1일 100명 (월 3,000명)
+        'goods_daily': 25000,           # 일 용품 2.5만 (월 75만)
         'description': '상권 초기 진입 및 평일 주간 위주 가동',
     },
     'moderate': {
-        'name': '보편적',
-        'name_en': 'Moderate',
-        'avg_daily_users_per_room': 15.0,   # 타석당 1일 15.0명 (10타석=150명/일, 월 4,500명)
-        'daily_operating_hours': 5.0,       # 1일 5시간 가동
-        'description': '지역 내 안정적 회원 확보 및 정기 모임 정착',
+        'name': '보편적 시나리오 (4회전)',
+        'turns': 4.0,
+        'daily_users': 133,             # 1일 133명 (월 4,000명)
+        'goods_daily': 40000,           # 일 용품 4.0만 (월 120만)
+        'description': '평일 주간 정기 모임 정착 및 안정적 단골 확보',
     },
     'optimistic': {
-        'name': '긍정적',
-        'name_en': 'Optimistic',
-        'avg_daily_users_per_room': 20.0,   # 타석당 1일 20.0명 (10타석=200명/일, 월 6,000명)
-        'daily_operating_hours': 5.0,       # 1일 5시간 가동
-        'description': '지역 랜드마크 매장 선점 및 동호회/대회 유치 활성화',
+        'name': '긍정적 시나리오 (5회전)',
+        'turns': 5.0,
+        'daily_users': 167,             # 1일 167명 (월 5,000명)
+        'goods_daily': 50000,           # 일 용품 5.0만 (월 150만)
+        'description': '지역 랜드마크 매장 선점 및 주말/야간 활성화',
     }
-}
-
-SCORING_WEIGHTS = {
-    'senior_population': {
-        'name': '골든 시니어 집적도',
-        'weight': 25,
-        'desc': '반경 3km 내 50~70대 시니어 인구수 및 구성비율'
-    },
-    'accessibility_parking': {
-        'name': '접근성 및 주차 인프라',
-        'weight': 25,
-        'desc': '자주식 주차 편의성, 승강기 완비, 주요 간선도로 접면'
-    },
-    'space_efficiency': {
-        'name': '공간 적합성 및 임대료',
-        'weight': 15,
-        'desc': '유효 층고(2.8m 이상), 기둥 간격, 평당 임대료 경쟁력'
-    },
-    'supply_gap': {
-        'name': '수요 공급 갭 (블루오션)',
-        'weight': 15,
-        'desc': '반경 3km 내 스크린 파크골프 경쟁 강도 및 야외구장 대기수요'
-    },
-    'commercial_spending': {
-        'name': '지역 소비력 및 여가지출',
-        'weight': 20,
-        'desc': '소상공인 스포츠/여가 카드 매출액 및 생활밀착 상권 활성도'
-    }
-}
-
-BRAND_COLORS = {
-    'navy_primary': '#003366',       # 스마일스퀘어/마이파크 네이비
-    'blue_accent': '#1E88E5',        # 액센트 블루
-    'gold_accent': '#FFB300',        # 골든 앰버
-    'green_accent': '#43A047',       # 파크골프 그린
-    'red_accent': '#E53935',         # 강조 레드
-    'gray_dark': '#333333',          # 본문 진회색
-    'gray_light': '#F5F7FA',         # 배경 연회색
-    'white': '#FFFFFF'
 }

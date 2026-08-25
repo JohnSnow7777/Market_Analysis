@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""5대 핵심 입지 지표(100점 만점) 채점 및 사업성 보고서 생성 엔진 (변별력 강화 모델)"""
+"""5대 핵심 입지 지표(100점 만점) 채점 및 사업성 보고서 생성 엔진 (객관적 사실 기반)"""
 
-def format_payback_text(months, capex_amount=336000000):
+def format_payback_text(months, capex_amount=319000000):
     m = float(months)
     capex_str = f"약 {capex_amount / 100000000:.2f}억원 ({capex_amount // 10000:,}만원)"
     if m < 12:
@@ -40,7 +40,7 @@ class ScoringEngine:
         # 3. 공간 적합성 및 층고 (15점 만점)
         score_space = 13.0
         
-        # 4. 수요공급 갭 - 블루오션 (15점 만점)
+        # 4. 수요공급 갭 (15점 만점)
         competitors = commercial_data.get('competitors', [])
         comp_count = len(competitors)
         if comp_count <= 1:
@@ -75,21 +75,22 @@ class ScoringEngine:
             grade = 'C'
             grade_desc = '출점 신중 검토 (Sub-Prime Spot)'
             
+        inv = financials['investment']
+        sc = financials['monthly_scenarios']['moderate']
+        
         value_franchisee = (
-            f"1. 주간 유휴시간 제로(100% 예약 풀가동 체계): 반경 3km 내 50대 이상 시니어 {senior_pop:,}명({senior_ratio}%) 및 "
-            f"여성 주부 동호회를 타겟팅하여 평일 낮 10~17시 유휴 시간을 100% 예약제로 가동합니다.\n"
-            f"2. 10타석 플래그십 상위 20% 시장 독점: 노후 1~2타석 매장 대비 10타석 플래그십 압도적 시설 경쟁력과 카페형 휴게 라운지로 객단가를 극대화합니다.\n"
-            f"3. 빠른 원금 회수 및 고수익성: 오토 운영 시 월 순영업이익 약 {financials['monthly_scenarios']['moderate']['operating_profit']//10000:,}만원, "
-            f"창업주 직접 운영 시 월 순영업이익 약 {financials['owner_operated']['monthly_operating_profit_moderate']//10000:,}만원(영업이익률 {financials['owner_operated']['profit_margin_moderate']}%)을 달성하여 "
-            f"단 {financials['owner_operated']['payback_months']:.1f}개월 만에 순투자금 3.36억원을 전액 회수할 수 있습니다."
+            f"1. 평일 주간 높은 가동률 확보: 반경 3km 내 50대 이상 시니어 {senior_pop:,}명({senior_ratio}%) 및 "
+            f"주부 동호회를 타겟팅하여 평일 낮 10~17시 정기 모임 중심의 안정적 가동률을 확보합니다.\n"
+            f"2. 10타석 대규모 플래그십 시설 경쟁력: 기존 소규모 매장 대비 10타석 쾌적한 시설과 단체 모임 수용력으로 고객 선호도를 극대화합니다.\n"
+            f"3. 안정적 수익성 및 빠른 원금 회수: 보편적 가동 기준 월 순영업이익 약 {sc['operating_profit']//10000:,}만원(영업이익률 {sc['profit_margin']}%)을 달성하여 "
+            f"약 {inv['payback_months_moderate']:.1f}개월 만에 초기 순투자금 3.19억원을 전액 회수할 수 있습니다."
         )
         
         value_landlord = (
-            f"1. 일 60~90명 액티브 시니어 지속 유입: 구매력과 소비 여력이 높은 지역 시니어 고객이 매일 건물을 방문하여 "
+            f"1. 주간 시니어 소비층 지속 유입: 구매력과 여유가 있는 지역 50~70대 고객이 매일 건물을 방문하여 "
             f"상가 내 식당, 병원, 약국, 카페 등 타 점포 매출을 동반 견인합니다.\n"
-            f"2. 공실 완전 해소 및 5년 장기 우량 임대차: 마이파크 가맹점과의 5년 장기 계약으로 공실 리스크를 완전 박멸하고 매월 안정적 임대료를 확보합니다.\n"
-            f"3. 건물 전체의 자산 가치(Cap Rate) 상승 견인: 우량 핵심 점포(Anchor Tenant) 입점에 따른 유동인구 급증으로 "
-            f"상가 매매 가치 및 부동산 감정평가액 상승을 주도합니다."
+            f"2. 공실 해소 및 장기 우량 임대차: 마이파크 매장 입점을 통해 공실을 해소하고 매월 안정적인 임대 수익을 확보합니다.\n"
+            f"3. 건물 전체의 자산 가치(Cap Rate) 상승: 대형 체육 집객 시설 입점으로 건물 인지도 및 상가 매매 가치 상승에 기여합니다."
         )
         
         return {
@@ -103,7 +104,7 @@ class ScoringEngine:
             'total_score': total_score,
             'grade': grade,
             'grade_desc': grade_desc,
-            'payback_text': format_payback_text(financials['investment']['payback_months_moderate'], financials['investment']['total_capex']),
+            'payback_text': format_payback_text(inv['payback_months_moderate'], inv['total_capex']),
             'value_franchisee': value_franchisee,
             'value_landlord': value_landlord
         }

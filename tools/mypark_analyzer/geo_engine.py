@@ -31,12 +31,8 @@ class GeoEngine:
         estimated_rent = round(estimated_rent, -5)
         auto_rent = int(monthly_rent) if (monthly_rent and int(monthly_rent) > 0) else estimated_rent
         
-        if auto_rooms <= 6:
-            rec_staff = 2
-        elif auto_rooms <= 10:
-            rec_staff = 3
-        else:
-            rec_staff = 4
+        # 기본 표준: 점주(실장) 1인 상주 운영 체제 (엑셀 원본 일치)
+        rec_staff = 1
         auto_staff = int(staff_count) if (staff_count and int(staff_count) > 0) else rec_staff
         
         return {

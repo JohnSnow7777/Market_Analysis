@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""맥킨지 클래식 이그제큐티브 PDF 보고서 생성기 (16:9 와이드 & 100% 동적 데이터 완벽 렌더링)"""
+"""맥킨지 클래식 이그제큐티브 PDF 보고서 생성기 (SSOT 3.19억원 & 7,000원 팩트 기반)"""
 import os
 import textwrap
 from reportlab.lib.pagesizes import landscape
@@ -71,13 +71,11 @@ class PDFGenerator:
         c.drawRightString(920, 20, "CONFIDENTIAL  |  MYPARK Screen Park Golf Feasibility Study")
 
     def _draw_multiline_text(self, c, text, x, y, max_chars=18, line_height=13, max_lines=4, font_name=FONT_REGULAR, font_size=8, color=None):
-        """단어 경계를 보존하는 스마트 줄바꿈 텍스트 렌더러"""
         if color:
             c.setFillColor(color)
         c.setFont(font_name, font_size)
         
         lines = []
-        # 한글/영문 혼합 스마트 줄바꿈
         raw_paragraphs = str(text).split('\n')
         for p in raw_paragraphs:
             p_wrapped = textwrap.wrap(p, width=max_chars, break_long_words=True)
@@ -140,20 +138,20 @@ class PDFGenerator:
         c.rect(40, 268, 425, 192, fill=1, stroke=1)
         c.setFont(FONT_BOLD, 12)
         c.setFillColor(self.c_mck_navy)
-        c.drawString(56, 436, "■ 핵심 결론: 출점 최우선 추천 (S-Grade)")
+        c.drawString(56, 436, f"■ 핵심 결론: 출점 최우선 추천 ({score['grade']}등급)")
         c.setFont(FONT_REGULAR, 9.2)
         c.setFillColor(self.c_charcoal)
         c.drawString(56, 408, f"• 배후 수요: 반경 3km 내 50대 이상 시니어 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%) 밀집")
-        c.drawString(56, 386, f"• 경쟁 환경: {comm.get('competitor_summary', '반경 3km 내 대형 플래그십 매장 공급 절대 부족')}")
-        c.drawString(56, 364, f"• 재무 타당성: 오토 운영 시 월 순영업이익 {scenarios['moderate']['operating_profit']//10000:,}만원 (회수 {inv['payback_months_moderate']:.1f}개월)")
-        c.drawString(56, 342, f"• ★ 직접 운영: 창업주 직접 운영 시 월 순익 {fin['owner_operated']['monthly_operating_profit_moderate']//10000:,}만원 (회수 {fin['owner_operated']['payback_months']:.1f}개월)")
+        c.drawString(56, 386, f"• 경쟁 환경: {comm.get('competitor_summary', '반경 3km 내 대형 플래그십 매장 공급 부족')}")
+        c.drawString(56, 364, f"• 재무 타당성: 보편적 가동 시 월 순영업이익 {scenarios['moderate']['operating_profit']//10000:,}만원 (회수 {inv['payback_months_moderate']:.1f}개월)")
+        c.drawString(56, 342, f"• 초기 투자금: 총 3.19억원 (장비 1.5억 + 인테리어 1.44억 + 냉난방/간판/초도용품 2,500만)")
         c.drawString(56, 320, f"• 종합 평가: 5대 다이아몬드 스코어링 {score['total_score']}점 ({score['grade']}등급)")
 
         kpis = [
             ("배후 시니어 인구 (3km)", f"{demo['senior_50_plus']:,}명", f"전체 인구의 {demo['senior_ratio']}%", self.c_mck_navy),
-            ("예상 월 영업이익 (오토)", f"{scenarios['moderate']['operating_profit']//10000:,}만원", f"영업이익률 {scenarios['moderate']['profit_margin']}%", self.c_mck_teal),
-            ("손익분기점 (BEP 회전율)", f"일 {inv['bep_turns_per_room']}회전", f"직접운영 시 일 {fin['owner_operated']['bep_turns_per_room']}회전", self.c_mck_navy),
-            ("순투자금 100% 회수기간", f"약 {inv['payback_months_moderate']:.1f}개월", f"직접운영 시 약 {fin['owner_operated']['payback_months']:.1f}개월", self.c_red),
+            ("예상 월 영업이익 (보편)", f"{scenarios['moderate']['operating_profit']//10000:,}만원", f"영업이익률 {scenarios['moderate']['profit_margin']}%", self.c_mck_teal),
+            ("손익분기점 (BEP 회전율)", f"일 {inv['bep_turns_per_room']}회전", f"1일 약 {inv['bep_daily_users']}명 돌파 시 흑자", self.c_mck_navy),
+            ("순투자금 3.19억 회수기간", f"약 {inv['payback_months_moderate']:.1f}개월", f"연환산 수익률 약 {scenarios['moderate']['operating_profit']*12/inv['total_capex']*100:.1f}%", self.c_red),
         ]
         for idx, (title, val, sub, col) in enumerate(kpis):
             x = 495 + (idx % 2) * 225
@@ -265,10 +263,10 @@ class PDFGenerator:
         c.drawString(56, 226, "■ 시니어 생활체육 소비 행태 및 타겟팅 분석")
         c.setFont(FONT_REGULAR, 8.8)
         c.setFillColor(self.c_charcoal)
-        c.drawString(56, 196, f"• 여성 시니어(주부/동호회) 53% 집중: 평일 오전 10시~오후 17시 여성 친목 동호회의 100% 예약제 풀가동 핵심 타겟")
+        c.drawString(56, 196, f"• 여성 시니어(주부/동호회) 53% 집중: 평일 오전 10시~오후 17시 여성 친목 동호회의 정기 예약 중심 안정적 타겟")
         c.drawString(56, 168, "• 60대 액티브 시니어 40% 최다 분포: 은퇴 후 시간적·경제적 여유를 갖춘 60대 고객층의 주 3회 이상 정기적 내방 소비")
-        c.drawString(56, 140, "• 70대 실버 헬스케어 수요 21%: 관절 부담이 없는 파크골프 특성상 부부 동반 및 시니어 케어 커뮤니티 공간으로 정착")
-        c.drawString(56, 112, "• 일반 스크린골프 대비 회전율 2배: 야간 직장인 편중 매장과 달리 주간 7시간 풀가동으로 일일 최대 6.5회전 달성")
+        c.drawString(56, 140, "• 70대 실버 헬스케어 수요 21%: 관절 부담이 없는 파크골프 특성상 부부 동반 및 시니어 커뮤니티 공간으로 정착")
+        c.drawString(56, 112, "• 일반 스크린골프 대비 회전율 우위: 야간 직장인 편중 매장과 달리 주간 7시간 집중 가동으로 일일 높은 회전수 확보")
         
         self._draw_footer(c, "KOSIS National Statistics Portal & Ministry of the Interior and Safety Data")
         c.showPage()
@@ -344,7 +342,7 @@ class PDFGenerator:
         c.setFillColor(self.c_charcoal)
         c.drawString(56, 198, f"• 피크 요일: 월요일 ({comm['day_distribution']['월']}%) 최고치 (주간 동호회 정기 모임)")
         c.drawString(56, 172, f"• 주간 비중: 10~17시 이용 비중이 전체의 {comm['time_distribution']['주간_10_17시_비중']}% 압도적")
-        c.drawString(56, 146, "• 일반 스크린골프(야간 위주)와 달리 낮 시간대 풀가동으로 회전율 2배")
+        c.drawString(56, 146, "• 일반 스크린골프(야간 위주)와 달리 낮 시간대 집중 가동으로 회전율 확보")
         c.drawString(56, 120, f"• 주말 가동률: 주말 평균 비중 {comm['day_distribution']['주말평균비중']}%로 주 7일 고른 수익")
         
         c.setFillColor(self.c_box_bg)
@@ -357,17 +355,17 @@ class PDFGenerator:
         c.setFont(FONT_REGULAR, 8.6)
         c.setFillColor(self.c_charcoal)
         c.drawString(511, 198, f"• 수요 검증 완료: 골프용품 매출 성장 1위(+{comm['growth_rate']}%) 상권으로 검증된 소비력")
-        c.drawString(511, 172, "• 공급 격차 점유: 노후 2~3타석 매장 대비 10타석 플래그십으로 상위 시장 독점")
-        c.drawString(511, 146, "• 복합 문화 공간: 카페형 라운지 및 파크골프 용품 샵 연계로 객단가 극대화")
-        c.drawString(511, 120, "• 상권 락인(Lock-in): 주거지역 93% 배후 고정 고객 대상 월회원제 정착")
+        c.drawString(511, 172, "• 시설 경쟁력 우위: 소규모 매장 대비 10타석 대규모 플래그십으로 단체 수요 흡수")
+        c.drawString(511, 146, "• 복합 시설 운영: 휴게 라운지 및 파크골프 용품 코너 연계로 편의성 극대화")
+        c.drawString(511, 120, "• 고객 락인(Lock-in): 주거지역 93% 배후 고정 고객 대상 정기 회원제 정착")
         
         self._draw_footer(c, "Small Enterprise 365, NICE BizMap & SK Telecom Geovision Big Data")
         c.showPage()
 
         # ---------------------------------------------------------------------
-        # Page 6: 3. 경쟁 환경 실측 분석 (글자 잘림 100% 박멸 & 스마트 줄바꿈)
+        # Page 6: 3. 경쟁 환경 실측 분석
         # ---------------------------------------------------------------------
-        self._draw_mckinsey_header(c, "3. 경쟁 환경 실측 분석", f"반경 3km 내 스크린 파크골프 전문 매장 공급 부족으로 10타석 플래그십 독점 선점 기회")
+        self._draw_mckinsey_header(c, "3. 경쟁 환경 실측 분석", f"반경 3km 내 스크린 파크골프 전문 매장 공급 부족으로 10타석 플래그십 선점 기회")
         comps = comm.get('competitors', [])
         card_w = 208
         gap = 16
@@ -375,7 +373,6 @@ class PDFGenerator:
         for idx, comp in enumerate(comps[:4]):
             cur_x = start_x + (idx * (card_w + gap))
             
-            # 헤더
             c.setFillColor(self.c_mck_navy)
             c.rect(cur_x, 425, card_w, 45, fill=1, stroke=0)
             c.setFont(FONT_BOLD, 9.5)
@@ -387,7 +384,6 @@ class PDFGenerator:
             else:
                 c.drawCentredString(cur_x + card_w/2, 443, c_name)
             
-            # 서브헤더
             c.setFillColor(self.c_tint_blue)
             c.setStrokeColor(self.c_line)
             c.rect(cur_x, 355, card_w, 70, fill=1, stroke=1)
@@ -397,33 +393,27 @@ class PDFGenerator:
             c.drawCentredString(cur_x + card_w/2, 395, rooms_label)
             c.setFont(FONT_REGULAR, 7.8)
             c.setFillColor(self.c_slate)
-            # 글자 잘림 완벽 해결 (투비전 짤림 방지)
             c.drawCentredString(cur_x + card_w/2, 372, f"[{comp.get('status', '실측완료')}] {comp.get('system', '스크린 시스템')}")
             
-            # 카드 본문
             c.setFillColor(self.c_box_bg)
             c.setStrokeColor(self.c_line)
             c.rect(cur_x, 48, card_w, 300, fill=1, stroke=1)
             
-            # 1) 주소 (스마트 줄바꿈)
             c.setFont(FONT_BOLD, 8)
             c.setFillColor(self.c_charcoal)
             c.drawString(cur_x + 10, 328, "■ 주소:")
             self._draw_multiline_text(c, comp['address'], cur_x + 10, 314, max_chars=17, line_height=13, max_lines=3, font_name=FONT_REGULAR, font_size=7.5)
             
-            # 2) 시스템
             c.setFont(FONT_BOLD, 8)
             c.setFillColor(self.c_mck_teal)
             c.drawString(cur_x + 10, 260, "■ 시스템:")
             self._draw_multiline_text(c, comp['system'], cur_x + 10, 246, max_chars=17, line_height=13, max_lines=2, font_name=FONT_REGULAR, font_size=7.5, color=self.c_mck_teal)
             
-            # 3) 규모
             c.setFont(FONT_BOLD, 8)
             c.setFillColor(self.c_charcoal)
             rooms_str = f"■ 규모: {comp['rooms']}타석 운영" if comp.get('rooms', 0) > 0 else "■ 상태: 상업용 매장 미등록"
             c.drawString(cur_x + 10, 208, rooms_str)
             
-            # 4) 특징 (스마트 줄바꿈)
             c.setFont(FONT_BOLD, 8)
             c.setFillColor(self.c_slate)
             c.drawString(cur_x + 10, 180, "■ 특징:")
@@ -434,7 +424,7 @@ class PDFGenerator:
         c.showPage()
 
         # ---------------------------------------------------------------------
-        # Page 7: 4. 입지 최적성 종합 평가 (5대 다이아몬드 스코어링 - 100% 동적 변수화)
+        # Page 7: 4. 입지 최적성 종합 평가 (5대 다이아몬드 스코어링)
         # ---------------------------------------------------------------------
         self._draw_mckinsey_header(c, "4. 입지 최적성 종합 평가", f"5대 다이아몬드 스코어링 총점 {score['total_score']}점({score['grade']}등급)으로 출점 최우선 추천 판정")
         if 'radar_score' in charts and os.path.exists(charts['radar_score']):
@@ -444,7 +434,7 @@ class PDFGenerator:
             ("1) 골든 시니어 집적도", score['scores']['senior_population'], 25, f"KOSIS 실측: 반경 3km 내 50대 이상 시니어 {demo['senior_50_plus']:,}명 ({demo['senior_ratio']}%) 밀집"),
             ("2) 접근성 및 주차 인프라", score['scores']['accessibility_parking'], 25, "간선도로 접면/교통망 우수(20점) / 10타석 주차면은 '현장 실측' 요망"),
             ("3) 공간 적합성 및 층고", score['scores']['space_efficiency'], 15, f"{site['area_pyeong']}평 10타석 배치 최적(13점) / 유효 층고 2.8m 이상은 '인테리어 실측' 필수"),
-            ("4) 수요 공급 갭 (블루오션)", score['scores']['supply_gap'], 15, f"{comm.get('competitor_summary', '반경 3km 내 대형 플래그십 매장 공급 부족')}"),
+            ("4) 수요 공급 갭", score['scores']['supply_gap'], 15, f"{comm.get('competitor_summary', '반경 3km 내 대형 플래그십 매장 공급 부족')}"),
             ("5) 지역 소비력 및 여가지출", score['scores']['commercial_spending'], 20, f"BASA 실측: 골프용품 성장 1위(+{comm['growth_rate']}%) 및 월평균 {comm['monthly_avg_sales']//10000:,}만원 상권"),
         ]
         y_ind = 445
@@ -473,15 +463,15 @@ class PDFGenerator:
         cards_p8 = [
             (40, 268, 425, 192, "■ 공간 및 유효 층고 요건", [
                 f"• 대상 주소: {site['full_address']}",
-                f"• 권장 면적: 전용 {site['area_pyeong']}평 (10타석 + 카페/락커룸 최적 배치)",
+                f"• 권장 면적: 전용 {site['area_pyeong']}평 (10타석 + 휴게 라운지 최적 배치)",
                 f"• 층고 기준: {site['clear_height_spec']}",
                 f"• 보/배관 간섭: 센서 투사 영역 및 스윙 궤적 내 장애물 사전 실측",
                 f"• 권장 층수: 접근성 높은 지상 2~3층 권장 (쾌적한 지하 1층 가능)",
                 f"• 바닥 하중: 스크린 타석 및 키오스크 하중(300kg/㎡) 적합 여부"
             ]),
             (495, 268, 425, 192, "■ 전기·공조 및 소방 설비 기준", [
-                f"• 수전 용량: 계약전력 최소 {site['electrical_spec']} (타석당 1.5kW + 냉난방)",
-                f"• 냉난방 시스템: 4계절 쾌적한 시스템 에어컨 40~50평형 3~4대 분산 배치",
+                f"• 수전 용량: 계약전력 최소 {site['electrical_spec']}",
+                f"• 냉난방 시스템: 4계절 쾌적한 25평형 냉난방기 4대 분산 배치",
                 f"• 환기 및 공기질: 시간당 환기 6회 이상 강제 급배기 및 대용량 공기청정",
                 f"• 소방 안전: 스프링클러 헤드 유효 반경 확보 및 비상 유도등 완비",
                 f"• 다중이용업소: 안전시설등 완비증명서 발급 대상 여부 사전 확인",
@@ -490,7 +480,7 @@ class PDFGenerator:
             (40, 48, 425, 204, "■ 주차 및 수직 동선 인프라", [
                 f"• 주차 요건: {site['parking_spec']}",
                 f"• 주차 방식: 시니어 고객 선호도가 높은 지하/지상 자주식 주차 최우선",
-                f"• 승강기 설비: 파크골프백 휴대가 용이한 13인승 이상 엘리베이터 필수",
+                f"• 승강기 설비: 파크골프백 휴대가 용이한 13인승 이상 엘리베이터 권장",
                 f"• 진출입 편의: 광폭 주차면(2.5m 이상) 및 회차 공간 확보 여부",
                 f"• 대중교통 연계: 도보 5분 내 버스정류장 및 지하철역 접근성",
                 f"• 장애인 편의: 휠체어 경사로 및 단차 없는 출입구 동선 확보"
@@ -522,20 +512,19 @@ class PDFGenerator:
         c.showPage()
 
         # ---------------------------------------------------------------------
-        # Page 9: 6. 사업 타당성 분석 - 매출 추정 (1인 18홀 7,000원 기준)
+        # Page 9: 6. 사업 타당성 분석 - 매출 추정 (3대 매출 엑셀 기준)
         # ---------------------------------------------------------------------
-        self._draw_mckinsey_header(c, "6. 사업 타당성 분석 - 매출 추정", f"1인 18홀 7,000원 단가 기준: 보편적 시나리오 월 총매출 {scenarios['moderate']['total_revenue']//10000:,}만원 달성")
+        self._draw_mckinsey_header(c, "6. 사업 타당성 분석 - 매출 추정", f"1인 18홀 7,000원(팀당 28,000원) 기준: 보편적 가동 시 월 총매출 {scenarios['moderate']['total_revenue']//10000:,}만원 달성")
         
         c.setFillColor(self.c_mck_navy)
         c.rect(40, 395, 880, 28, fill=1, stroke=0)
         c.setFont(FONT_BOLD, 9.5)
         c.setFillColor(self.c_white)
         c.drawString(56, 404, "구분")
-        c.drawString(180, 404, "타석 이용료 (7,000원)")
-        c.drawString(320, 404, "식음/카페 (10%)")
-        c.drawString(450, 404, "용품 판매 (5%)")
-        c.drawString(570, 404, "레슨/그립 (3%)")
-        c.drawString(700, 404, "월 총매출 합계")
+        c.drawString(180, 404, "게임비 매출 (7,000원/인)")
+        c.drawString(360, 404, "용품 판매 매출")
+        c.drawString(520, 404, "식음료 판매 (3,000원/팀)")
+        c.drawString(680, 404, "월 총매출 합계")
         c.drawString(820, 404, "1일 이용객")
         
         y_sc = 360
@@ -547,40 +536,39 @@ class PDFGenerator:
             c.setFont(FONT_BOLD if k == 'moderate' else FONT_REGULAR, 9)
             c.setFillColor(self.c_mck_navy if k == 'moderate' else self.c_charcoal)
             c.drawString(56, y_sc + 4, sc['scenario_name'])
-            c.drawString(180, y_sc + 4, f"{sc['room_revenue']:,}원")
-            c.drawString(320, y_sc + 4, f"{sc['cafe_revenue']:,}원")
-            c.drawString(450, y_sc + 4, f"{sc['goods_revenue']:,}원")
-            c.drawString(570, y_sc + 4, f"{sc['lesson_revenue']:,}원")
+            c.drawString(180, y_sc + 4, f"{sc['game_revenue']:,}원")
+            c.drawString(360, y_sc + 4, f"{sc['goods_revenue']:,}원")
+            c.drawString(520, y_sc + 4, f"{sc['beverage_revenue']:,}원")
             c.setFont(FONT_BOLD, 9.5)
-            c.drawString(700, y_sc + 4, f"{sc['total_revenue']:,}원")
+            c.drawString(680, y_sc + 4, f"{sc['total_revenue']:,}원")
             c.setFont(FONT_REGULAR, 8.5)
             c.drawString(820, y_sc + 4, f"1일 {sc['daily_users']}명 (월 {sc['monthly_users']:,}명)")
             y_sc -= 32
 
         callouts_p9 = [
-            (40, 48, 275, 220, "■ 보수적 시나리오 (초기 진입)", [
+            (40, 48, 275, 220, "■ 보수적 시나리오 (3회전)", [
                 f"• 월 총매출: {scenarios['conservative']['total_revenue']//10000:,}만원 (연 {scenarios['conservative']['total_revenue']*12//100000000:.1f}억원)",
                 f"• 타석 회전수: 1일 {scenarios['conservative']['daily_turns_per_room']:.1f}회전",
                 f"• 1일 이용객: 약 {scenarios['conservative']['daily_users']}명 (월 {scenarios['conservative']['monthly_users']:,}명)",
-                "• 상권 초기 진입 및 비수기 보수적 가정",
+                "• 상권 초기 진입 단계 안정적 가동",
                 f"• BEP(월 {inv['bep_monthly_sales']//10000:,}만)를 안정적으로 초과",
                 f"• 월 순영업이익 {scenarios['conservative']['operating_profit']//10000:,}만원 흑자 확보"
             ]),
-            (342, 48, 275, 220, "■ 보편적 시나리오 (표준 정착)", [
+            (342, 48, 275, 220, "■ 보편적 시나리오 (4회전)", [
                 f"• 월 총매출: {scenarios['moderate']['total_revenue']//10000:,}만원 (연 {scenarios['moderate']['total_revenue']*12//100000000:.1f}억원)",
-                f"• 타석 회전수: 1일 {scenarios['moderate']['daily_turns_per_room']:.1f}회전 (주간 풀예약)",
+                f"• 타석 회전수: 1일 {scenarios['moderate']['daily_turns_per_room']:.1f}회전 (표준 가동)",
                 f"• 1일 이용객: 약 {scenarios['moderate']['daily_users']}명 (월 {scenarios['moderate']['monthly_users']:,}명)",
-                "• 평일 주간 동호회 정기 예약 100% 정착",
+                "• 평일 주간 동호회 정기 모임 안정적 정착",
                 f"• 월 순영업이익 {scenarios['moderate']['operating_profit']//10000:,}만원 달성",
-                f"• ★ 순투자금 전액 회수 기간: {inv['payback_months_moderate']:.1f}개월"
+                f"• ★ 순투자금 3.19억 회수 기간: {inv['payback_months_moderate']:.1f}개월"
             ]),
-            (645, 48, 275, 220, "■ 긍정적 시나리오 (랜드마크)", [
+            (645, 48, 275, 220, "■ 긍정적 시나리오 (5회전)", [
                 f"• 월 총매출: {scenarios['optimistic']['total_revenue']//10000:,}만원 (연 {scenarios['optimistic']['total_revenue']*12//100000000:.1f}억원)",
-                f"• 타석 회전수: 1일 {scenarios['optimistic']['daily_turns_per_room']:.1f}회전 (야간/주말)",
+                f"• 타석 회전수: 1일 {scenarios['optimistic']['daily_turns_per_room']:.1f}회전 (주말/야간)",
                 f"• 1일 이용객: 약 {scenarios['optimistic']['daily_users']}명 (월 {scenarios['optimistic']['monthly_users']:,}명)",
-                "• 지역 생활체육 랜드마크 및 정기대회 유치",
+                "• 지역 생활체육 랜드마크 및 대회 유치",
                 f"• 월 순영업이익 {scenarios['optimistic']['operating_profit']//10000:,}만원 달성",
-                f"• 순투자금 전액 회수 기간: {inv['payback_months_optimistic']:.1f}개월"
+                f"• 순투자금 3.19억 회수 기간: {inv['payback_months_optimistic']:.1f}개월"
             ])
         ]
         for x, y, w, h, title, items in callouts_p9:
@@ -603,7 +591,7 @@ class PDFGenerator:
         # ---------------------------------------------------------------------
         # Page 10: 7. 사업 타당성 분석 - 비용 구조 및 순영업이익
         # ---------------------------------------------------------------------
-        self._draw_mckinsey_header(c, "7. 사업 타당성 분석 - 비용 구조 및 순영업이익", f"오토 운영 시 월 순익 {scenarios['moderate']['operating_profit']//10000:,}만원  vs  ★ 직접 운영 시 월 순익 {fin['owner_operated']['monthly_operating_profit_moderate']//10000:,}만원 (영업익률 {fin['owner_operated']['profit_margin_moderate']}%)")
+        self._draw_mckinsey_header(c, "7. 사업 타당성 분석 - 비용 구조 및 순영업이익", f"점주 상주 시 월 순익 {scenarios['moderate']['operating_profit']//10000:,}만원 (이익률 {scenarios['moderate']['profit_margin']}%)  |  직원 위탁 운영 시 월 순익 {fin['owner_operated']['staff3_operating_profit']//10000:,}만원")
         
         c.setFillColor(self.c_mck_navy)
         c.rect(40, 395, 880, 28, fill=1, stroke=0)
@@ -616,12 +604,12 @@ class PDFGenerator:
         c.drawString(680, 404, "비용 산출 기준 및 내역")
         
         cost_rows = [
-            ("인건비 (직원 3명 기준)", f"{scenarios['conservative']['labor_cost']:,}원", f"{scenarios['moderate']['labor_cost']:,}원", f"{scenarios['optimistic']['labor_cost']:,}원", "월 250만원 × 3명 (점주 직접 운영 시 월 500만 절감)"),
+            ("인건비 (점주 1인 상주)", f"{scenarios['conservative']['labor_cost']:,}원", f"{scenarios['moderate']['labor_cost']:,}원", f"{scenarios['optimistic']['labor_cost']:,}원", "월 250만원 (직원 채용 시 인건비 추가)"),
             ("사업장 월 임대료", f"{scenarios['conservative']['rent_cost']:,}원", f"{scenarios['moderate']['rent_cost']:,}원", f"{scenarios['optimistic']['rent_cost']:,}원", f"전용 {site['area_pyeong']}평 기준 월 임대료"),
-            ("원가 및 카드수수료", f"{scenarios['conservative']['cost_beverage']+scenarios['conservative']['cost_goods']+scenarios['conservative']['cost_lesson']+scenarios['conservative']['card_fee']:,}원", f"{scenarios['moderate']['cost_beverage']+scenarios['moderate']['cost_goods']+scenarios['moderate']['cost_lesson']+scenarios['moderate']['card_fee']:,}원", f"{scenarios['optimistic']['cost_beverage']+scenarios['optimistic']['cost_goods']+scenarios['optimistic']['cost_lesson']+scenarios['optimistic']['card_fee']:,}원", "음료원가40%, 용품60%, 레슨80%, 카드수수료2%"),
-            ("매장운영비 + 렌탈/마케팅", f"{scenarios['conservative']['store_ops_cost']+scenarios['conservative']['rental_cost']+scenarios['conservative']['marketing_cost']:,}원", f"{scenarios['moderate']['store_ops_cost']+scenarios['moderate']['rental_cost']+scenarios['moderate']['marketing_cost']:,}원", f"{scenarios['optimistic']['store_ops_cost']+scenarios['optimistic']['rental_cost']+scenarios['optimistic']['marketing_cost']:,}원", "수도광열비, 소모품, 정수기/공청기, 마케팅비"),
+            ("용품/음료 원가 및 카드수수료", f"{scenarios['conservative']['cost_goods']+scenarios['conservative']['cost_beverage']+scenarios['conservative']['card_fee']:,}원", f"{scenarios['moderate']['cost_goods']+scenarios['moderate']['cost_beverage']+scenarios['moderate']['card_fee']:,}원", f"{scenarios['optimistic']['cost_goods']+scenarios['optimistic']['cost_beverage']+scenarios['optimistic']['card_fee']:,}원", "용품원가50%, 음료원가50%, 카드수수료2%"),
+            ("매장운영비 + 통신/마케팅", f"{scenarios['conservative']['store_ops_cost']+scenarios['conservative']['marketing_cost']:,}원", f"{scenarios['moderate']['store_ops_cost']+scenarios['moderate']['marketing_cost']:,}원", f"{scenarios['optimistic']['store_ops_cost']+scenarios['optimistic']['marketing_cost']:,}원", "수도광열비, 통신/POS(30만), 마케팅비(50만)"),
             ("월 총비용 합계", f"{scenarios['conservative']['total_cost']:,}원", f"{scenarios['moderate']['total_cost']:,}원", f"{scenarios['optimistic']['total_cost']:,}원", "고정비 및 변동비 총합"),
-            ("★ 월 순영업이익 (오토)", f"{scenarios['conservative']['operating_profit']:,}원", f"{scenarios['moderate']['operating_profit']:,}원", f"{scenarios['optimistic']['operating_profit']:,}원", f"영업이익률: 보편 {scenarios['moderate']['profit_margin']}% 달성")
+            ("★ 월 순영업이익", f"{scenarios['conservative']['operating_profit']:,}원", f"{scenarios['moderate']['operating_profit']:,}원", f"{scenarios['optimistic']['operating_profit']:,}원", f"영업이익률: 보편 {scenarios['moderate']['profit_margin']}% 달성")
         ]
         
         y_c = 360
@@ -641,41 +629,42 @@ class PDFGenerator:
             c.drawString(680, y_c + 4, cdesc)
             y_c -= 30
 
-        # 하단 직접 운영 비교 배너
+        # 하단 운영 형태별 손익 비교
         c.setFillColor(HexColor('#F0FDF4'))
         c.setStrokeColor(HexColor('#BBF7D0'))
         c.rect(40, 48, 880, 105, fill=1, stroke=1)
         c.setFont(FONT_BOLD, 10.5)
         c.setFillColor(HexColor('#166534'))
-        c.drawString(56, 128, "★【 창업주 직접 운영 시 손익 극대화 효과 (점주 상주 + 파트 1명) 】")
+        c.drawString(56, 128, "★【 운영 방식별 손익 및 회수 기간 비교 】")
         c.setFont(FONT_REGULAR, 8.6)
         c.setFillColor(HexColor('#14532D'))
-        c.drawString(56, 104, f"• 인건비 절감 효과: 직원 3명(750만) → 점주 직접운영(250만)으로 매월 500만원 고정비 순절감")
-        c.drawString(56, 82, f"• 월 순영업이익 상승: 오토 {scenarios['moderate']['operating_profit']//10000:,}만원 → ★ 직접 운영 시 월 {fin['owner_operated']['monthly_operating_profit_moderate']//10000:,}만원 (영업이익률 {fin['owner_operated']['profit_margin_moderate']}%) 달성")
-        c.drawString(56, 60, f"• 원금 회수 기간 단축: 1년 8개월({inv['payback_months_moderate']:.1f}개월) → ★ 단 1년 2~4개월({fin['owner_operated']['payback_months']:.1f}개월) 만에 순투자금 3.36억원 100% 회수!")
+        c.drawString(56, 104, f"• [표준] 창업주 직접 상주 운영 (인건비 250만): 월 순영업익 {scenarios['moderate']['operating_profit']//10000:,}만원 (영업이익률 {scenarios['moderate']['profit_margin']}%) → 회수 기간 약 {inv['payback_months_moderate']:.1f}개월")
+        c.drawString(56, 82, f"• [위탁] 전담 직원 3명 채용 위탁 운영 (인건비 750만): 월 순영업익 {fin['owner_operated']['staff3_operating_profit']//10000:,}만원 → 회수 기간 약 {fin['owner_operated']['staff3_payback_months']:.1f}개월")
+        c.drawString(56, 60, f"• 핵심 요약: 창업주 직접 상주 시 월 500만원의 고정비가 절감되어 단 1년 1개월({inv['payback_months_moderate']:.1f}개월) 만에 초기 투자금 3.19억원을 100% 전액 회수합니다.")
         
         self._draw_footer(c, "Standard Cost Accounting Framework & Franchise Labor Policy")
         c.showPage()
 
         # ---------------------------------------------------------------------
-        # Page 11: 8. 손익분기점(BEP) 및 투자금 회수 기간
+        # Page 11: 8. 손익분기점(BEP) 및 투자금 회수 기간 (SSOT 3.19억원)
         # ---------------------------------------------------------------------
-        self._draw_mckinsey_header(c, "8. 손익분기점(BEP) 및 투자금 회수 기간", f"순투자금 3.36억원 기준: 오토 1일 {inv['bep_turns_per_room']}회전  vs  ★ 직접운영 1일 단 {fin['owner_operated']['bep_turns_per_room']}회전 돌파 시 즉시 흑자")
+        self._draw_mckinsey_header(c, "8. 손익분기점(BEP) 및 투자금 회수 기간", f"초기 순투자금 3.19억원 기준: 1일 {inv['bep_turns_per_room']}회전(1일 {inv['bep_daily_users']}명) 돌파 시 즉시 흑자 달성")
         
         bep_cards = [
-            (40, 268, 425, 192, "■ 초기 순투자비용 세부 내역", [
-                f"• 스크린 파크골프 시뮬레이터 (10대): 15,000만원 (1대당 1,500만원)",
-                f"• 인테리어 및 시설 공사 ({site['area_pyeong']}평): 15,600만원 (평당 130만원)",
-                f"• 초도 비품, 용품 및 홍보물: 3,000만원",
-                f"• 초기 총 투자비용 (CAPEX): 3.36억원 ({inv['total_capex']//10000:,}만원)",
-                "• 보증금 및 별도 공사비는 개별 매장 조건에 따라 별도 산정"
+            (40, 268, 425, 192, "■ 초기 순투자비용 세부 내역 (SSOT)", [
+                f"• 시뮬레이터 장비 (10대): 15,000만원 (1대당 1,500만원)",
+                f"• 인테리어 공사비 ({site['area_pyeong']}평): 14,400만원 (평당 120만원)",
+                f"• 냉난방기 (4대): 1,200만원 (대당 300만원)",
+                f"• 간판/싸인물: 500만원  |  가구/집기: 300만원",
+                f"• 초도 용품(클럽, 공 등): 500만원",
+                f"• ★ 초기 총 투자비용 (CAPEX): 3.19억원 ({inv['total_capex']//10000:,}만원)"
             ]),
             (495, 268, 425, 192, "■ 손익분기점(BEP) 달성 요건", [
-                f"• 월 고정비: 오토 {fin['staff_count']*250+site['monthly_rent']//10000+350:,}만원  |  직접운영 {250+site['monthly_rent']//10000+350:,}만원",
-                f"• 1인 18홀 7,000원 기준 공헌이익: 1인당 7,462원 마진",
-                f"• 손익분기 월 매출: 오토 약 {inv['bep_monthly_sales']//10000:,}만원  |  직접운영 약 {fin['owner_operated']['bep_monthly_sales']//10000:,}만원",
-                f"• 손익분기 1일 회전수: 오토 일 {inv['bep_turns_per_room']}회전 (1일 {inv['bep_daily_users']}명)",
-                f"• ★ 직접운영 손익분기: 일 단 {fin['owner_operated']['bep_turns_per_room']}회전 (1일 {fin['owner_operated']['bep_daily_users']}명만 와도 흑자!)"
+                f"• 월 고정비: 약 {fin['owner_operated']['fixed_cost']//10000:,}만원 (점주 상주 기준)",
+                f"• 1인 18홀 7,000원 기준 공헌이익: 팀당 약 29,000원 (1인 약 7,250원)",
+                f"• 손익분기 월 매출: 약 {inv['bep_monthly_sales']//10000:,}만원",
+                f"• 손익분기 1일 회전수: 일 {inv['bep_turns_per_room']}회전 (1일 약 {inv['bep_daily_users']}명)",
+                f"• 타석당 1일 1.2팀만 이용해도 월 고정비 전액 커버 및 흑자 전환"
             ])
         ]
         for x, y, w, h, title, items in bep_cards:
@@ -701,15 +690,17 @@ class PDFGenerator:
         
         c.setFont(FONT_REGULAR, 8.8)
         c.setFillColor(self.c_charcoal)
-        c.drawString(56, 196, f"• 보수적 시나리오: 월 순영업익 {scenarios['conservative']['operating_profit']//10000:,}만원 기준 → 약 {inv['payback_months_conservative']:.1f}개월 만에 회수")
-        c.drawString(56, 168, f"• 보편적 시나리오: 월 순영업익 {scenarios['moderate']['operating_profit']//10000:,}만원 기준 → 약 {inv['payback_months_moderate']:.1f}개월 만에 회수")
-        c.drawString(56, 140, f"• 긍정적 시나리오: 월 순영업익 {scenarios['optimistic']['operating_profit']//10000:,}만원 기준 → 약 {inv['payback_months_optimistic']:.1f}개월 만에 회수")
+        c.drawString(56, 196, f"• 보수적 시나리오 (3회전): 월 순영업익 {scenarios['conservative']['operating_profit']//10000:,}만원 기준 → 약 {inv['payback_months_conservative']:.1f}개월 만에 회수")
         c.setFont(FONT_BOLD, 9.2)
         c.setFillColor(self.c_mck_teal)
-        c.drawString(56, 112, f"• ★ 창업주 직접 운영(보편): 월 순영업익 {fin['owner_operated']['monthly_operating_profit_moderate']//10000:,}만원 기준 → 단 {fin['owner_operated']['payback_months']:.1f}개월 만에 순투자금 3.36억원 100% 회수!")
-        c.drawString(56, 88, f"• 자본 수익률(ROI): 연간 환산 수익률 약 {fin['owner_operated']['monthly_operating_profit_moderate']*12 / inv['total_capex'] * 100:.1f}% 기록")
+        c.drawString(56, 168, f"• ★ 보편적 시나리오 (4회전): 월 순영업익 {scenarios['moderate']['operating_profit']//10000:,}만원 기준 → 단 {inv['payback_months_moderate']:.1f}개월 (약 1년 1개월) 만에 전액 회수!")
+        c.setFont(FONT_REGULAR, 8.8)
+        c.setFillColor(self.c_charcoal)
+        c.drawString(56, 140, f"• 긍정적 시나리오 (5회전): 월 순영업익 {scenarios['optimistic']['operating_profit']//10000:,}만원 기준 → 약 {inv['payback_months_optimistic']:.1f}개월 (10개월 미만) 만에 회수")
+        c.drawString(56, 112, f"• 자본 수익률(ROI): 연간 환산 투자 수익률 약 {scenarios['moderate']['operating_profit']*12 / inv['total_capex'] * 100:.1f}% 달성")
+        c.drawString(56, 88, f"• 리스크 안전망: 일 3회전의 보수적 운영 시에도 월 1,500만원 이상의 순영업익이 확보되어 사업 안정성이 매우 높음")
         
-        self._draw_footer(c, "DCF & Payback Period Financial Valuation Model")
+        self._draw_footer(c, "DCF & Payback Period Financial Valuation Model (CAPEX 3.19B)")
         c.showPage()
 
         # ---------------------------------------------------------------------
@@ -760,11 +751,11 @@ class PDFGenerator:
         c.drawString(516, 226, "■ 최종 출점 의사결정 종합 제언")
         c.setFont(FONT_REGULAR, 8.4)
         c.setFillColor(self.c_charcoal)
-        c.drawString(516, 198, f"1. 골든 시니어 독점 입지: 반경 3km 내 50대 이상 {demo['senior_50_plus']:,}명 선점")
-        c.drawString(516, 172, "2. 10타석 대규모 플래그십: 소규모 노후 매장 대비 압도적 집객력")
+        c.drawString(516, 198, f"1. 골든 시니어 배후 수요: 반경 3km 내 50대 이상 {demo['senior_50_plus']:,}명 선점")
+        c.drawString(516, 172, "2. 10타석 대규모 플래그십: 소규모 매장 대비 압도적 집객력과 쾌적성")
         c.drawString(516, 146, "3. 1인 18홀 7,000원 경쟁력: 일반 스크린골프 대비 가격 우위 및 높은 회전율")
-        c.drawString(516, 120, f"4. 빠른 투자 회수: 직접운영 시 단 {fin['owner_operated']['payback_months']:.1f}개월 만에 3.36억원 전액 회수")
-        c.drawString(516, 94, "5. 선점 추천: 블루오션 상권 내 마이파크 1호점 출점 즉시 진행 권장")
+        c.drawString(516, 120, f"4. 빠른 투자 회수: 보편적 가동 기준 약 {inv['payback_months_moderate']:.1f}개월 만에 3.19억원 전액 회수")
+        c.drawString(516, 94, "5. 선점 추천: 상권 내 마이파크 플래그십 1호점 출점 즉시 진행 권장")
         
         self._draw_footer(c, "MYPARK 5-Year Long-term Strategic Feasibility Valuation")
         c.showPage()

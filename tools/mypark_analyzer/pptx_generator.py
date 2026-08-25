@@ -201,7 +201,7 @@ class PPTXGenerator:
         # Slide 3: 1. 타겟 시니어 인구 분석
         # ---------------------------------------------------------------------
         s3 = self.prs.slides.add_slide(self.blank_layout)
-        self._add_mckinsey_header(s3, "1. 타겟 시니어 인구 분석", f"50대 이상 골든 시니어 7.2만 명({demo['senior_ratio']}%)으로 평일 주간 100% 예약 풀가동 최적")
+        self._add_mckinsey_header(s3, "1. 타겟 시니어 인구 분석", f"50대 이상 골든 시니어 7.2만 명({demo['senior_ratio']}%)으로 평일 주간 정기 예약 중심 안정적 가동 최적")
         
         c3_1 = s3.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.6), Inches(1.45), Inches(5.0), Inches(2.72))
         c3_1.fill.solid()
@@ -245,7 +245,7 @@ class PPTXGenerator:
         p2.text = (
             f"• 시니어 집적도: {demo['senior_ratio']}%의 최상급 골든 배후지 형성\n"
             f"• 사계절 가동성: 야외 파크골프장의 혹서기/혹한기 한계 대체\n"
-            f"• 주간 가동 극대화: 일반 골프 유휴 시간대를 100% 예약 풀가동\n"
+            f"• 주간 가동 극대화: 일반 골프 유휴 시간대를 정기 예약 중심 안정적 가동\n"
             f"• 진입 장벽 제로: 단 1개의 전용 채로 남녀노소 누구나 즉시 입문\n"
             f"• 리텐션 극대화: 월정액제 및 동호회 전용 타석 배정으로 고정 매출 확보"
         )
@@ -457,7 +457,7 @@ class PPTXGenerator:
         p_s1.space_before = Pt(4)
         p_s1.text = (
             f"• 수요 검증 완료: 골프용품 매출 성장 1위(+182.4%) 상권으로 검증된 소비력\n"
-            f"• 공급 격차 점유: 노후 2~3타석 매장 대비 10타석 플래그십으로 상위 시장 독점\n"
+            f"• 공급 격차 점유: 소규모 매장 대비 10타석 플래그십으로 상위 시장 독점\n"
             f"• 복합 문화 공간: 카페형 라운지 및 파크골프 용품 샵 연계로 객단가 극대화\n"
             f"• 상권 락인(Lock-in): 주거지역 93% 배후 고정 고객 대상 월회원제 정착"
         )
@@ -694,12 +694,12 @@ class PPTXGenerator:
             p_dv.font.color.rgb = self.c_mck_navy
             
         # 2. 중앙 손익 매트릭스 테이블
-        table_s9 = s9.shapes.add_table(4, 7, Inches(0.6), Inches(2.62), Inches(12.133), Inches(2.55)).table
-        col_w9 = [Inches(1.3), Inches(1.6), Inches(1.4), Inches(1.4), Inches(1.4), Inches(2.3), Inches(2.733)]
+        table_s9 = s9.shapes.add_table(4, 6, Inches(0.6), Inches(2.62), Inches(12.133), Inches(2.55)).table
+        col_w9 = [Inches(1.8), Inches(2.0), Inches(1.8), Inches(1.9), Inches(2.2), Inches(2.433)]
         for c_idx, w in enumerate(col_w9):
             table_s9.columns[c_idx].width = w
             
-        h9 = ['구분', '타석 이용료', '용품(10%)', '카페(5%)', '레슨(3%)', '월 총매출 합계', '비고 (1일 이용자)']
+        h9 = ['구분', '게임비 매출 (7,000원)', '용품 판매 매출', '식음료 판매 (3,000원/팀)', '월 총매출 합계', '1일 이용객 (월간)']
         for col_idx, h in enumerate(h9):
             self._format_cell(table_s9.cell(0, col_idx), h, font_size=10, bold=True, color=self.c_white, bg_color=self.c_mck_navy)
             
@@ -708,12 +708,11 @@ class PPTXGenerator:
             r = row_idx + 1
             bg_c = self.c_box_bg if row_idx % 2 == 1 else self.c_white
             self._format_cell(table_s9.cell(r, 0), sc['scenario_name'], font_size=9.5, bold=True, color=self.c_mck_navy, bg_color=bg_c)
-            self._format_cell(table_s9.cell(r, 1), f"{sc['room_revenue']:,}원", font_size=9.5, color=self.c_charcoal, bg_color=bg_c)
+            self._format_cell(table_s9.cell(r, 1), f"{sc['game_revenue']:,}원", font_size=9.5, color=self.c_charcoal, bg_color=bg_c)
             self._format_cell(table_s9.cell(r, 2), f"{sc['goods_revenue']:,}원", font_size=9.5, color=self.c_charcoal, bg_color=bg_c)
-            self._format_cell(table_s9.cell(r, 3), f"{sc['cafe_revenue']:,}원", font_size=9.5, color=self.c_charcoal, bg_color=bg_c)
-            self._format_cell(table_s9.cell(r, 4), f"{sc['lesson_revenue']:,}원", font_size=9.5, color=self.c_charcoal, bg_color=bg_c)
-            self._format_cell(table_s9.cell(r, 5), f"{sc['total_revenue']:,}원", font_size=10, bold=True, color=self.c_mck_navy, bg_color=bg_c)
-            self._format_cell(table_s9.cell(r, 6), f"1일 {sc['daily_users']}명 (월 {sc['monthly_users']:,}명)", font_size=9.5, color=self.c_slate, bg_color=bg_c)
+            self._format_cell(table_s9.cell(r, 3), f"{sc['beverage_revenue']:,}원", font_size=9.5, color=self.c_charcoal, bg_color=bg_c)
+            self._format_cell(table_s9.cell(r, 4), f"{sc['total_revenue']:,}원", font_size=10, bold=True, color=self.c_mck_navy, bg_color=bg_c)
+            self._format_cell(table_s9.cell(r, 5), f"1일 {sc['daily_users']}명 (월 {sc['monthly_users']:,}명)", font_size=9.5, color=self.c_slate, bg_color=bg_c)
             
         # 3. 하단 시나리오별 시사점 콜아웃 카드
         callouts = [
@@ -751,14 +750,14 @@ class PPTXGenerator:
         self._add_source_footer(s9, "Base Assumptions: 18 Holes 8,000 KRW, Secondary Sales 18%, 30 Operating Days/Month")
 
         # ---------------------------------------------------------------------
-        # Slide 10: 6. 사업 타당성 분석 - 비용 구조 (3.36억원 CAPEX 명세 완비)
+        # Slide 10: 6. 사업 타당성 분석 - 비용 구조 (3.19억원 CAPEX 명세 완비)
         # ---------------------------------------------------------------------
         s10 = self.prs.slides.add_slide(self.blank_layout)
-        self._add_mckinsey_header(s10, "6. 사업 타당성 분석 - 비용 구조", "초기 순투자금 3.36억원(장비 1.5억+인테리어 1.56억+초도 0.3억) 및 월비용 2,246만원")
+        self._add_mckinsey_header(s10, "6. 사업 타당성 분석 - 비용 구조", "초기 순투자금 3.19억원(장비 1.5억+인테리어 1.56억+초도 0.3억) 및 월비용 2,246만원")
         
         # 1. 상단 3대 비용 지표
         s10_metrics = [
-            (Inches(0.6), "초기 순투자금 (총 3.36억원)", "3억 3,600만원", "장비 1.5억(10대) + 인테리어 1.56억(120평) + 초도 0.3억"),
+            (Inches(0.6), "초기 순투자금 (총 3.19억원)", "3억 3,600만원", "장비 1.5억(10대) + 인테리어 1.56억(120평) + 초도 0.3억"),
             (Inches(4.68), "월 고정비 (인건비+임대료)", f"{fin['monthly_rent']//10000 + 750:,}만원 /월", f"인력 3명(750만) + 120평 임대료({fin['monthly_rent']//10000:,}만)"),
             (Inches(8.76), "월 변동비 & 매장운영비", "956만원 /월", "원가 3종 + 카드수수료 + 매장운영비")
         ]
@@ -795,7 +794,7 @@ class PPTXGenerator:
         o_sc = m_scen['optimistic']
         cost_rows = [
             ('인건비 + 임대료', f"{c_sc['labor_cost']+c_sc['rent_cost']:,}원", f"{m_sc['labor_cost']+m_sc['rent_cost']:,}원", f"{o_sc['labor_cost']+o_sc['rent_cost']:,}원", f"인력 {fin['staff_count']}명(월 750만) / 임대료 {fin['monthly_rent']//10000:,}만원/월"),
-            ('원가 3종 + 카드수수료', f"{c_sc['goods_cost']+c_sc['cafe_cost']+c_sc['lesson_cost']+c_sc['card_fee']:,}원", f"{m_sc['goods_cost']+m_sc['cafe_cost']+m_sc['lesson_cost']+m_sc['card_fee']:,}원", f"{o_sc['goods_cost']+o_sc['cafe_cost']+o_sc['lesson_cost']+o_sc['card_fee']:,}원", "용품60%, 식음50%, 레슨80%, 카드2%"),
+            ('원가 2종 + 카드수수료', f"{c_sc['cost_goods']+c_sc['cost_beverage']+c_sc['card_fee']:,}원", f"{m_sc['cost_goods']+m_sc['cost_beverage']+m_sc['card_fee']:,}원", f"{o_sc['cost_goods']+o_sc['cost_beverage']+o_sc['card_fee']:,}원", "용품원가50%, 음료원가50%, 카드수수료2%"),
             ('매장운영비 + 렌탈/마케팅', f"{c_sc['store_ops_cost']+c_sc['rental_cost']+c_sc['marketing_cost']:,}원", f"{m_sc['store_ops_cost']+m_sc['rental_cost']+m_sc['marketing_cost']:,}원", f"{o_sc['store_ops_cost']+o_sc['rental_cost']+o_sc['marketing_cost']:,}원", "수도광열, 소모품, 공청기, 보험 등"),
             ('월 총 비용 합계', f"{c_sc['total_cost']:,}원", f"{m_sc['total_cost']:,}원", f"{o_sc['total_cost']:,}원", "부가가치세(VAT) 별도 기준")
         ]
@@ -846,7 +845,7 @@ class PPTXGenerator:
         # Slide 11: 6. 손익 예측 및 BEP 분석
         # ---------------------------------------------------------------------
         s11 = self.prs.slides.add_slide(self.blank_layout)
-        self._add_mckinsey_header(s11, "6. 손익 예측 및 BEP 분석", f"기기당 1일 0.9회전 달성 시 BEP 돌파 및 {fin['investment']['payback_months_moderate']:.1f}개월 내 순투자금 3.36억원 전액 회수")
+        self._add_mckinsey_header(s11, "6. 손익 예측 및 BEP 분석", f"기기당 1일 0.9회전 달성 시 BEP 돌파 및 {fin['investment']['payback_months_moderate']:.1f}개월 내 순투자금 3.19억원 전액 회수")
         
         if 'profit_forecast' in charts and os.path.exists(charts['profit_forecast']):
             s11.shapes.add_picture(charts['profit_forecast'], Inches(0.6), Inches(1.45), width=Inches(6.8))
@@ -897,7 +896,7 @@ class PPTXGenerator:
             f"• 오토 운영 BEP: 기기당 1일 0.9회전 (월 240명 돌파 시 흑자 / 회수 15.8개월)\n"
             f"★ 창업주 직접 운영 BEP: 기기당 1일 단 0.6회전 (월 135명 돌파 시 흑자)\n"
             f"  ↳ 인건비 500만원 절감으로 월 순영업이익 2,620만원 (이익률 60.0%)\n"
-            f"  ↳ 순투자금 3.36억원 전액 회수 기간: 단 12.8개월 (약 1년 1개월)\n"
+            f"  ↳ 순투자금 3.19억원 전액 회수 기간: 단 12.8개월 (약 1년 1개월)\n"
             f"• 안전 마진: 보편 가동(150명) 대비 BEP(4.5명)는 3.0%로 적자 불가능 구조"
         )
         p2.font.size = Pt(9.0)
@@ -916,7 +915,7 @@ class PPTXGenerator:
             ("배후 시니어 인구", f"{demo['senior_50_plus']:,}명", f"({demo['senior_ratio']}% 점유)", self.c_mck_navy),
             ("예상 월 영업이익", f"{fin['monthly_scenarios']['moderate']['operating_profit']//10000:,}만원", "(영업이익률 48.6%)", self.c_mck_navy),
             ("손익분기점 (BEP)", "타석당 0.9회전", "(월 240명 시 돌파)", self.c_mck_teal),
-            ("순투자금 회수", f"약 {fin['investment']['payback_months_moderate']:.1f}개월", "(순투자 3.36억원 기준)", self.c_red)
+            ("순투자금 회수", f"약 {fin['investment']['payback_months_moderate']:.1f}개월", "(순투자 3.19억원 기준)", self.c_red)
         ]
         for i, (title, val, sub, col) in enumerate(kpis):
             x = Inches(0.6 + (i * 3.08))
@@ -963,12 +962,12 @@ class PPTXGenerator:
         tf_lb.margin_left = tf_lb.margin_right = tf_lb.margin_top = tf_lb.margin_bottom = 0
         
         f_points = [
-            ("1. 주간 유휴시간 제로 (100% 예약 풀가동 체계)",
+            ("1. 주간 유휴시간 제로 (정기 예약 중심 안정적 가동 체계)",
              "• 일반 스크린골프 손님이 전무한 '평일 낮 10시~오후 5시' 유휴 시간대를 독점\n"
              "• 반경 3km 내 7.2만 골든 시니어 및 여성 주부 동호회 4인 1팀 정기 리그 가동\n"
-             "• 비수기 및 날씨 영향을 받지 않는 사계절 100% 예약 풀가동 안정성 확보"),
-            ("2. 10타석 플래그십 상위 20% 시장 독점 점유",
-             "• 지역 내 노후 소형 1~2타석 매장 대비 10타석 대규모 플래그십 시설 경쟁력 압도\n"
+             "• 비수기 및 날씨 영향을 받지 않는 사계절 정기 예약 중심 안정적 가동 안정성 확보"),
+            ("2. 10타석 플래그십 상위 20% 시장 시장 선점",
+             "• 지역 내 소규모 매장 대비 10타석 대규모 플래그십 시설 경쟁력 압도\n"
              "• 소상공인365 실측 상위 20% 월매출 6,251만원 시장을 단독 선점 점유\n"
              "• 카페형 휴게 라운지 및 파크골프 용품 샵 결합으로 객단가 및 체류시간 극대화"),
             ("3. 빠른 원금 회수 및 압도적 고수익성",
