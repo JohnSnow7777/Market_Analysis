@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""16:9 와이드 맥킨지 클래식 이그제큐티브(McKinsey Executive) PDF 보고서 생성기 (완벽한 여백 채움 & 하이엔드 인포그래픽)"""
+"""16:9 와이드 맥킨지 클래식 이그제큐티브(McKinsey Executive) PDF 보고서 생성기 (최신 슬라이드 플로우 완비)"""
 import os
 from reportlab.lib import colors
 from reportlab.pdfgen import canvas
@@ -80,7 +80,9 @@ class PDFGenerator:
         os.makedirs(os.path.dirname(output_pdf_path), exist_ok=True)
         c = canvas.Canvas(output_pdf_path, pagesize=(self.width, self.height))
         
+        # ---------------------------------------------------------------------
         # Page 1: 표지
+        # ---------------------------------------------------------------------
         c.setFillColor(self.c_mck_navy)
         c.rect(0, 0, self.width, self.height, fill=1, stroke=0)
         
@@ -120,63 +122,10 @@ class PDFGenerator:
             
         c.showPage()
 
-        # Page 2: 사업지 개요 및 출점 점검 체크리스트 (2x2 풀그리드)
-        self._draw_mckinsey_header(c, "1. 사업지 개요 및 출점 요건", f"10타석 {site['area_pyeong']}평 규모 출점을 위한 4대 건축·인프라 현장 실측 기준")
-        cards_p2 = [
-            (40, 268, 425, 212, "■ 공간 및 유효 층고 요건", [
-                f"• 대상 주소: {site['full_address']}",
-                f"• 권장 면적: 전용 {site['area_pyeong']}평 (10타석 + 카페/락커룸 최적 배치)",
-                f"• 층고 기준: {site['clear_height_spec']}",
-                f"• 보/배관 간섭: 센서 투사 영역 및 스윙 궤적 내 장애물 사전 실측",
-                f"• 권장 층수: 접근성 높은 지상 2~3층 권장 (쾌적한 지하 1층 가능)",
-                f"• 바닥 하중: 스크린 타석 및 키오스크 하중(300kg/㎡) 적합 여부"
-            ]),
-            (495, 268, 425, 212, "■ 주차 및 차량 접근성 기준", [
-                f"• 주차 요건: {site['parking_spec']}",
-                f"• 고객 특성: 자차 이용 시니어 비중 80% 이상으로 편리한 진출입 필수",
-                f"• 진입 여건: 램프 폭 및 회전각 여유 있는 자주식 주차장 최우선",
-                f"• 도로 접면: 주요 간선도로 및 대단지 아파트 진입로 인접 우수",
-                f"• 보행 동선: 대중교통(버스/지하철) 도보 5~10분 생활권",
-                f"• 승하차 편의: 주차장에서 매장 입구까지 단차 없는 완만한 동선"
-            ]),
-            (40, 48, 425, 210, "■ 건물 편의 및 승강기 설비", [
-                f"• 고객 편의: {site['accessibility_spec']}",
-                f"• 계단 여건: 계단 단차가 낮거나 완만한 진입 경사로 확보 필요",
-                f"• 냉난방/환기: 개별 공조 및 고성능 환기 덕트 설치 공간 확인",
-                f"• 소음/진동: 상하층 타 업종 간섭 방지 방음/흡음 설계 시공",
-                f"• 쾌적성: 남녀 분리 청결 화장실 및 쾌적한 로비 라운지 구축",
-                f"• 장애인 편의: 엘리베이터 단차 제거 및 자동문 출입구 권장"
-            ]),
-            (495, 48, 425, 210, "■ 인허가 및 건축물 용도", [
-                f"• 적합 용도: {site['zoning_spec']}",
-                f"• 지자체 체육시설: 체육시설의 설치·이용에 관한 법률 인허가 검토",
-                f"• 소방 기준: 스프링클러, 비상유도등, 비상탈출구 완비 점검",
-                f"• 전기 용량: 10타석 시뮬레이터 동시 가동 대비 30kW 이상 인입",
-                f"• 정화조 용량: 일 최대 150명 이상 동시 이용 기준 충족 점검",
-                f"• 행정 절차: 관할 구청 건축과 및 체육진흥과 용도 사전 협의"
-            ]),
-        ]
-        for cx, cy, cw, ch, ctitle, clines in cards_p2:
-            c.setFillColor(self.c_box_bg)
-            c.setStrokeColor(self.c_line)
-            c.setLineWidth(1)
-            c.rect(cx, cy, cw, ch, fill=1, stroke=1)
-            
-            c.setFont(FONT_BOLD, 10.5)
-            c.setFillColor(self.c_mck_navy)
-            c.drawString(cx + 14, cy + ch - 18, ctitle)
-            
-            c.setFont(FONT_REGULAR, 8.8)
-            c.setFillColor(self.c_charcoal)
-            y_offset = cy + ch - 38
-            for line_txt in clines:
-                c.drawString(cx + 14, y_offset, line_txt)
-                y_offset -= 29
-        self._draw_footer(c, "MYPARK Standard Facility Criteria & Architectural Survey")
-        c.showPage()
-
-        # Page 3: 배후 인구 분석 (좌우 균형 100% 매칭)
-        self._draw_mckinsey_header(c, "2. 배후 인구 분석", f"사업지 반경 3km 내 18.8만 명({len(demo['dongs'])}개 행정동)의 풍부한 주거 배후 인구 형성")
+        # ---------------------------------------------------------------------
+        # Page 2: 1. 배후 인구 분석 (반경 3km)
+        # ---------------------------------------------------------------------
+        self._draw_mckinsey_header(c, "1. 배후 인구 분석", f"사업지 반경 3km 내 18.8만 명({len(demo['dongs'])}개 행정동)의 풍부한 주거 배후 인구 형성")
         if 'map_radius' in charts and os.path.exists(charts['map_radius']):
             c.drawImage(charts['map_radius'], 40, 48, width=425, height=425, preserveAspectRatio=True)
             
@@ -184,13 +133,13 @@ class PDFGenerator:
         c.setFillColor(self.c_mck_navy)
         c.drawString(495, 465, f"■ 반경 3km 행정동별 인구 집계 현황 (총 {demo['total_pop']:,}명)")
         
-        table_data_3 = [['행정구역(동)', '남자(명)', '여자(명)', '합계(명)']]
+        table_data_2 = [['행정구역(동)', '남자(명)', '여자(명)', '합계(명)']]
         for d in demo['dongs']:
-            table_data_3.append([d['dong'], f"{d['male']:,}", f"{d['female']:,}", f"{d['total']:,}"])
-        table_data_3.append(['합계 (3km 생활권)', f"{demo['male_pop']:,}", f"{demo['female_pop']:,}", f"{demo['total_pop']:,}"])
+            table_data_2.append([d['dong'], f"{d['male']:,}", f"{d['female']:,}", f"{d['total']:,}"])
+        table_data_2.append(['합계 (3km 생활권)', f"{demo['male_pop']:,}", f"{demo['female_pop']:,}", f"{demo['total_pop']:,}"])
         
-        t3 = Table(table_data_3, colWidths=[120, 100, 100, 105], rowHeights=[28]*len(table_data_3))
-        t3.setStyle(TableStyle([
+        t2 = Table(table_data_2, colWidths=[120, 100, 100, 105], rowHeights=[28]*len(table_data_2))
+        t2.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), self.c_mck_navy),
             ('TEXTCOLOR', (0, 0), (-1, 0), self.c_white),
             ('FONTNAME', (0, 0), (-1, -1), FONT_REGULAR),
@@ -202,13 +151,15 @@ class PDFGenerator:
             ('TEXTCOLOR', (0, -1), (-1, -1), self.c_mck_navy),
             ('FONTNAME', (0, -1), (-1, -1), FONT_BOLD),
         ]))
-        t3.wrapOn(c, 495, 48)
-        t3.drawOn(c, 495, 450 - (len(table_data_3) * 28))
+        t2.wrapOn(c, 495, 48)
+        t2.drawOn(c, 495, 450 - (len(table_data_2) * 28))
         self._draw_footer(c, f"KOSIS National Statistics Portal ({demo['base_date']})")
         c.showPage()
 
-        # Page 4: 메인 타겟 장·노년층 인구 분석
-        self._draw_mckinsey_header(c, "2. 타겟 시니어 인구 분석", f"50대 이상 골든 시니어 7.2만 명({demo['senior_ratio']}%)으로 평일 주간 100% 예약 풀가동 최적")
+        # ---------------------------------------------------------------------
+        # Page 3: 1. 타겟 시니어 인구 분석
+        # ---------------------------------------------------------------------
+        self._draw_mckinsey_header(c, "1. 타겟 시니어 인구 분석", f"50대 이상 골든 시니어 7.2만 명({demo['senior_ratio']}%)으로 평일 주간 100% 예약 풀가동 최적")
         
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
@@ -239,13 +190,13 @@ class PDFGenerator:
         c.drawString(54, 140, "• 진입 장벽 제로: 단 1개의 채로 누구나 즉시 입문")
         c.drawString(54, 116, "• 리텐션 극대화: 월정액제 동호회 타석 배정 고정매출")
         
-        table_data_4 = [['연령대', '남자(명)', '여자(명)', '합계(명)']]
+        table_data_3 = [['연령대', '남자(명)', '여자(명)', '합계(명)']]
         for a in demo['age_distribution']:
-            table_data_4.append([a['age_group'], f"{int(a['male']):,}", f"{int(a['female']):,}", f"{int(a['total']):,}"])
-        table_data_4.append(['총계 (50대이상)', f"{demo['senior_50_plus'] - demo['senior_50_female']:,}", f"{demo['senior_50_female']:,}", f"{demo['senior_50_plus']:,}"])
+            table_data_3.append([a['age_group'], f"{int(a['male']):,}", f"{int(a['female']):,}", f"{int(a['total']):,}"])
+        table_data_3.append(['총계 (50대이상)', f"{demo['senior_50_plus'] - demo['senior_50_female']:,}", f"{demo['senior_50_female']:,}", f"{demo['senior_50_plus']:,}"])
         
-        t4 = Table(table_data_4, colWidths=[120, 110, 110, 120], rowHeights=[32]*len(table_data_4))
-        t4.setStyle(TableStyle([
+        t3 = Table(table_data_3, colWidths=[120, 110, 110, 120], rowHeights=[32]*len(table_data_3))
+        t3.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), self.c_mck_navy),
             ('TEXTCOLOR', (0, 0), (-1, 0), self.c_white),
             ('FONTNAME', (0, 0), (-1, -1), FONT_REGULAR),
@@ -257,13 +208,15 @@ class PDFGenerator:
             ('TEXTCOLOR', (0, -1), (-1, -1), self.c_mck_navy),
             ('FONTNAME', (0, -1), (-1, -1), FONT_BOLD),
         ]))
-        t4.wrapOn(c, 460, 48)
-        t4.drawOn(c, 460, 465 - (len(table_data_4) * 32))
+        t3.wrapOn(c, 460, 48)
+        t3.drawOn(c, 460, 465 - (len(table_data_3) * 32))
         self._draw_footer(c, f"KOSIS Demographic Database ({demo['base_date']})")
         c.showPage()
 
-        # Page 5: 상권 실측 분석
-        self._draw_mckinsey_header(c, "3. 상권 실측 분석 (소상공인365/BASA)", "주거지역 93% 밀집 상권 및 유사 골프업종 상위 20% 월매출 6,251만원 시장 타겟팅")
+        # ---------------------------------------------------------------------
+        # Page 4: 2. 상권 실측 분석 (소상공인365/BASA)
+        # ---------------------------------------------------------------------
+        self._draw_mckinsey_header(c, "2. 상권 실측 분석 (소상공인365/BASA)", "주거지역 93% 밀집 상권 및 유사 골프업종 상위 20% 월매출 6,251만원 시장 타겟팅")
         rev_st = comm.get('revenue_structure', {})
         top20_str = f"{rev_st.get('top_20_sales', 62510000)//10000:,}만원"
         bot20_str = f"{rev_st.get('bottom_20_sales', 3020000)//10000:,}만원"
@@ -324,8 +277,10 @@ class PDFGenerator:
         self._draw_footer(c, "Small Enterprise and Market Service (BASA) & NICE BizMap")
         c.showPage()
 
-        # Page 6: 업종별 성장률
-        self._draw_mckinsey_header(c, "3. 업종 성장률 및 골프 특화도", "골프용품 매출성장률 1위(+182.4%) 및 전국 평균 대비 2.3배 높은 골프 특화 상권")
+        # ---------------------------------------------------------------------
+        # Page 5: 2. 업종 성장률 및 골프 특화도
+        # ---------------------------------------------------------------------
+        self._draw_mckinsey_header(c, "2. 업종 성장률 및 골프 특화도", "골프용품 매출성장률 1위(+182.4%) 및 전국 평균 대비 2.3배 높은 골프 특화 상권")
         
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
@@ -385,8 +340,10 @@ class PDFGenerator:
         self._draw_footer(c, "Small Enterprise 365, NICE BizMap & SK Telecom Geovision Big Data")
         c.showPage()
 
-        # Page 7: 경쟁 매장 실측
-        self._draw_mckinsey_header(c, "4. 경쟁 환경 실측 분석", "반경 3km 내 스크린 파크골프 전문 매장 공급 부족으로 10타석 대규모 플래그십 선점 기회")
+        # ---------------------------------------------------------------------
+        # Page 6: 3. 경쟁 환경 실측 분석
+        # ---------------------------------------------------------------------
+        self._draw_mckinsey_header(c, "3. 경쟁 환경 실측 분석", "반경 3km 내 스크린 파크골프 전문 매장 공급 부족으로 10타석 대규모 플래그십 선점 기회")
         comps = comm.get('competitors', [])
         card_w = 205
         gap = 18
@@ -454,8 +411,10 @@ class PDFGenerator:
         self._draw_footer(c, "Small Enterprise Market Service & Kakao Map Local POI Survey")
         c.showPage()
 
-        # Page 8: 5대 지표 종합 평가
-        self._draw_mckinsey_header(c, "5. 입지 최적성 종합 평가", f"5대 다이아몬드 스코어링 총점 {score['total_score']}점({score['grade']}등급)으로 출점 최우선 추천 판정")
+        # ---------------------------------------------------------------------
+        # Page 7: 4. 입지 최적성 종합 평가 (5대 다이아몬드 스코어링)
+        # ---------------------------------------------------------------------
+        self._draw_mckinsey_header(c, "4. 입지 최적성 종합 평가", f"5대 다이아몬드 스코어링 총점 {score['total_score']}점({score['grade']}등급)으로 출점 최우선 추천 판정")
         if 'radar_score' in charts and os.path.exists(charts['radar_score']):
             c.drawImage(charts['radar_score'], 40, 48, width=440, height=425, preserveAspectRatio=True)
             
@@ -485,7 +444,66 @@ class PDFGenerator:
         self._draw_footer(c, "MYPARK 5-Dimension Diamond Scoring Methodology (22+20+13+15+20=90.0 S-Grade)")
         c.showPage()
 
-        # Page 9: 월 예상 매출 (3단 복합 인포그래픽 - 꽉 찬 여백)
+        # ---------------------------------------------------------------------
+        # Page 8: 5. 사업지 개요 및 현장 출점 요건 (4대 건축·인프라 체크리스트) [신규 위치]
+        # ---------------------------------------------------------------------
+        self._draw_mckinsey_header(c, "5. 사업지 개요 및 현장 출점 요건", f"10타석 {site['area_pyeong']}평 규모 출점을 위한 4대 건축·인프라 현장 실측 기준")
+        cards_p8 = [
+            (40, 268, 425, 212, "■ 공간 및 유효 층고 요건", [
+                f"• 대상 주소: {site['full_address']}",
+                f"• 권장 면적: 전용 {site['area_pyeong']}평 (10타석 + 카페/락커룸 최적 배치)",
+                f"• 층고 기준: {site['clear_height_spec']}",
+                f"• 보/배관 간섭: 센서 투사 영역 및 스윙 궤적 내 장애물 사전 실측",
+                f"• 권장 층수: 접근성 높은 지상 2~3층 권장 (쾌적한 지하 1층 가능)",
+                f"• 바닥 하중: 스크린 타석 및 키오스크 하중(300kg/㎡) 적합 여부"
+            ]),
+            (495, 268, 425, 212, "■ 주차 및 차량 접근성 기준", [
+                f"• 주차 요건: {site['parking_spec']}",
+                f"• 고객 특성: 자차 이용 시니어 비중 80% 이상으로 편리한 진출입 필수",
+                f"• 진입 여건: 램프 폭 및 회전각 여유 있는 자주식 주차장 최우선",
+                f"• 도로 접면: 주요 간선도로 및 대단지 아파트 진입로 인접 우수",
+                f"• 보행 동선: 대중교통(버스/지하철) 도보 5~10분 생활권",
+                f"• 승하차 편의: 주차장에서 매장 입구까지 단차 없는 완만한 동선"
+            ]),
+            (40, 48, 425, 210, "■ 건물 편의 및 승강기 설비", [
+                f"• 고객 편의: {site['accessibility_spec']}",
+                f"• 계단 여건: 계단 단차가 낮거나 완만한 진입 경사로 확보 필요",
+                f"• 냉난방/환기: 개별 공조 및 고성능 환기 덕트 설치 공간 확인",
+                f"• 소음/진동: 상하층 타 업종 간섭 방지 방음/흡음 설계 시공",
+                f"• 쾌적성: 남녀 분리 청결 화장실 및 쾌적한 로비 라운지 구축",
+                f"• 장애인 편의: 엘리베이터 단차 제거 및 자동문 출입구 권장"
+            ]),
+            (495, 48, 425, 210, "■ 인허가 및 건축물 용도", [
+                f"• 적합 용도: {site['zoning_spec']}",
+                f"• 지자체 체육시설: 체육시설의 설치·이용에 관한 법률 인허가 검토",
+                f"• 소방 기준: 스프링클러, 비상유도등, 비상탈출구 완비 점검",
+                f"• 전기 용량: 10타석 시뮬레이터 동시 가동 대비 30kW 이상 인입",
+                f"• 정화조 용량: 일 최대 150명 이상 동시 이용 기준 충족 점검",
+                f"• 행정 절차: 관할 구청 건축과 및 체육진흥과 용도 사전 협의"
+            ]),
+        ]
+        for cx, cy, cw, ch, ctitle, clines in cards_p8:
+            c.setFillColor(self.c_box_bg)
+            c.setStrokeColor(self.c_line)
+            c.setLineWidth(1)
+            c.rect(cx, cy, cw, ch, fill=1, stroke=1)
+            
+            c.setFont(FONT_BOLD, 10.5)
+            c.setFillColor(self.c_mck_navy)
+            c.drawString(cx + 14, cy + ch - 18, ctitle)
+            
+            c.setFont(FONT_REGULAR, 8.8)
+            c.setFillColor(self.c_charcoal)
+            y_offset = cy + ch - 38
+            for line_txt in clines:
+                c.drawString(cx + 14, y_offset, line_txt)
+                y_offset -= 29
+        self._draw_footer(c, "MYPARK Standard Facility Criteria & Architectural Survey")
+        c.showPage()
+
+        # ---------------------------------------------------------------------
+        # Page 9: 6. 사업 타당성 분석 - 매출 추정
+        # ---------------------------------------------------------------------
         m_scen = fin['monthly_scenarios']
         self._draw_mckinsey_header(c, "6. 사업 타당성 분석 - 매출 추정", f"10타석 기준 보편 가동 시 월매출 {m_scen['moderate']['total_revenue']//10000:,}만원(연간 5.2억원) 달성 전망")
         
@@ -534,7 +552,7 @@ class PDFGenerator:
         t9.wrapOn(c, 40, 48)
         t9.drawOn(c, 40, 275)
         
-        # 3. 하단 콜아웃 3단 (꽉 찬 여백)
+        # 3. 하단 콜아웃 3단
         callouts = [
             (40, "■ 보수적 시나리오 (월 3,540만원)", [
                 "• 상권 초기 진입 단계: 타석당 1일 12.5명 이용",
@@ -546,7 +564,7 @@ class PDFGenerator:
                 "• 평일 주간 10~17시 동호회 정기 예약 정착",
                 "• 타석당 1일 15명 이용 기준 연매출 5.2억원 창출",
                 "• 월 순영업이익 2,120만원 달성 (영업이익률 48.6%)",
-                "• 약 1년 6개월(18.1개월) 만에 투자금 전액 회수"
+                f"• 약 1년 4개월({fin['investment']['payback_months_moderate']:.1f}개월) 만에 투자금 전액 회수"
             ]),
             (650, "■ 긍정적 시나리오 (월 5,664만원)", [
                 "• 주말 풀예약 및 야간 직장인/가족 유입 활성화",
@@ -575,12 +593,14 @@ class PDFGenerator:
         self._draw_footer(c, "Base Assumptions: 18 Holes 8,000 KRW, Secondary Sales 18%, 30 Operating Days/Month")
         c.showPage()
 
-        # Page 10: 예상 운영 비용
-        self._draw_mckinsey_header(c, "6. 사업 타당성 분석 - 비용 구조", "월 고정·변동비 2,246만원 지출로 보편 가동 시 높은 영업이익률(48.6%) 확보")
+        # ---------------------------------------------------------------------
+        # Page 10: 6. 사업 타당성 분석 - 비용 구조 (3.36억원 CAPEX 명세 완비)
+        # ---------------------------------------------------------------------
+        self._draw_mckinsey_header(c, "6. 사업 타당성 분석 - 비용 구조", "초기 순투자금 3.36억원(장비 1.5억+인테리어 1.56억+초도 0.3억) 및 월비용 2,246만원")
         
         # 1. 상단 3대 비용 지표
         metrics = [
-            (40, "초기 순투자금 (총 3.86억원)", "3억 8,600만원", "장비 2.0억 + 인테리어 1.56억 + 초도 0.3억"),
+            (40, "초기 순투자금 (총 3.36억원)", "3억 3,600만원", "장비 1.5억 + 인테리어 1.56억 + 초도 0.3억"),
             (345, "월 고정비 (인건비+임대료)", f"{fin['monthly_rent']//10000 + 750:,}만원 /월", f"인력 3명(750만) + 임대료({fin['monthly_rent']//10000:,}만)"),
             (650, "월 변동비 & 매장운영비", "956만원 /월", "원가 3종 + 카드수수료 + 매장운영비")
         ]
@@ -652,11 +672,13 @@ class PDFGenerator:
                 c.drawString(bx + 14, y_cl, l_txt)
                 y_cl -= 40
                 
-        self._draw_footer(c, "MYPARK Standard Operating Cost Model")
+        self._draw_footer(c, "MYPARK Standard Operating Cost Model (CAPEX 3.36 Billion KRW)")
         c.showPage()
 
-        # Page 11: 5개년 손익 예측 및 BEP 회수
-        self._draw_mckinsey_header(c, "6. 손익 예측 및 BEP 분석", "기기당 1일 0.8회전 달성 시 BEP 돌파 및 18.1개월 내 순투자금 3.86억원 전액 회수")
+        # ---------------------------------------------------------------------
+        # Page 11: 6. 손익 예측 및 BEP 분석
+        # ---------------------------------------------------------------------
+        self._draw_mckinsey_header(c, "6. 손익 예측 및 BEP 분석", f"기기당 1일 0.8회전 달성 시 BEP 돌파 및 {fin['investment']['payback_months_moderate']:.1f}개월 내 순투자금 3.36억원 전액 회수")
         if 'profit_forecast' in charts and os.path.exists(charts['profit_forecast']):
             c.drawImage(charts['profit_forecast'], 40, 48, width=500, height=425, preserveAspectRatio=True)
             
@@ -688,22 +710,24 @@ class PDFGenerator:
         c.setFillColor(self.c_charcoal)
         c.drawString(576, 212, "• 손익분기점(BEP): 기기(타석)당 1일 단 0.8회전")
         c.drawString(576, 188, "  ↳ 매장 전체 1일 8명(월 240명), 월 1,940만원 돌파")
-        c.drawString(576, 164, f"• 순투자금 회수: 초기 순투자금 {fin['investment']['total_capex']//100000000:.2f}억원 기준")
-        c.drawString(576, 140, f"  ↳ 보편 가동 시 약 {fin['investment']['payback_months_moderate']:.1f}개월 만에 전액 회수")
+        c.drawString(576, 164, f"• 순투자금 회수: 초기 순투자금 {fin['investment']['total_capex']//100000000:.2f}억원 ({fin['investment']['total_capex']//10000:,}만원) 기준")
+        c.drawString(576, 140, f"  ↳ 보편 가동 시 약 1년 4개월 ({fin['investment']['payback_months_moderate']:.1f}개월) 만에 전액 회수")
         c.drawString(576, 116, "• 안전 마진: 보편(150명) 대비 BEP(8명)는 5.3% 수준")
         
         self._draw_footer(c, f"CAPEX {fin['investment']['total_capex']//100000000:.2f} Billion KRW / Compound Growth Rate 2% p.a.")
         c.showPage()
 
-        # Page 12: 종합 결론 (공백 0% 풀그리드 - 꽉 찬 카드)
-        self._draw_mckinsey_header(c, "7. 종합 결론 및 사업 타당성 최종 평가", "반경 3km 내 7.2만 시니어 배후 수요와 주간 풀가동으로 18개월 내 투자금 전액 회수 가능")
+        # ---------------------------------------------------------------------
+        # Page 12: 7. 종합 결론 및 사업 타당성 최종 평가
+        # ---------------------------------------------------------------------
+        self._draw_mckinsey_header(c, "7. 종합 결론 및 사업 타당성 최종 평가", f"반경 3km 내 7.2만 시니어 배후 수요와 주간 풀가동으로 {fin['investment']['payback_months_moderate']:.1f}개월 내 투자금 전액 회수 가능")
         
         # 1. 상단 4대 배지
         kpis = [
             (40, "배후 시니어 인구", f"{demo['senior_50_plus']:,}명", f"({demo['senior_ratio']}% 점유)", self.c_mck_navy),
             (265, "예상 월 영업이익", f"{fin['monthly_scenarios']['moderate']['operating_profit']//10000:,}만원", "(이익률 48.6%)", self.c_mck_navy),
             (490, "손익분기점 (BEP)", "타석당 0.8회전", "(월 240명 시 돌파)", self.c_mck_teal),
-            (715, "순투자금 회수", f"약 {fin['investment']['payback_months_moderate']:.1f}개월", "(순투자 3.86억원)", self.c_red),
+            (715, "순투자금 회수", f"약 {fin['investment']['payback_months_moderate']:.1f}개월", "(순투자 3.36억원)", self.c_red),
         ]
         for bx, btitle, bval, bsub, col in kpis:
             c.setFillColor(self.c_box_bg)
@@ -742,7 +766,7 @@ class PDFGenerator:
             ]),
             ("● 3. 빠른 원금 회수 및 압도적 고수익성", [
                 f"• 월 순영업이익 약 {fin['monthly_scenarios']['moderate']['operating_profit']//10000:,}만원 (영업이익률 48.6%) 안정적 창출",
-                f"• 초기 순투자금 3.86억원 기준 약 1년 6개월 ({fin['investment']['payback_months_moderate']:.1f}개월) 만에 전액 회수",
+                f"• 초기 순투자금 3.36억원 기준 약 1년 4개월 ({fin['investment']['payback_months_moderate']:.1f}개월) 만에 전액 회수",
                 "• 손익분기점(BEP)이 기기당 하루 단 0.8회전에 불과하여 적자 리스크 제로"
             ])
         ]

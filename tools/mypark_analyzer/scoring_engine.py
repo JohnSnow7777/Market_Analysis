@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """5대 핵심 입지 지표(100점 만점) 채점 및 사업성 보고서 생성 엔진 (정직한 실측 및 가점 체계)"""
 
-def format_payback_text(months, capex_amount=386000000):
+def format_payback_text(months, capex_amount=336000000):
     m = float(months)
     capex_str = f"약 {capex_amount / 100000000:.2f}억원 ({capex_amount // 10000:,}만원)"
     if m < 12:

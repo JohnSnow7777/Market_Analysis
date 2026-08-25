@@ -8,11 +8,11 @@ class FinanceEngine:
     @staticmethod
     def calculate_investment(rooms=10, area_pyeong=120):
         # 10타석 120평 플래그십 표준 CAPEX
-        system_cost = rooms * 20000000          # 타석당 2,000만원 = 2.0억원
+        system_cost = rooms * 15000000          # 타석당 1,500만원 = 1.5억원
         interior_cost = area_pyeong * 1300000   # 평당 130만원 = 1.56억원
         signage_cost = 15000000                 # 간판/사인물 1,500만원
         furniture_cost = 15000000               # 가구/키오스크 1,500만원
-        subtotal_capex = system_cost + interior_cost + signage_cost + furniture_cost  # 3.86억원
+        subtotal_capex = system_cost + interior_cost + signage_cost + furniture_cost  # 3.36억원
         
         deposit = area_pyeong * 45000 * 10      # 임차보증금 (월세 10개월분)
         total_initial_cash = subtotal_capex + deposit
