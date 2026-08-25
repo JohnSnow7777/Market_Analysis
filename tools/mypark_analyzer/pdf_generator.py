@@ -263,7 +263,7 @@ class PDFGenerator:
         # ---------------------------------------------------------------------
         # Page 5: 소상공인365/BASA 실측 화면 (수익구조 + 주거 93% 인프라)
         # ---------------------------------------------------------------------
-        self._draw_header(c, "2. 소상공인365/BASA 상권 실측 분석 - ", "주거형 상권(주거 93%)", " 및 스크린골프 수익 구조")
+        self._draw_header(c, "2. 상권 실측 분석 (소상공인365/BASA) - ", "주거형 상권(주거 93%)", " 및 유사 골프업종 수익 구조")
         rev_st = comm.get('revenue_structure', {})
         top20_str = f"{rev_st.get('top_20_sales', 62510000)//10000:,}만원"
         bot20_str = f"{rev_st.get('bottom_20_sales', 3020000)//10000:,}만원"
@@ -274,7 +274,7 @@ class PDFGenerator:
         c.roundRect(40, 340, 260, 115, 6, fill=1, stroke=1)
         c.setFont(FONT_BOLD, 9.5)
         c.setFillColor(self.c_navy)
-        c.drawString(50, 435, "💰 스크린골프 수익구조 격차 (BASA 실측)")
+        c.drawString(50, 435, "💰 유사 골프업종 수익구조 격차 (선행지표 BASA 실측)")
         c.setFont(FONT_REGULAR, 8)
         c.setFillColor(self.c_slate_dark)
         c.drawString(50, 412, f"• 상위 20% 매출: {top20_str} /월")
@@ -353,7 +353,7 @@ class PDFGenerator:
         c.roundRect(495, 265, 425, 195, 8, fill=1, stroke=1)
         c.setFont(FONT_BOLD, 10.5)
         c.setFillColor(self.c_gold)
-        c.drawString(511, 435, "⛳ 스크린골프 업종 비중 및 밀집도 (BASA 실측)")
+        c.drawString(511, 435, "⛳ 지역 골프 문화 및 유사 레저 밀집도 (BASA 실측)")
         c.setFont(FONT_REGULAR, 8.5)
         c.setFillColor(self.c_slate_dark)
         c.drawString(511, 405, f"• 서현1동 내 스크린골프 점포: {golf_den.get('store_count', 10)}개 (전체 {golf_den.get('total_stores_in_dong', 1526)}개 점포 중)")

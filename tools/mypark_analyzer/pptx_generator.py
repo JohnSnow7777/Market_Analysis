@@ -343,7 +343,7 @@ class PPTXGenerator:
         # ---------------------------------------------------------------------
         s5 = self.prs.slides.add_slide(self.blank_layout)
         rev_st = comm.get('revenue_structure', {})
-        self._add_header_bar(s5, "2. 소상공인365/BASA 상권 실측 분석 - ", "주거형 상권(주거 93%)", f" 및 스크린골프 수익 구조")
+        self._add_header_bar(s5, "2. 상권 실측 분석 (소상공인365/BASA) - ", "주거형 상권(주거 93%)", " 및 유사 골프업종 수익 구조")
         
         # 좌측 3대 핵심 실측 카드
         top20_str = f"{rev_st.get('top_20_sales', 62510000)//10000:,}만원"
@@ -356,7 +356,7 @@ class PPTXGenerator:
         tf5_1 = c5_1.text_frame
         tf5_1.word_wrap = True
         p = tf5_1.paragraphs[0]
-        p.text = "💰 스크린골프 수익구조 격차 (BASA 실측)"
+        p.text = "💰 유사 골프업종 수익구조 격차 (선행지표 BASA 실측)"
         p.font.size = Pt(11)
         p.font.bold = True
         p.font.color.rgb = self.c_navy
@@ -465,7 +465,7 @@ class PPTXGenerator:
         tf6_2 = c6_2.text_frame
         tf6_2.word_wrap = True
         p = tf6_2.paragraphs[0]
-        p.text = "⛳ 스크린골프 업종 비중 및 밀집도 (BASA 실측)"
+        p.text = "⛳ 지역 골프 문화 및 유사 레저 밀집도 (BASA 실측)"
         p.font.size = Pt(12)
         p.font.bold = True
         p.font.color.rgb = self.c_gold
