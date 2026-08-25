@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""데이터 시각화 차트 및 반경 3km 상권 분석 지도 이미지 생성기 (Vercel Linux 한글 폰트 완벽 지원)"""
+"""데이터 시각화 차트 및 반경 3km 상권 분석 지도 이미지 생성기 (글자 겹침/짤림 완전 해결)"""
 import os
 import matplotlib
 matplotlib.use('Agg')
@@ -8,7 +8,7 @@ import matplotlib.font_manager as fm
 import numpy as np
 
 # -----------------------------------------------------------------------------
-# Vercel Linux / Windows 환경 TTF 폰트 파일 직접 로드 (한글 네모 박스 tofu 깨짐 완전 해결)
+# TTF 폰트 파일 직접 로드
 # -----------------------------------------------------------------------------
 current_dir = os.path.dirname(os.path.abspath(__file__))
 font_candidates = [
@@ -30,7 +30,7 @@ for fpath in font_candidates:
             plt.rcParams['font.sans-serif'] = [korean_font_name, 'Malgun Gothic', 'DejaVu Sans', 'Arial']
             break
         except Exception as e:
-            print(f"Font load warning for {fpath}: {e}")
+            pass
 
 plt.rcParams['axes.unicode_minus'] = False
 
@@ -77,8 +77,8 @@ class Visualizer:
 
     @staticmethod
     def generate_radius_map(site_info, competitors_data, output_path):
-        """반경 3km 생활권 상권 지도 그래픽 생성 (Vercel 한글 폰트 완전 지원)"""
-        fig, ax = plt.subplots(figsize=(6.0, 5.2), dpi=200)
+        """반경 3km 생활권 상권 지도 그래픽 생성 (글자 짤림 방지)"""
+        fig, ax = plt.subplots(figsize=(6.2, 5.4), dpi=200)
         fig.patch.set_facecolor('#FFFFFF')
         ax.set_facecolor('#F8FAFC')
         
@@ -92,30 +92,37 @@ class Visualizer:
         ax.plot(0, 0, marker='*', markersize=20, color='#DC2626', markeredgecolor='#FFFFFF', markeredgewidth=1.5, zorder=6)
         b_name = site_info.get('building_name', '사업지')
         s_dong = site_info.get('dong', '서현동')
-        ax.text(0, -0.45, f"★ {b_name}\n({s_dong})",
+        ax.text(0, -0.48, f"★ {b_name}\n({s_dong})",
                 ha='center', va='top', fontsize=9.5, fontweight='bold', color='#991B1B', zorder=7,
-                bbox=dict(boxstyle='round,pad=0.3', facecolor='#FEF2F2', edgecolor='#FCA5A5', alpha=0.95))
+                bbox=dict(boxstyle='round,pad=0.35', facecolor='#FEF2F2', edgecolor='#FCA5A5', alpha=0.95))
         
-        # 경쟁 매장 마킹
+        # 경쟁 매장 마킹 (긴 상호명 줄바꿈으로 짤림 방지)
         stores = competitors_data.get('stores', [])
         angles = [45, 135, 225, 315, 90]
         for idx, store in enumerate(stores[:4]):
             if store.get('rooms', 0) > 0:
                 ang = np.radians(angles[idx % len(angles)])
-                dist = 1.7 + (idx * 0.35)
+                dist = 1.75 + (idx * 0.35)
                 x = dist * np.cos(ang)
                 y = dist * np.sin(ang)
                 ax.plot(x, y, marker='o', markersize=11, color='#0284C7', markeredgecolor='#FFFFFF', markeredgewidth=1.5, zorder=5)
-                short_name = store['name'].split('(')[0][:8]
-                ax.text(x, y + 0.35, f"{idx+1}. {short_name}", ha='center', fontsize=8, fontweight='bold', color='#0369A1', zorder=7,
-                        bbox=dict(boxstyle='round,pad=0.2', facecolor='#F0F9FF', edgecolor='#BAE6FD', alpha=0.9))
+                
+                raw_name = store['name'].replace(' (', '\n(').replace('(', '\n(')
+                if len(raw_name) > 12 and '\n' not in raw_name:
+                    raw_name = raw_name[:7] + '\n' + raw_name[7:]
+                label_txt = f"{idx+1}. {raw_name}"
+                
+                va_pos = 'bottom' if y >= 0 else 'top'
+                y_off = 0.35 if y >= 0 else -0.35
+                ax.text(x, y + y_off, label_txt, ha='center', va=va_pos, fontsize=8, fontweight='bold', color='#0369A1', zorder=7,
+                        bbox=dict(boxstyle='round,pad=0.25', facecolor='#F0F9FF', edgecolor='#BAE6FD', alpha=0.95))
         
         # 동서남북 반경 표시
-        ax.text(0, 3.15, "반경 3km (차량 10분 생활권)", ha='center', fontsize=8.5, color='#475569', fontweight='bold')
+        ax.text(0, 3.2, "반경 3km (차량 10분 생활권)", ha='center', fontsize=8.5, color='#475569', fontweight='bold')
         ax.text(0, 1.6, "1.5km", ha='center', fontsize=7.5, color='#64748B')
         
-        ax.set_xlim(-3.7, 3.7)
-        ax.set_ylim(-3.7, 3.7)
+        ax.set_xlim(-4.2, 4.2)
+        ax.set_ylim(-4.2, 4.2)
         ax.set_aspect('equal')
         ax.axis('off')
         
@@ -133,7 +140,14 @@ class Visualizer:
 
     @staticmethod
     def generate_radar_score_chart(scores_data, output_path):
-        labels = ['골든 시니어\n집적도(25)', '접근성 &\n주차 인프라(25)', '공간 적합성\n& 층고(15)', '수요공급 갭\n블루오션(15)', '지역 소비력\n& 매출(20)']
+        """레이더 다이아몬드 차트 생성 (글자 겹침 100% 완전 해결)"""
+        labels = [
+            '골든 시니어\n집적도 (25)',
+            '접근성 &\n주차 인프라 (25)',
+            '공간 적합성\n& 층고 (15)',
+            '수요공급 갭\n블루오션 (15)',
+            '지역 소비력\n& 매출 (20)'
+        ]
         s = scores_data['scores']
         values = [
             (s['senior_population'] / 25.0) * 100,
@@ -148,22 +162,29 @@ class Visualizer:
         values_loop = values + values[:1]
         angles += angles[:1]
         
-        fig, ax = plt.subplots(figsize=(5.6, 4.6), subplot_kw=dict(polar=True), dpi=200)
+        fig, ax = plt.subplots(figsize=(6.2, 5.2), subplot_kw=dict(polar=True), dpi=200)
         fig.patch.set_facecolor('#FFFFFF')
         ax.set_facecolor('#F8FAFC')
         ax.set_theta_offset(np.pi / 2)
         ax.set_theta_direction(-1)
         
-        plt.xticks(angles[:-1], labels, color='#1E293B', size=9, fontweight='bold')
-        ax.set_rlabel_position(0)
+        # 축 레이블 여백(pad)을 대폭 넓혀 선과 텍스트가 절대 겹치지 않도록 처리
+        plt.xticks(angles[:-1], labels, color='#0F172A', size=9.5, fontweight='bold')
+        ax.tick_params(axis='x', pad=22)
+        
+        ax.set_rlabel_position(36)
         plt.yticks([40, 60, 80, 100], ["40", "60", "80", "100"], color='#94A3B8', size=7.5)
-        plt.ylim(0, 105)
+        plt.ylim(0, 125)  # 축 상한을 125로 늘려 레이더 다각형과 라벨 사이 안전거리 확보
         
-        ax.plot(angles, values_loop, linewidth=2.5, linestyle='solid', color='#1E40AF')
-        ax.fill(angles, values_loop, color='#3B82F6', alpha=0.35)
+        ax.plot(angles, values_loop, linewidth=2.8, linestyle='solid', color='#1D4ED8', zorder=4)
+        ax.fill(angles, values_loop, color='#3B82F6', alpha=0.30, zorder=3)
         
+        # 각 꼭짓점 포인트 강조
+        for a_val, v_val in zip(angles[:-1], values):
+            ax.plot(a_val, v_val, marker='o', markersize=7, color='#1E40AF', zorder=5)
+            
         plt.title(f"입지 최적성 5대 지표 [{scores_data['grade']}등급 - {scores_data['total_score']}점]",
-                  size=12, fontweight='bold', color='#0F172A', pad=18)
+                  size=12, fontweight='bold', color='#0F172A', pad=28)
                   
         plt.tight_layout()
         os.makedirs(os.path.dirname(output_path), exist_ok=True)

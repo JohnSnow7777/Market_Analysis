@@ -43,7 +43,7 @@ class DOCXGenerator:
             ("대상 사업지 주소", site['full_address']),
             ("분석 공간 규모", f"전용면적 {site['area_pyeong']}평 / {site['rooms']}타석 플래그십 기준"),
             ("입지 최적성 등급", f"{score['grade']}등급 ({score['total_score']}점 / 100점 만점 - {score['grade_desc']})"),
-            ("예상 월 영업이익 (보편)", f"약 {fin['monthly_scenarios']['moderate']['operating_profit']//10000:,}만원 (영업이익률 {fin['monthly_scenarios']['moderate']['op_margin']:.1f}%)")
+            ("예상 월 영업이익 (보편)", f"약 {fin['monthly_scenarios']['moderate']['operating_profit']//10000:,}만원 (영업이익률 {fin['monthly_scenarios']['moderate']['profit_margin']:.1f}%)")
         ]
         for r_idx, (k, v) in enumerate(meta_data):
             c1 = meta_table.cell(r_idx, 0)
@@ -90,10 +90,10 @@ class DOCXGenerator:
         o_sc = fin['monthly_scenarios']['optimistic']
         p = doc.add_paragraph()
         p.add_run(f"{site['rooms']}타석 운영 기준, 3대 시나리오별 월간 예상 손익 및 연간 전망은 다음과 같습니다:\n")
-        p.add_run(f"• 보수적 시나리오: 월매출 {c_sc['total_revenue']//10000:,}만원 / 월비용 {c_sc['total_cost']//10000:,}만원 / 월 영업이익 {c_sc['operating_profit']//10000:,}만원 (연 {c_sc['annual_operating_profit']//100000000:.1f}억원)\n")
-        p.add_run(f"• 보편적 시나리오: 월매출 {m_sc['total_revenue']//10000:,}만원 / 월비용 {m_sc['total_cost']//10000:,}만원 / 월 영업이익 {m_sc['operating_profit']//10000:,}만원 (연 {m_sc['annual_operating_profit']//100000000:.1f}억원)\n")
-        p.add_run(f"• 긍정적 시나리오: 월매출 {o_sc['total_revenue']//10000:,}만원 / 월비용 {o_sc['total_cost']//10000:,}만원 / 월 영업이익 {o_sc['operating_profit']//10000:,}만원 (연 {o_sc['annual_operating_profit']//100000000:.1f}억원)\n\n")
-        p.add_run(f"손익분기점(BEP)은 월 매출 약 {fin['investment']['bep_monthly_sales']//10000:,}만원(타석당 1일 {fin['investment']['bep_turns_per_room']}회전)으로, 초기 순투자금 회수 기간은 {score['payback_text']}로 산출되었습니다.")
+        p.add_run(f"• 보수적 시나리오: 월매출 {c_sc['total_revenue']//10000:,}만원 / 월비용 {c_sc['total_cost']//10000:,}만원 / 월 영업이익 {c_sc['operating_profit']//10000:,}만원 (연 {(c_sc['operating_profit']*12)//100000000:.1f}억원)\n")
+        p.add_run(f"• 보편적 시나리오: 월매출 {m_sc['total_revenue']//10000:,}만원 / 월비용 {m_sc['total_cost']//10000:,}만원 / 월 영업이익 {m_sc['operating_profit']//10000:,}만원 (연 {(m_sc['operating_profit']*12)//100000000:.1f}억원)\n")
+        p.add_run(f"• 긍정적 시나리오: 월매출 {o_sc['total_revenue']//10000:,}만원 / 월비용 {o_sc['total_cost']//10000:,}만원 / 월 영업이익 {o_sc['operating_profit']//10000:,}만원 (연 {(o_sc['operating_profit']*12)//100000000:.1f}억원)\n\n")
+        p.add_run(f"손익분기점(BEP)은 월 매출 약 {fin['investment']['bep_monthly_sales']//10000:,}만원(기기당 1일 {fin['investment']['bep_turns_per_room']}회전)으로, 초기 순투자금 회수 기간은 {score['payback_text']}로 산출되었습니다.")
         
         # 5. 결론
         h5 = doc.add_heading("5. 입지 최적성 5대 지표 평가 및 최종 제안", level=1)
