@@ -140,19 +140,23 @@ class FinanceEngine:
 
     @staticmethod
     def get_full_financial_analysis(rooms=12, monthly_rent=5000000, staff_count=4):
-        conservative_m = FinanceEngine.calculate_scenario_monthly('conservative', rooms, monthly_rent, staff_count)
-        moderate_m = FinanceEngine.calculate_scenario_monthly('moderate', rooms, monthly_rent, staff_count)
-        optimistic_m = FinanceEngine.calculate_scenario_monthly('optimistic', rooms, monthly_rent, staff_count)
+        actual_rent = monthly_rent if monthly_rent else DEFAULT_SETTINGS['default_monthly_rent']
+        actual_rooms = rooms if rooms else 12
+        actual_staff = staff_count if staff_count else 4
         
-        conservative_5y = FinanceEngine.calculate_5year_forecast('conservative', rooms, monthly_rent, staff_count)
-        moderate_5y = FinanceEngine.calculate_5year_forecast('moderate', rooms, monthly_rent, staff_count)
-        optimistic_5y = FinanceEngine.calculate_5year_forecast('optimistic', rooms, monthly_rent, staff_count)
+        conservative_m = FinanceEngine.calculate_scenario_monthly('conservative', actual_rooms, actual_rent, actual_staff)
+        moderate_m = FinanceEngine.calculate_scenario_monthly('moderate', actual_rooms, actual_rent, actual_staff)
+        optimistic_m = FinanceEngine.calculate_scenario_monthly('optimistic', actual_rooms, actual_rent, actual_staff)
         
-        pyeong = rooms * 8.5 + 20
-        capex_equipment = rooms * 20000000
+        conservative_5y = FinanceEngine.calculate_5year_forecast('conservative', actual_rooms, actual_rent, actual_staff)
+        moderate_5y = FinanceEngine.calculate_5year_forecast('moderate', actual_rooms, actual_rent, actual_staff)
+        optimistic_5y = FinanceEngine.calculate_5year_forecast('optimistic', actual_rooms, actual_rent, actual_staff)
+        
+        pyeong = actual_rooms * 8.5 + 20
+        capex_equipment = actual_rooms * 20000000
         capex_interior = int(pyeong * 1300000)
         capex_etc = 30000000
-        deposit = monthly_rent * 10
+        deposit = actual_rent * 10
         total_capex = capex_equipment + capex_interior + capex_etc
         
         fixed_cost = moderate_m['labor_cost'] + moderate_m['rent_cost'] + moderate_m['store_ops_cost'] + moderate_m['rental_cost'] + moderate_m['marketing_cost']
