@@ -509,7 +509,7 @@ class PDFGenerator:
         
         # 1. 상단 3대 드라이버 카드
         drivers = [
-            (40, "1게임 이용 단가", "8,000원", "18홀 라운딩 기준"),
+            (40, "1게임 이용 단가", "7,000원", "18홀 라운딩 기준"),
             (345, "부가 매출 창출", "18.0%", "용품10% + 식음5% + 레슨3%"),
             (650, "주간 풀가동 일수", "월 30일", "1일 10시간 가동 모델")
         ]
@@ -655,7 +655,7 @@ class PDFGenerator:
             (495, "■ 높은 공헌이익률 및 BEP 방어력", [
                 "• 전체 매출의 82%가 타석 이용료(마진 98%)로 구성되어 이익률 최상",
                 "• 창업주 직접 운영 시 월 고정비가 1,140만원으로 급감하여 손익 안정성 극대화",
-                "• 손익분기점(BEP)이 기기당 일 0.5회전(월 135명)으로 낮아져 적자 불가능"
+                "• 손익분기점(BEP)이 기기당 일 0.6회전(월 135명)으로 낮아져 적자 불가능"
             ])
         ]
         for bx, btitle, blines in cost_callouts:
@@ -678,7 +678,7 @@ class PDFGenerator:
         # ---------------------------------------------------------------------
         # Page 11: 6. 손익 예측 및 BEP 분석
         # ---------------------------------------------------------------------
-        self._draw_mckinsey_header(c, "6. 손익 예측 및 BEP 분석", f"기기당 1일 0.8회전 달성 시 BEP 돌파 및 {fin['investment']['payback_months_moderate']:.1f}개월 내 순투자금 3.36억원 전액 회수")
+        self._draw_mckinsey_header(c, "6. 손익 예측 및 BEP 분석", f"기기당 1일 0.9회전 달성 시 BEP 돌파 및 {fin['investment']['payback_months_moderate']:.1f}개월 내 순투자금 3.36억원 전액 회수")
         if 'profit_forecast' in charts and os.path.exists(charts['profit_forecast']):
             c.drawImage(charts['profit_forecast'], 40, 48, width=500, height=425, preserveAspectRatio=True)
             
@@ -708,10 +708,10 @@ class PDFGenerator:
         c.drawString(576, 238, "■ 손익분기점(BEP) 및 운영모델별 회수 기간")
         c.setFont(FONT_REGULAR, 8.5)
         c.setFillColor(self.c_charcoal)
-        c.drawString(576, 212, "• 오토 운영 BEP: 기기당 1일 0.8회전 (월 240명 돌파 / 15.8개월 회수)")
+        c.drawString(576, 212, "• 오토 운영 BEP: 기기당 1일 0.9회전 (월 240명 돌파 / 15.8개월 회수)")
         c.setFont(FONT_BOLD, 8.8)
         c.setFillColor(self.c_mck_teal)
-        c.drawString(576, 190, "★ 창업주 직접 운영 BEP: 기기당 1일 단 0.5회전 (월 135명 돌파)")
+        c.drawString(576, 190, "★ 창업주 직접 운영 BEP: 기기당 1일 단 0.6회전 (월 135명 돌파)")
         c.setFont(FONT_REGULAR, 8.2)
         c.setFillColor(self.c_charcoal)
         c.drawString(576, 172, "  ↳ 인건비 500만원 절감으로 월 순영업이익 2,620만원 (이익률 60.0%)")
@@ -730,7 +730,7 @@ class PDFGenerator:
         kpis = [
             (40, "배후 시니어 인구", f"{demo['senior_50_plus']:,}명", f"({demo['senior_ratio']}% 점유)", self.c_mck_navy),
             (265, "예상 월 영업이익", f"{fin['monthly_scenarios']['moderate']['operating_profit']//10000:,}만원", "(이익률 48.6%)", self.c_mck_navy),
-            (490, "손익분기점 (BEP)", "타석당 0.8회전", "(월 240명 시 돌파)", self.c_mck_teal),
+            (490, "손익분기점 (BEP)", "타석당 0.9회전", "(월 240명 시 돌파)", self.c_mck_teal),
             (715, "순투자금 회수", f"약 {fin['investment']['payback_months_moderate']:.1f}개월", "(순투자 3.36억원)", self.c_red),
         ]
         for bx, btitle, bval, bsub, col in kpis:
@@ -771,7 +771,7 @@ class PDFGenerator:
             ("● 3. 빠른 원금 회수 및 압도적 고수익성", [
                 f"• 오토 운영: 월 순영업익 약 {fin['monthly_scenarios']['moderate']['operating_profit']//10000:,}만원 (이익률 48.6%) / 15.8개월 회수",
                 f"★ 창업주 직접 운영: 월 순영업익 2,620만원 (이익률 60.0%) / 단 12.8개월(1년 1개월) 회수",
-                "• 손익분기점(BEP)이 기기당 하루 0.5~0.8회전에 불과하여 적자 리스크 제로"
+                "• 손익분기점(BEP)이 기기당 하루 0.5~0.9회전에 불과하여 적자 리스크 제로"
             ])
         ]
         for title, lines in f_points:

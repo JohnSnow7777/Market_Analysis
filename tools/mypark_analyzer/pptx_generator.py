@@ -669,7 +669,7 @@ class PPTXGenerator:
         
         # 1. 상단 3대 매출 드라이버 카드
         s9_drivers = [
-            (Inches(0.6), "1게임 이용 단가", "8,000원", "18홀 정규 라운딩 기준"),
+            (Inches(0.6), "1게임 이용 단가", "7,000원", "18홀 정규 라운딩 기준"),
             (Inches(4.68), "부가 매출 창출", "18.0%", "용품 10% + 카페 5% + 레슨 3%"),
             (Inches(8.76), "주간 풀가동 일수", "월 30일", "1일 10시간 가동 모델")
         ]
@@ -816,7 +816,7 @@ class PPTXGenerator:
              "★ 창업주 직접 운영 (점주 상주 + 파트 1명): 월 인건비 250만(500만원 절감), 월 순영업이익 2,620만원, 회수 12.8개월(1년 1개월)"),
             (Inches(6.8), "■ 높은 공헌이익률 및 BEP 방어력",
              "• 전체 매출의 82%가 타석 이용료(마진 98%)로 구성되어 손익분기점 초과 시 매출의 78%가 순이익 직결\n"
-             "• 창업주 직접 운영 시 고정비가 1,140만원으로 감소하여 손익분기점이 타석당 일 0.5회전으로 초안정화")
+             "• 창업주 직접 운영 시 고정비가 1,140만원으로 감소하여 손익분기점이 타석당 일 0.6회전으로 초안정화")
         ]
         for bx, btitle, bdesc in cost_callouts:
             c_box = s10.shapes.add_shape(MSO_SHAPE.RECTANGLE, bx, Inches(5.3), Inches(5.9), Inches(1.7))
@@ -844,7 +844,7 @@ class PPTXGenerator:
         # Slide 11: 6. 손익 예측 및 BEP 분석
         # ---------------------------------------------------------------------
         s11 = self.prs.slides.add_slide(self.blank_layout)
-        self._add_mckinsey_header(s11, "6. 손익 예측 및 BEP 분석", f"기기당 1일 0.8회전 달성 시 BEP 돌파 및 {fin['investment']['payback_months_moderate']:.1f}개월 내 순투자금 3.36억원 전액 회수")
+        self._add_mckinsey_header(s11, "6. 손익 예측 및 BEP 분석", f"기기당 1일 0.9회전 달성 시 BEP 돌파 및 {fin['investment']['payback_months_moderate']:.1f}개월 내 순투자금 3.36억원 전액 회수")
         
         if 'profit_forecast' in charts and os.path.exists(charts['profit_forecast']):
             s11.shapes.add_picture(charts['profit_forecast'], Inches(0.6), Inches(1.45), width=Inches(6.8))
@@ -892,8 +892,8 @@ class PPTXGenerator:
         p2 = tf_k2.add_paragraph()
         p2.space_before = Pt(6)
         p2.text = (
-            f"• 오토 운영 BEP: 기기당 1일 0.8회전 (월 240명 돌파 시 흑자 / 회수 15.8개월)\n"
-            f"★ 창업주 직접 운영 BEP: 기기당 1일 단 0.5회전 (월 135명 돌파 시 흑자)\n"
+            f"• 오토 운영 BEP: 기기당 1일 0.9회전 (월 240명 돌파 시 흑자 / 회수 15.8개월)\n"
+            f"★ 창업주 직접 운영 BEP: 기기당 1일 단 0.6회전 (월 135명 돌파 시 흑자)\n"
             f"  ↳ 인건비 500만원 절감으로 월 순영업이익 2,620만원 (이익률 60.0%)\n"
             f"  ↳ 순투자금 3.36억원 전액 회수 기간: 단 12.8개월 (약 1년 1개월)\n"
             f"• 안전 마진: 보편 가동(150명) 대비 BEP(4.5명)는 3.0%로 적자 불가능 구조"
@@ -913,7 +913,7 @@ class PPTXGenerator:
         kpis = [
             ("배후 시니어 인구", f"{demo['senior_50_plus']:,}명", f"({demo['senior_ratio']}% 점유)", self.c_mck_navy),
             ("예상 월 영업이익", f"{fin['monthly_scenarios']['moderate']['operating_profit']//10000:,}만원", "(영업이익률 48.6%)", self.c_mck_navy),
-            ("손익분기점 (BEP)", "타석당 0.8회전", "(월 240명 시 돌파)", self.c_mck_teal),
+            ("손익분기점 (BEP)", "타석당 0.9회전", "(월 240명 시 돌파)", self.c_mck_teal),
             ("순투자금 회수", f"약 {fin['investment']['payback_months_moderate']:.1f}개월", "(순투자 3.36억원 기준)", self.c_red)
         ]
         for i, (title, val, sub, col) in enumerate(kpis):
@@ -972,7 +972,7 @@ class PPTXGenerator:
             ("3. 빠른 원금 회수 및 압도적 고수익성",
              f"• 오토 운영: 월 순영업익 약 {fin['monthly_scenarios']['moderate']['operating_profit']//10000:,}만원 (이익률 48.6%) / 회수 15.8개월\n"
              f"★ 창업주 직접 운영 시: 월 순영업익 2,620만원 (이익률 60.0%) / 단 12.8개월(1년 1개월) 회수\n"
-             "• 손익분기점(BEP)이 기기당 하루 0.5~0.8회전에 불과하여 적자 리스크 전무")
+             "• 손익분기점(BEP)이 기기당 하루 0.5~0.9회전에 불과하여 적자 리스크 전무")
         ]
         for idx, (title, desc) in enumerate(f_points):
             p_t = tf_lb.add_paragraph() if idx > 0 else tf_lb.paragraphs[0]

@@ -530,7 +530,7 @@
                         </div>
                         <div class="metric-card">
                             <div class="metric-label">손익분기점 (BEP 일회전율)</div>
-                            <div class="metric-value" id="valBEP" style="font-size:17px;">일 0.8회전 <span style="font-size:13px; color:var(--royal-blue); font-weight:normal;">(직접운영 시 0.5회전)</span></div>
+                            <div class="metric-value" id="valBEP" style="font-size:17px;">일 0.9회전 <span style="font-size:13px; color:var(--royal-blue); font-weight:normal;">(직접운영 시 0.6회전)</span></div>
                             <div class="metric-sub" id="valBEPSub">오토: 월 240명 | 직접운영: 월 135명 돌파 시 흑자</div>
                         </div>
                         <div class="metric-card">
@@ -662,6 +662,7 @@
     <script>
         const STORAGE_KEY = 'mypark_analysis_history';
         const WEBHOOK_KEY = 'mypark_sheet_webhook_url';
+        const DEFAULT_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbxTLo4zeJWcVx8nGnSWcyoV-2Cbhguy_ufDLTEr_ywgPX8o5G3B2n32bq2pQ5Awv4hVWQ/exec';
 
         const toggleBtn = document.getElementById('btnToggleAdvanced');
         const advancedFields = document.getElementById('advancedFields');
@@ -756,7 +757,7 @@
             
             document.getElementById('valSenior').innerText = (item.seniorPop ? item.seniorPop.toLocaleString() : '72,400') + "명 (" + (item.seniorRatio || '38.4') + "%)";
             document.getElementById('valProfit').innerText = (Math.floor(item.profit / 10000)).toLocaleString() + "만원/월";
-            document.getElementById('valBEP').innerHTML = '일 0.8회전 <span style="font-size:13px; color:var(--royal-blue); font-weight:normal;">(직접운영 시 0.5회전)</span>';
+            document.getElementById('valBEP').innerHTML = '일 0.9회전 <span style="font-size:13px; color:var(--royal-blue); font-weight:normal;">(직접운영 시 0.6회전)</span>';
             document.getElementById('valBEPSub').innerText = '오토: 월 240명 | 직접운영: 월 135명 돌파 시 흑자';
             document.getElementById('valPayback').innerText = formatPaybackPeriod(item.payback);
 
@@ -818,7 +819,7 @@
         // 모달 제어
         const modal = document.getElementById('sheetModal');
         document.getElementById('btnOpenSheetModal').addEventListener('click', () => {
-            document.getElementById('webhookUrlInput').value = localStorage.getItem(WEBHOOK_KEY) || '';
+            document.getElementById('webhookUrlInput').value = localStorage.getItem(WEBHOOK_KEY) || DEFAULT_WEBHOOK_URL;
             modal.style.display = 'flex';
         });
         document.getElementById('btnCloseModal').addEventListener('click', () => modal.style.display = 'none');
@@ -891,7 +892,7 @@
                 
                 document.getElementById('valSenior').innerText = res.bundle.demographics.senior_50_plus.toLocaleString() + "명 (" + res.bundle.demographics.senior_ratio + "%)";
                 document.getElementById('valProfit').innerText = (Math.floor(res.operating_profit_moderate / 10000)).toLocaleString() + "만원/월";
-                document.getElementById('valBEP').innerHTML = '일 0.8회전 <span style="font-size:13px; color:var(--royal-blue); font-weight:normal;">(직접운영 시 0.5회전)</span>';
+                document.getElementById('valBEP').innerHTML = '일 0.9회전 <span style="font-size:13px; color:var(--royal-blue); font-weight:normal;">(직접운영 시 0.6회전)</span>';
                 document.getElementById('valBEPSub').innerText = '오토: 월 240명 | 직접운영: 월 135명 돌파 시 흑자';
                 document.getElementById('valPayback').innerText = formatPaybackPeriod(res.payback_months);
                 
@@ -946,7 +947,7 @@
                 saveHistory(historyList);
 
                 // 구글 시트 Webhook 자동 전송 (설정되어 있을 때)
-                const webhookUrl = localStorage.getItem(WEBHOOK_KEY);
+                const webhookUrl = localStorage.getItem(WEBHOOK_KEY) || DEFAULT_WEBHOOK_URL;
                 if (webhookUrl) {
                     try {
                         fetch(webhookUrl, {
