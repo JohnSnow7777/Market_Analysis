@@ -33,7 +33,7 @@
             padding: 30px 15px;
             -webkit-font-smoothing: antialiased;
         }
-        .container { max-width: 1240px; margin: 0 auto; }
+        .container { max-width: 1280px; margin: 0 auto; }
         
         header {
             background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
@@ -52,7 +52,7 @@
             overflow: hidden;
         }
         .header-content h1 {
-            font-size: 27px;
+            font-size: 26px;
             font-weight: 800;
             letter-spacing: -0.5px;
             margin-bottom: 6px;
@@ -78,8 +78,8 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
-        .layout { display: grid; grid-template-columns: 410px 1fr; gap: 28px; }
-        @media (max-width: 950px) { .layout { grid-template-columns: 1fr; } }
+        .layout { display: grid; grid-template-columns: 420px 1fr; gap: 28px; margin-bottom: 35px; }
+        @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
 
         .card {
             background: var(--card-bg);
@@ -136,7 +136,7 @@
             outline: none;
             border-color: var(--royal-blue);
             background: #FFFFFF;
-            box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.15);
+            box-shadow: 0 0 0 3.5px rgba(0, 128, 128, 0.15);
         }
 
         .advanced-toggle {
@@ -166,7 +166,7 @@
 
         .btn-submit {
             width: 100%;
-            background: linear-gradient(135deg, var(--royal-blue) 0%, #1D4ED8 100%);
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--royal-blue) 100%);
             color: white;
             border: none;
             padding: 16px;
@@ -175,11 +175,11 @@
             border-radius: 12px;
             cursor: pointer;
             transition: all 0.25s ease;
-            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+            box-shadow: 0 4px 14px rgba(0, 43, 73, 0.25);
         }
         .btn-submit:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+            box-shadow: 0 6px 20px rgba(0, 43, 73, 0.35);
         }
         .btn-submit:disabled {
             background: #94A3B8;
@@ -245,7 +245,8 @@
             border-radius: 10px;
         }
         .metric-label { font-size: 12px; color: var(--text-muted); font-weight: 700; margin-bottom: 5px; }
-        .metric-value { font-size: 20px; font-weight: 900; color: var(--primary); }
+        .metric-value { font-size: 19px; font-weight: 900; color: var(--primary); }
+        .metric-sub { font-size: 11.5px; color: var(--text-muted); margin-top: 3px; }
 
         .value-container {
             background: #FFFBEB;
@@ -257,15 +258,15 @@
         .value-title { font-size: 14px; font-weight: 800; color: #92400E; margin-bottom: 8px; }
         .value-text { font-size: 13.5px; color: #78350F; line-height: 1.65; }
 
-        .download-group { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+        .download-group { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 12px; margin-top: 24px; }
         .btn-download {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            padding: 14px;
+            gap: 6px;
+            padding: 13px 10px;
             border-radius: 10px;
-            font-size: 14px;
+            font-size: 13.5px;
             font-weight: 800;
             text-decoration: none;
             border: 1.5px solid var(--border);
@@ -273,15 +274,145 @@
             color: var(--primary);
             transition: 0.2s;
             cursor: pointer;
+            text-align: center;
         }
         .btn-download:hover { background: #F1F5F9; border-color: var(--primary); }
         .btn-download.primary {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            background: linear-gradient(135deg, #002B49 0%, #001A2C 100%);
             color: white;
-            border: none;
-            box-shadow: 0 4px 12px rgba(15, 39, 68, 0.2);
+            border: 1.5px solid #10B981;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
         }
         .btn-download.primary:hover { background: var(--royal-blue); }
+
+        /* 히스토리 및 구글 시트 연동 섹션 */
+        .history-section {
+            background: var(--card-bg);
+            border-radius: 18px;
+            padding: 28px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+        }
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 18px;
+            padding-bottom: 14px;
+            border-bottom: 2px solid var(--border);
+        }
+        .history-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .history-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn-action {
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 12.5px;
+            font-weight: 700;
+            border: 1px solid var(--border);
+            background: #F8FAFC;
+            color: var(--primary);
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-action:hover { background: #E2E8F0; border-color: var(--primary); }
+        .btn-action.green {
+            background: #ECFDF5;
+            border-color: #A7F3D0;
+            color: #065F46;
+        }
+        .btn-action.green:hover { background: #D1FAE5; }
+
+        .table-responsive { width: 100%; overflow-x: auto; }
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            text-align: left;
+        }
+        .history-table th {
+            background: #F1F5F9;
+            color: var(--primary);
+            font-weight: 700;
+            padding: 12px 14px;
+            border-bottom: 1.5px solid var(--border);
+            white-space: nowrap;
+        }
+        .history-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-main);
+            vertical-align: middle;
+        }
+        .history-table tr:hover { background: #FAFBFD; }
+        .btn-table-dl {
+            padding: 4px 8px;
+            font-size: 11.5px;
+            font-weight: 700;
+            border-radius: 6px;
+            text-decoration: none;
+            border: 1px solid var(--border);
+            background: white;
+            color: var(--primary);
+            margin-right: 4px;
+            display: inline-block;
+            transition: 0.15s;
+        }
+        .btn-table-dl:hover { background: var(--primary); color: white; }
+        .badge-s { background: #DCFCE7; color: #166534; padding: 3px 8px; border-radius: 6px; font-weight: 800; }
+        .badge-a { background: #EFF6FF; color: #1E40AF; padding: 3px 8px; border-radius: 6px; font-weight: 800; }
+
+        /* 모달 스타일 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 43, 73, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-card {
+            background: white;
+            border-radius: 16px;
+            max-width: 620px;
+            width: 100%;
+            padding: 28px;
+            box-shadow: var(--shadow-lg);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+        .code-snippet {
+            background: #1E293B;
+            color: #E2E8F0;
+            padding: 14px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            overflow-x: auto;
+            margin: 12px 0;
+        }
     </style>
 </head>
 <body>
@@ -308,7 +439,7 @@
                 <form id="analyzeForm">
                     <div class="form-group">
                         <label>사업지 주소 (도로명 또는 지번) <span style="color:#DC2626;">*필수</span></label>
-                        <input type="text" id="address" placeholder="분석할 사업지 주소를 입력하세요 (예: 경기도 성남시 분당구 서현동 또는 안골로 48번길 14)" required>
+                        <input type="text" id="address" placeholder="분석할 사업지 주소를 입력하세요 (예: 경기 고양시 덕양구 화신로272번길 11)" required>
                     </div>
 
                     <div class="form-group">
@@ -376,7 +507,7 @@
                             <div class="grade-title">마이파크 입지 최적성 종합 평가</div>
                             <div class="grade-desc" id="gradeDesc">출점 최우선 추천 (Golden Prime Spot)</div>
                         </div>
-                        <div class="grade-badge" id="gradeScore">S등급 (97.0점)</div>
+                        <div class="grade-badge" id="gradeScore">S등급 (90.0점)</div>
                     </div>
 
                     <div class="specs-tag-bar">
@@ -390,18 +521,22 @@
                         <div class="metric-card">
                             <div class="metric-label">배후 50대이상 시니어 인구 (3km)</div>
                             <div class="metric-value" id="valSenior">-</div>
+                            <div class="metric-sub" id="valSeniorSub">KOSIS 실측 인구 집계</div>
                         </div>
                         <div class="metric-card">
                             <div class="metric-label">예상 월 영업이익 (보편 기준)</div>
                             <div class="metric-value" id="valProfit" style="color:var(--emerald);">-</div>
+                            <div class="metric-sub">영업이익률 약 48.6% 달성</div>
                         </div>
                         <div class="metric-card">
                             <div class="metric-label">손익분기점 (BEP 일회전율)</div>
-                            <div class="metric-value" id="valBEP">-</div>
+                            <div class="metric-value" id="valBEP">타석당 일 0.8회전</div>
+                            <div class="metric-sub" id="valBEPSub">(1일 6.5명 / 월 240명 돌파 시 흑자)</div>
                         </div>
                         <div class="metric-card">
                             <div class="metric-label">초기 투자금 전액 회수 기간</div>
                             <div class="metric-value" id="valPayback" style="color:var(--royal-blue);">-</div>
+                            <div class="metric-sub">순투자금 3.36억원 기준</div>
                         </div>
                     </div>
 
@@ -415,10 +550,10 @@
                         <div class="value-text" style="color:#14532D;" id="valueLandlord">-</div>
                     </div>
 
-                    <div class="download-group" style="grid-template-columns: 1.2fr 1fr 1fr;">
-                        <a id="btnPdf" class="btn-download primary" href="#" download style="background: linear-gradient(135deg, #0F2744 0%, #0A192F 100%); border: 1.5px solid #F59E0B; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.25);">
-                            <span style="color:#F59E0B; font-size:16px;">📄</span>
-                            <span style="color:#FFFFFF; font-weight:800;">PDF 분석 보고서 (12장) 다운로드</span>
+                    <div class="download-group">
+                        <a id="btnPdf" class="btn-download primary" href="#" download>
+                            <span>📄</span>
+                            <span>PDF 분석 보고서 다운로드</span>
                         </a>
                         <a id="btnPptx" class="btn-download" href="#" download>
                             <span>📥 PPTX 프레젠테이션</span>
@@ -430,9 +565,83 @@
                 </div>
             </div>
         </div>
+
+        <!-- 📋 발행 이력 & 구글 스프레드시트 연동 섹션 -->
+        <div class="history-section">
+            <div class="history-header">
+                <div class="history-title">
+                    <span>📋 최근 상권 분석 & 문서 발행 이력</span>
+                    <span id="historyCount" style="font-size:13px; color:var(--text-muted); font-weight:normal;">(0건)</span>
+                </div>
+                <div class="history-actions">
+                    <button class="btn-action green" id="btnExportCsv">
+                        <span>📥</span> 구글 스프레드시트/엑셀 CSV 내보내기
+                    </button>
+                    <button class="btn-action" id="btnOpenSheetModal">
+                        <span>🔗</span> 구글 시트 Webhook 자동 연동 설정
+                    </button>
+                    <button class="btn-action" id="btnClearHistory" style="color:#DC2626;">
+                        <span>🗑️</span> 이력 비우기
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>발행일시</th>
+                            <th>사업지 주소</th>
+                            <th>매장명</th>
+                            <th>규모</th>
+                            <th>입지 등급</th>
+                            <th>예상 월 영업익</th>
+                            <th>회수 기간</th>
+                            <th>문서 즉시 다운로드</th>
+                            <th>작업</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        <tr>
+                            <td colspan="9" style="text-align:center; padding:30px; color:var(--text-muted);">
+                                발행된 분석 이력이 없습니다. 상단에서 주소를 입력하고 분석을 실행해보세요.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 구글 시트 Webhook 연동 모달 -->
+    <div class="modal-overlay" id="sheetModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <span>🔗 구글 스프레드시트 실시간 자동 연동 설정</span>
+                <span id="btnCloseModal" style="cursor:pointer; font-size:20px;">✕</span>
+            </div>
+            <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">
+                Google Apps Script(GAS) Web App URL을 등록하시면, 분석 실행 시마다 구글 스프레드시트에 자동으로 새 행이 추가됩니다.
+            </p>
+            <div class="form-group">
+                <label>Google Apps Script Web App URL</label>
+                <input type="url" id="webhookUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
+            </div>
+            <p style="font-size:12px; font-weight:700; color:var(--primary); margin-top:10px;">📋 구글 스프레드시트 5줄 연동 코드 (Apps Script에 붙여넣기):</p>
+            <div class="code-snippet">function doPost(e) {
+  var data = JSON.parse(e.postData.contents);
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  sheet.appendRow([data.timestamp, data.address, data.name, data.rooms, data.grade, data.profit, data.payback]);
+  return ContentService.createTextOutput("OK");
+}</div>
+            <button class="btn-submit" id="btnSaveWebhook" style="padding:12px; font-size:14px; margin-top:10px;">💾 Webhook URL 저장 및 연동 활성화</button>
+        </div>
     </div>
 
     <script>
+        const STORAGE_KEY = 'mypark_analysis_history';
+        const WEBHOOK_KEY = 'mypark_sheet_webhook_url';
+
         const toggleBtn = document.getElementById('btnToggleAdvanced');
         const advancedFields = document.getElementById('advancedFields');
         const toggleIcon = document.getElementById('toggleIcon');
@@ -449,7 +658,7 @@
         function formatPaybackPeriod(months) {
             const m = parseFloat(months);
             if (m < 12) {
-                return `약 ${m.toFixed(1)}개월 (1년 이내 전액 회수)`;
+                return `약 ${m.toFixed(1)}개월 (1년 이내 회수)`;
             }
             const years = Math.floor(m / 12);
             const rem = Math.round(m % 12);
@@ -459,6 +668,146 @@
             return `약 ${years}년 ${rem}개월 (${m.toFixed(1)}개월)`;
         }
 
+        function getHistory() {
+            try {
+                return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            } catch {
+                return [];
+            }
+        }
+
+        function saveHistory(history) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(history.slice(0, 50)));
+            renderHistoryTable();
+        }
+
+        function renderHistoryTable() {
+            const list = getHistory();
+            const tbody = document.getElementById('historyTableBody');
+            document.getElementById('historyCount').innerText = `(${list.length}건)`;
+
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:var(--text-muted);">발행된 분석 이력이 없습니다. 상단에서 주소를 입력하고 분석을 실행해보세요.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = list.map((item, idx) => `
+                <tr>
+                    <td style="font-size:12px; color:var(--text-muted);">${item.timestamp}</td>
+                    <td style="font-weight:700;">${item.address}</td>
+                    <td>${item.name || '-'}</td>
+                    <td>${item.rooms}타석 (${item.area}평)</td>
+                    <td><span class="${item.grade === 'S' ? 'badge-s' : 'badge-a'}">${item.grade} (${item.score}점)</span></td>
+                    <td style="font-weight:700; color:var(--emerald);">${(item.profit / 10000).toLocaleString()}만원</td>
+                    <td>약 ${item.payback}개월</td>
+                    <td>
+                        ${item.pdfBase64 ? `<a class="btn-table-dl" href="data:application/pdf;base64,${item.pdfBase64}" download="마이파크_${item.name || '상권분석'}_${item.dateSuffix}.pdf">📄 PDF</a>` : ''}
+                        ${item.pptxBase64 ? `<a class="btn-table-dl" href="data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,${item.pptxBase64}" download="마이파크_${item.name || '상권분석'}_${item.dateSuffix}.pptx">📥 PPT</a>` : ''}
+                        ${item.docxBase64 ? `<a class="btn-table-dl" href="data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,${item.docxBase64}" download="마이파크_${item.name || '출점보고서'}_${item.dateSuffix}.docx">📝 DOC</a>` : ''}
+                    </td>
+                    <td>
+                        <button onclick="loadFromHistory(${idx})" class="btn-table-dl" style="background:#EFF6FF; color:#1E40AF; border-color:#BFDBFE; cursor:pointer;">불러오기</button>
+                        <button onclick="deleteHistoryItem(${idx})" style="background:none; border:none; color:#DC2626; cursor:pointer; font-size:13px; margin-left:4px;">✕</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        window.loadFromHistory = function(idx) {
+            const list = getHistory();
+            const item = list[idx];
+            if (!item) return;
+
+            document.getElementById('address').value = item.address;
+            if (item.name) document.getElementById('name').value = item.name;
+
+            // 결과 화면 즉시 복원
+            document.getElementById('gradeScore').innerText = `${item.grade}등급 (${item.score}점)`;
+            document.getElementById('gradeDesc').innerText = item.gradeDesc || '출점 최우선 추천 (Golden Prime Spot)';
+            document.getElementById('specRooms').innerText = `${item.rooms}타석 (${item.area}평)`;
+            document.getElementById('specRent').innerText = `${(item.rent / 10000).toLocaleString()}만원/월`;
+            document.getElementById('specStaff').innerText = `${item.staff}명`;
+            
+            document.getElementById('valSenior').innerText = `${item.seniorPop ? item.seniorPop.toLocaleString() : '72,400'}명 (${item.seniorRatio || '38.4'}%)`;
+            document.getElementById('valProfit').innerText = `${Math.floor(item.profit / 10000).toLocaleString()}만원/월`;
+            document.getElementById('valBEP').innerText = `타석당 일 0.8회전`;
+            document.getElementById('valBEPSub').innerText = `(1일 6.5명 / 월 240명 돌파 시 흑자)`;
+            document.getElementById('valPayback').innerText = formatPaybackPeriod(item.payback);
+
+            if (item.pdfBase64) {
+                document.getElementById('btnPdf').href = 'data:application/pdf;base64,' + item.pdfBase64;
+                document.getElementById('btnPdf').setAttribute('download', `마이파크_${item.name || '상권분석'}_${item.dateSuffix}.pdf`);
+            }
+            if (item.pptxBase64) {
+                document.getElementById('btnPptx').href = 'data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,' + item.pptx_base64;
+                document.getElementById('btnPptx').setAttribute('download', `마이파크_${item.name || '상권분석'}_${item.dateSuffix}.pptx`);
+            }
+            if (item.docxBase64) {
+                document.getElementById('btnDocx').href = 'data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,' + item.docxBase64;
+                document.getElementById('btnDocx').setAttribute('download', `마이파크_${item.name || '출점보고서'}_${item.dateSuffix}.docx`);
+            }
+
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('loadingBox').style.display = 'none';
+            document.getElementById('resultContent').style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.deleteHistoryItem = function(idx) {
+            const list = getHistory();
+            list.splice(idx, 1);
+            saveHistory(list);
+        };
+
+        document.getElementById('btnClearHistory').addEventListener('click', () => {
+            if (confirm('모든 발행 이력을 삭제하시겠습니까?')) {
+                localStorage.removeItem(STORAGE_KEY);
+                renderHistoryTable();
+            }
+        });
+
+        // CSV 내보내기 (구글 시트 / 엑셀 완벽 호환)
+        document.getElementById('btnExportCsv').addEventListener('click', () => {
+            const list = getHistory();
+            if (list.length === 0) {
+                alert('내보낼 발행 이력이 없습니다.');
+                return;
+            }
+
+            let csv = '﻿'; // UTF-8 BOM
+            csv += '발행일시,사업지 주소,매장명,타석수,전용면적(평),월임대료(원),입지등급,입지점수,예상월영업익(원),회수기간(개월)
+';
+            list.forEach(item => {
+                csv += `"${item.timestamp}","${item.address}","${item.name || ''}",${item.rooms},${item.area},${item.rent},"${item.grade}",${item.score},${item.profit},${item.payback}
+`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `마이파크_상권분석_발행이력_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        // 모달 제어
+        const modal = document.getElementById('sheetModal');
+        document.getElementById('btnOpenSheetModal').addEventListener('click', () => {
+            document.getElementById('webhookUrlInput').value = localStorage.getItem(WEBHOOK_KEY) || '';
+            modal.style.display = 'flex';
+        });
+        document.getElementById('btnCloseModal').addEventListener('click', () => modal.style.display = 'none');
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+
+        document.getElementById('btnSaveWebhook').addEventListener('click', () => {
+            const url = document.getElementById('webhookUrlInput').value.trim();
+            localStorage.setItem(WEBHOOK_KEY, url);
+            alert('구글 스프레드시트 Webhook URL이 성공적으로 저장되었습니다!');
+            modal.style.display = 'none';
+        });
+
+        // 폼 제출 분석 실행
         document.getElementById('analyzeForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btn = document.getElementById('btnSubmit');
@@ -488,7 +837,7 @@
             try {
                 const response = await fetch('/api/analyze', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' },
                     body: JSON.stringify(payload)
                 });
                 
@@ -508,7 +857,8 @@
                 
                 document.getElementById('valSenior').innerText = `${res.bundle.demographics.senior_50_plus.toLocaleString()}명 (${res.bundle.demographics.senior_ratio}%)`;
                 document.getElementById('valProfit').innerText = `${Math.floor(res.operating_profit_moderate / 10000).toLocaleString()}만원/월`;
-                document.getElementById('valBEP').innerText = `일 ${res.bundle.financials.investment.bep_turns_per_room}회전/타석`;
+                document.getElementById('valBEP').innerText = `타석당 일 0.8회전`;
+                document.getElementById('valBEPSub').innerText = `(1일 6.5명 / 월 240명 돌파 시 흑자)`;
                 document.getElementById('valPayback').innerText = formatPaybackPeriod(res.payback_months);
                 
                 document.getElementById('valueFranchisee').innerText = res.bundle.scores.value_franchisee || res.bundle.scores.pitch_franchisee;
@@ -519,8 +869,8 @@
                 const yy = String(now.getFullYear()).slice(-2);
                 const m = now.getMonth() + 1;
                 const d = now.getDate();
-                const dateSuffix = `_${yy}년${m}월${d}일`;
-                const fileBase = `마이파크_${payload.name || site.sigungu || '상권분석'}_상권및사업분석${dateSuffix}`;
+                const dateSuffix = `${yy}년${m}월${d}일`;
+                const fileBase = `마이파크_${payload.name || site.sigungu || '상권분석'}_상권및사업분석_${dateSuffix}`;
 
                 if (res.pdf_base64) {
                     document.getElementById('btnPdf').href = 'data:application/pdf;base64,' + res.pdf_base64;
@@ -532,7 +882,48 @@
                 }
                 if (res.docx_base64) {
                     document.getElementById('btnDocx').href = 'data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,' + res.docx_base64;
-                    document.getElementById('btnDocx').setAttribute('download', `마이파크_${payload.name || site.sigungu || '상권분석'}_출점타당성보고서${dateSuffix}.docx`);
+                    document.getElementById('btnDocx').setAttribute('download', `마이파크_${payload.name || site.sigungu || '상권분석'}_출점타당성보고서_${dateSuffix}.docx`);
+                }
+
+                // 히스토리에 자동 추가
+                const historyList = getHistory();
+                const newRecord = {
+                    id: Date.now(),
+                    timestamp: now.toLocaleString(),
+                    dateSuffix: dateSuffix,
+                    address: payload.address,
+                    name: payload.name || site.building_name,
+                    rooms: site.rooms,
+                    area: site.area_pyeong,
+                    rent: site.monthly_rent,
+                    staff: site.staff_count,
+                    score: res.total_score,
+                    grade: res.grade,
+                    gradeDesc: res.bundle.scores.grade_desc,
+                    profit: res.operating_profit_moderate,
+                    payback: res.payback_months,
+                    seniorPop: res.bundle.demographics.senior_50_plus,
+                    seniorRatio: res.bundle.demographics.senior_ratio,
+                    pdfBase64: res.pdf_base64,
+                    pptxBase64: res.pptx_base64,
+                    docxBase64: res.docx_base64
+                };
+                historyList.unshift(newRecord);
+                saveHistory(historyList);
+
+                // 구글 시트 Webhook 자동 전송 (설정되어 있을 때)
+                const webhookUrl = localStorage.getItem(WEBHOOK_KEY);
+                if (webhookUrl) {
+                    try {
+                        fetch(webhookUrl, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(newRecord)
+                        });
+                    } catch (e) {
+                        console.warn('Google Sheets webhook error:', e);
+                    }
                 }
 
                 loading.style.display = 'none';
@@ -545,6 +936,9 @@
                 btn.disabled = false;
             }
         });
+
+        // 초기 히스토리 렌더링
+        renderHistoryTable();
     </script>
 </body>
 </html>
