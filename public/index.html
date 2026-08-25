@@ -3,121 +3,312 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>마이파크(MYPARK) 스크린 파크골프 상권 & 사업분석 자동화 솔루션</title>
+    <title>마이파크(MYPARK) 스크린 파크골프 상권 & 사업성 분석 시스템</title>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
     <style>
         :root {
-            --primary: #003366;
-            --primary-dark: #002244;
-            --accent: #1E88E5;
-            --gold: #FFB300;
-            --success: #2E7D32;
-            --bg: #F4F7FB;
+            --primary-dark: #0A192F;
+            --primary: #0F2744;
+            --royal-blue: #2563EB;
+            --accent-blue: #3B82F6;
+            --gold: #F59E0B;
+            --gold-light: #FEF3C7;
+            --emerald: #10B981;
+            --emerald-light: #D1FAE5;
+            --red: #DC2626;
+            --bg: #F8FAFC;
             --card-bg: #FFFFFF;
-            --text-main: #1E293B;
+            --text-main: #0F172A;
             --text-muted: #64748B;
             --border: #E2E8F0;
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 10px 25px -5px rgba(15, 39, 68, 0.1), 0 8px 10px -6px rgba(15, 39, 68, 0.05);
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--bg); color: var(--text-main); line-height: 1.6; padding: 30px 15px; }
-        .container { max-width: 1200px; margin: 0 auto; }
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 30px 15px;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container { max-width: 1240px; margin: 0 auto; }
         
         header {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
             color: white;
-            padding: 35px 30px;
-            border-radius: 16px;
+            padding: 35px 32px;
+            border-radius: 20px;
             margin-bottom: 30px;
-            box-shadow: 0 10px 25px -5px rgba(0, 51, 102, 0.25);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 20px;
+            position: relative;
+            overflow: hidden;
         }
-        .header-content h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 8px; }
-        .header-content p { color: var(--gold); font-size: 15px; font-weight: 600; }
-        .header-badge { background: rgba(255,255,255,0.15); padding: 8px 16px; border-radius: 30px; font-size: 13px; font-weight: 600; border: 1px solid rgba(255,255,255,0.2); }
+        .header-content h1 {
+            font-size: 27px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header-content p {
+            color: #94A3B8;
+            font-size: 14.5px;
+            font-weight: 500;
+        }
+        .header-content p strong { color: var(--gold); }
+        .header-badge {
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(8px);
+            padding: 9px 18px;
+            border-radius: 30px;
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #F8FAFC;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
 
-        .layout { display: grid; grid-template-columns: 390px 1fr; gap: 25px; }
-        @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+        .layout { display: grid; grid-template-columns: 410px 1fr; gap: 28px; }
+        @media (max-width: 950px) { .layout { grid-template-columns: 1fr; } }
 
-        .card { background: var(--card-bg); border-radius: 14px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05); border: 1px solid var(--border); }
-        .card-header { font-size: 18px; font-weight: 700; color: var(--primary); padding-bottom: 12px; margin-bottom: 20px; border-bottom: 2px solid var(--primary); display: flex; justify-content: space-between; align-items: center; }
+        .card {
+            background: var(--card-bg);
+            border-radius: 18px;
+            padding: 28px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+            transition: 0.2s ease;
+        }
+        .card-header {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--primary);
+            padding-bottom: 14px;
+            margin-bottom: 22px;
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-        .info-tip { background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 12px; font-size: 12.5px; color: #1E40AF; margin-bottom: 16px; line-height: 1.5; }
+        .info-tip {
+            background: #EFF6FF;
+            border: 1px solid #BFDBFE;
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 13px;
+            color: #1E40AF;
+            margin-bottom: 20px;
+            line-height: 1.55;
+        }
 
-        .form-group { margin-bottom: 16px; }
-        label { display: block; font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
-        .label-optional { font-size: 11px; font-weight: normal; color: var(--text-muted); margin-left: 4px; }
-        input, select { width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; color: var(--text-main); background: #FAFBFD; transition: 0.2s; }
-        input:focus, select:focus { outline: none; border-color: var(--accent); background: #FFF; box-shadow: 0 0 0 3px rgba(30,136,229,0.15); }
+        .form-group { margin-bottom: 18px; }
+        label {
+            display: block;
+            font-size: 13.5px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 7px;
+        }
+        .label-optional { font-size: 11.5px; font-weight: normal; color: var(--text-muted); margin-left: 4px; }
+        
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            color: var(--text-main);
+            background: #FAFBFD;
+            transition: all 0.2s ease;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--royal-blue);
+            background: #FFFFFF;
+            box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.15);
+        }
 
-        .advanced-toggle { font-size: 13px; color: var(--accent); font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; margin-bottom: 15px; user-select: none; }
-        .advanced-fields { display: none; background: #F8FAFC; border: 1px dashed var(--border); padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .advanced-toggle {
+            font-size: 13px;
+            color: var(--royal-blue);
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 18px;
+            user-select: none;
+            padding: 8px 12px;
+            background: #F1F5F9;
+            border-radius: 8px;
+            transition: 0.2s;
+        }
+        .advanced-toggle:hover { background: #E2E8F0; }
+        .advanced-fields {
+            display: none;
+            background: #F8FAFC;
+            border: 1px dashed var(--border);
+            padding: 18px;
+            border-radius: 12px;
+            margin-bottom: 18px;
+        }
 
-        .btn-submit { width: 100%; background: var(--primary); color: white; border: none; padding: 15px; font-size: 16px; font-weight: 700; border-radius: 8px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 12px rgba(0, 51, 102, 0.2); }
-        .btn-submit:hover { background: var(--accent); transform: translateY(-1px); }
-        .btn-submit:disabled { background: #94A3B8; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-submit {
+            width: 100%;
+            background: linear-gradient(135deg, var(--royal-blue) 0%, #1D4ED8 100%);
+            color: white;
+            border: none;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 800;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+        }
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+        }
+        .btn-submit:disabled {
+            background: #94A3B8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
 
-        .loading-box { display: none; text-align: center; padding: 60px 20px; }
-        .spinner { width: 45px; height: 45px; border: 4px solid #E2E8F0; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; }
+        .loading-box { display: none; text-align: center; padding: 70px 20px; }
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #E2E8F0;
+            border-top: 4px solid var(--royal-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
-        .empty-icon { font-size: 40px; margin-bottom: 15px; }
+        .empty-state { text-align: center; padding: 70px 20px; color: var(--text-muted); }
+        .empty-icon { font-size: 45px; margin-bottom: 16px; }
 
         .result-content { display: none; }
-        .grade-banner { background: linear-gradient(135deg, #003366, #1E88E5); color: white; padding: 20px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .grade-title { font-size: 14px; opacity: 0.9; }
+
+        .grade-banner {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+            color: white;
+            padding: 22px 24px;
+            border-radius: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 22px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .grade-title { font-size: 13.5px; color: #94A3B8; font-weight: 600; margin-bottom: 2px; }
+        .grade-desc { font-size: 16px; font-weight: 800; color: #FFFFFF; }
         .grade-badge { font-size: 28px; font-weight: 900; color: var(--gold); }
 
-        .specs-tag-bar { background: #F1F5F9; border-radius: 8px; padding: 10px 14px; font-size: 12.5px; color: var(--text-main); margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 12px; font-weight: 600; }
-        .spec-item { display: flex; align-items: center; gap: 4px; }
-        .spec-highlight { color: var(--primary); font-weight: 800; }
+        .specs-tag-bar {
+            background: #F1F5F9;
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 13px;
+            color: var(--text-main);
+            margin-bottom: 22px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            font-weight: 600;
+            align-items: center;
+        }
+        .spec-highlight { color: var(--royal-blue); font-weight: 800; }
 
-        .metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
-        .metric-card { background: #F8FAFC; border: 1px solid var(--border); border-left: 4px solid var(--primary); padding: 15px; border-radius: 8px; }
-        .metric-label { font-size: 12px; color: var(--text-muted); font-weight: 600; margin-bottom: 4px; }
-        .metric-value { font-size: 19px; font-weight: 800; color: var(--primary); }
+        .metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 22px; }
+        .metric-card {
+            background: #F8FAFC;
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--royal-blue);
+            padding: 16px;
+            border-radius: 10px;
+        }
+        .metric-label { font-size: 12px; color: var(--text-muted); font-weight: 700; margin-bottom: 5px; }
+        .metric-value { font-size: 20px; font-weight: 900; color: var(--primary); }
 
-        .value-container { background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 10px; padding: 18px; margin-bottom: 20px; }
-        .value-title { font-size: 14px; font-weight: 800; color: #92400E; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+        .value-container {
+            background: #FFFBEB;
+            border: 1px solid #FDE68A;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 18px;
+        }
+        .value-title { font-size: 14px; font-weight: 800; color: #92400E; margin-bottom: 8px; }
         .value-text { font-size: 13.5px; color: #78350F; line-height: 1.65; }
 
-        .download-group { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
-        .btn-download { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 700; text-decoration: none; border: 1px solid var(--border); background: white; color: var(--primary); transition: 0.2s; cursor: pointer; }
+        .download-group { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+        .btn-download {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 800;
+            text-decoration: none;
+            border: 1.5px solid var(--border);
+            background: white;
+            color: var(--primary);
+            transition: 0.2s;
+            cursor: pointer;
+        }
         .btn-download:hover { background: #F1F5F9; border-color: var(--primary); }
-        .btn-download.primary { background: var(--primary); color: white; border: none; }
-        .btn-download.primary:hover { background: var(--accent); }
+        .btn-download.primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 12px rgba(15, 39, 68, 0.2);
+        }
+        .btn-download.primary:hover { background: var(--royal-blue); }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <div class="header-content">
-                <h1>⛳ 마이파크(MYPARK) 스크린 파크골프 상권 & 사업 타당성 분석 시스템</h1>
-                <p>주소 입력 시 KOSIS 인구 + 지역 시세 + 5대 핵심 지표 + 5개년 손익 예측 자동 분석</p>
+                <h1>⛳ 마이파크(MYPARK) 스크린 파크골프 상권 & 사업성 분석</h1>
+                <p>주소 입력 시 KOSIS 실측 인구 + 공공 빅데이터 + 5개년 손익 예측 <strong>원클릭 자동 분석</strong></p>
             </div>
             <div class="header-badge">플래그십 표준 모델 (10타석 120평)</div>
         </header>
 
         <div class="layout">
-            <!-- Left: Input Form -->
             <div class="card">
                 <div class="card-header">
-                    <span>📍 분석 사업지 입력</span>
+                    <span>📍 분석 대상지 입력</span>
                 </div>
 
                 <div class="info-tip">
-                    💡 <strong>주소만 입력하셔도 즉시 분석 가능합니다!</strong><br>
+                    💡 <strong>주소만 입력하시면 KOSIS 실측 데이터로 즉시 분석됩니다!</strong><br>
                     타석수/임대료/면적을 모르실 경우 마이파크 플래그십 표준 모델(10타석, 120평, 지역 시세 임대료)로 자동 산정됩니다.
                 </div>
 
                 <form id="analyzeForm">
                     <div class="form-group">
-                        <label>사업지 주소 (도로명 또는 지번) <span style="color:#E53935;">*필수</span></label>
-                        <input type="text" id="address" placeholder="분석할 사업지 주소를 입력하세요 (예: 경기도 성남시 분당구 서현동 245 또는 서울시 강남구 테헤란로 123)" required>
+                        <label>사업지 주소 (도로명 또는 지번) <span style="color:#DC2626;">*필수</span></label>
+                        <input type="text" id="address" placeholder="분석할 사업지 주소를 입력하세요 (예: 경기도 성남시 분당구 서현동 또는 안골로 48번길 14)" required>
                     </div>
 
                     <div class="form-group">
@@ -161,7 +352,6 @@
                 </form>
             </div>
 
-            <!-- Right: Results -->
             <div class="card">
                 <div class="card-header">
                     <span>📊 상권 및 사업 타당성 분석 결과</span>
@@ -170,30 +360,30 @@
 
                 <div id="emptyState" class="empty-state">
                     <div class="empty-icon">🏢</div>
-                    <p style="font-weight:700; margin-bottom:6px;">분석할 사업지 주소를 입력해주세요</p>
-                    <p style="font-size:13px;">주소만 입력하시면 KOSIS 인구통계와 3대 손익 시나리오, 12슬라이드 PPTX가 실시간 자동 생성됩니다.</p>
+                    <p style="font-weight:800; margin-bottom:6px; color:var(--primary); font-size:16px;">분석할 사업지 주소를 입력해주세요</p>
+                    <p style="font-size:13.5px;">주소만 입력하시면 KOSIS 실측 통계와 13개월 상권 매출, 12슬라이드 PPTX가 실시간 자동 생성됩니다.</p>
                 </div>
 
                 <div id="loadingBox" class="loading-box">
                     <div class="spinner"></div>
-                    <p style="font-weight:700; color:var(--primary); margin-bottom:6px;">공공데이터 및 재무 시뮬레이션 분석 중...</p>
-                    <p style="font-size:13px; color:var(--text-muted);">16:9 와이드 PPTX 및 DOCX 기획서를 실시간 조립하고 있습니다.</p>
+                    <p style="font-weight:800; color:var(--primary); font-size:15px; margin-bottom:6px;">공공데이터 및 재무 시뮬레이션 분석 중...</p>
+                    <p style="font-size:13px; color:var(--text-muted);">16:9 와이드 고품질 프레젠테이션 및 DOCX 기획서를 실시간 렌더링하고 있습니다.</p>
                 </div>
 
                 <div id="resultContent" class="result-content">
                     <div class="grade-banner">
                         <div>
-                            <div class="grade-title">마이파크 입지 최적성 종합 등급</div>
-                            <div style="font-size:16px; font-weight:700;" id="gradeDesc">출점 최우선 추천 (Golden Prime Spot)</div>
+                            <div class="grade-title">마이파크 입지 최적성 종합 평가</div>
+                            <div class="grade-desc" id="gradeDesc">출점 최우선 추천 (Golden Prime Spot)</div>
                         </div>
-                        <div class="grade-badge" id="gradeScore">S등급 (98.0점)</div>
+                        <div class="grade-badge" id="gradeScore">S등급 (97.0점)</div>
                     </div>
 
                     <div class="specs-tag-bar">
-                        <div class="spec-item">📐 적용 규모: <span class="spec-highlight" id="specRooms">10타석 (120평)</span></div>
-                        <div class="spec-item">🏢 월 임대료: <span class="spec-highlight" id="specRent">540만원</span></div>
-                        <div class="spec-item">👥 운영 인력: <span class="spec-highlight" id="specStaff">3명</span></div>
-                        <div class="spec-item" id="tagAutoEstimated" style="color:#2E7D32; background:#E8F5E9; padding:2px 8px; border-radius:4px;">✨ 플래그십 표준 모델 적용</div>
+                        <div>📐 규모: <span class="spec-highlight" id="specRooms">10타석 (120평)</span></div>
+                        <div>🏢 임대료: <span class="spec-highlight" id="specRent">540만원/월</span></div>
+                        <div>👥 인력: <span class="spec-highlight" id="specStaff">3명</span></div>
+                        <div id="tagAutoEstimated" style="color:#059669; background:#D1FAE5; padding:2px 8px; border-radius:6px; font-size:12px;">✨ 플래그십 표준 적용</div>
                     </div>
 
                     <div class="metrics-grid">
@@ -203,7 +393,7 @@
                         </div>
                         <div class="metric-card">
                             <div class="metric-label">예상 월 영업이익 (보편 기준)</div>
-                            <div class="metric-value" id="valProfit" style="color:var(--primary);">-</div>
+                            <div class="metric-value" id="valProfit" style="color:var(--emerald);">-</div>
                         </div>
                         <div class="metric-card">
                             <div class="metric-label">손익분기점 (BEP 일회전율)</div>
@@ -211,17 +401,17 @@
                         </div>
                         <div class="metric-card">
                             <div class="metric-label">초기 투자금 전액 회수 기간</div>
-                            <div class="metric-value" id="valPayback" style="color:var(--success);">-</div>
+                            <div class="metric-value" id="valPayback" style="color:var(--royal-blue);">-</div>
                         </div>
                     </div>
 
                     <div class="value-container">
-                        <div class="value-title">🌟 가맹점 출점 기대효과 및 핵심 경쟁력</div>
+                        <div class="value-title">🌟【 가맹점 출점 기대효과 및 핵심 경쟁력 】</div>
                         <div class="value-text" id="valueFranchisee">-</div>
                     </div>
 
                     <div class="value-container" style="background:#F0FDF4; border-color:#BBF7D0;">
-                        <div class="value-title" style="color:#166534;">🏢 상가 전체 상권 활성화 및 건물 가치 상승 효과</div>
+                        <div class="value-title" style="color:#166534;">🏢【 상가 전체 상권 활성화 및 건물 가치 상승 효과 】</div>
                         <div class="value-text" style="color:#14532D;" id="valueLandlord">-</div>
                     </div>
 
@@ -252,7 +442,6 @@
             }
         });
 
-        // 정확한 기간 텍스트 포맷터
         function formatPaybackPeriod(months) {
             const m = parseFloat(months);
             if (m < 12) {
@@ -316,8 +505,6 @@
                 document.getElementById('valSenior').innerText = `${res.bundle.demographics.senior_50_plus.toLocaleString()}명 (${res.bundle.demographics.senior_ratio}%)`;
                 document.getElementById('valProfit').innerText = `${Math.floor(res.operating_profit_moderate / 10000).toLocaleString()}만원/월`;
                 document.getElementById('valBEP').innerText = `일 ${res.bundle.financials.investment.bep_turns_per_room}회전/타석`;
-                
-                // 정확한 회수 기간 표기 (약 1년 4개월 / 1년 5개월)
                 document.getElementById('valPayback').innerText = formatPaybackPeriod(res.payback_months);
                 
                 document.getElementById('valueFranchisee').innerText = res.bundle.scores.value_franchisee || res.bundle.scores.pitch_franchisee;
