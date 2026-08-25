@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마이파크(MYPARK) 스크린 파크골프 상권 & 사업분석 자동화 솔루션</title>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #003366;
+            --primary-dark: #002244;
+            --accent: #1E88E5;
+            --gold: #FFB300;
+            --success: #2E7D32;
+            --bg: #F4F7FB;
+            --card-bg: #FFFFFF;
+            --text-main: #1E293B;
+            --text-muted: #64748B;
+            --border: #E2E8F0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--bg); color: var(--text-main); line-height: 1.6; padding: 30px 15px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 35px 30px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 25px -5px rgba(0, 51, 102, 0.25);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .header-content h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 8px; }
+        .header-content p { color: var(--gold); font-size: 15px; font-weight: 600; }
+        .header-badge { background: rgba(255,255,255,0.15); padding: 8px 16px; border-radius: 30px; font-size: 13px; font-weight: 600; border: 1px solid rgba(255,255,255,0.2); }
+
+        .layout { display: grid; grid-template-columns: 380px 1fr; gap: 25px; }
+        @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+        .card { background: var(--card-bg); border-radius: 14px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05); border: 1px solid var(--border); }
+        .card-header { font-size: 18px; font-weight: 700; color: var(--primary); padding-bottom: 12px; margin-bottom: 20px; border-bottom: 2px solid var(--primary); display: flex; justify-content: space-between; align-items: center; }
+
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+        input, select { width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; color: var(--text-main); background: #FAFBFD; transition: 0.2s; }
+        input:focus, select:focus { outline: none; border-color: var(--accent); background: #FFF; box-shadow: 0 0 0 3px rgba(30,136,229,0.15); }
+
+        .btn-submit { width: 100%; background: var(--primary); color: white; border: none; padding: 15px; font-size: 16px; font-weight: 700; border-radius: 8px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 12px rgba(0, 51, 102, 0.2); margin-top: 10px; }
+        .btn-submit:hover { background: var(--accent); transform: translateY(-1px); }
+        .btn-submit:disabled { background: #94A3B8; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .loading-box { display: none; text-align: center; padding: 60px 20px; }
+        .spinner { width: 45px; height: 45px; border: 4px solid #E2E8F0; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+        .empty-icon { font-size: 40px; margin-bottom: 15px; }
+
+        .result-content { display: none; }
+        .grade-banner { background: linear-gradient(135deg, #003366, #1E88E5); color: white; padding: 20px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .grade-title { font-size: 14px; opacity: 0.9; }
+        .grade-badge { font-size: 28px; font-weight: 900; color: var(--gold); }
+
+        .metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
+        .metric-card { background: #F8FAFC; border: 1px solid var(--border); border-left: 4px solid var(--primary); padding: 15px; border-radius: 8px; }
+        .metric-label { font-size: 12px; color: var(--text-muted); font-weight: 600; margin-bottom: 4px; }
+        .metric-value { font-size: 19px; font-weight: 800; color: var(--primary); }
+
+        .pitch-container { background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 10px; padding: 18px; margin-bottom: 20px; }
+        .pitch-title { font-size: 14px; font-weight: 800; color: #92400E; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+        .pitch-text { font-size: 13.5px; color: #78350F; line-height: 1.65; }
+
+        .download-group { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+        .btn-download { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 700; text-decoration: none; border: 1px solid var(--border); background: white; color: var(--primary); transition: 0.2s; cursor: pointer; }
+        .btn-download:hover { background: #F1F5F9; border-color: var(--primary); }
+        .btn-download.primary { background: var(--primary); color: white; border: none; }
+        .btn-download.primary:hover { background: var(--accent); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1>⛳ 마이파크(MYPARK) 스크린 파크골프 상권 & 사업분석 시스템</h1>
+                <p>KOSIS 인구통계 + 소상공인365 + 5대 입지 지표 + 3대 시나리오 5개년 손익 자동화 엔진</p>
+            </div>
+            <div class="header-badge">v1.0 Vercel Production</div>
+        </header>
+
+        <div class="layout">
+            <!-- Left: Input Form -->
+            <div class="card">
+                <div class="card-header">
+                    <span>📍 분석 조건 입력</span>
+                </div>
+                <form id="analyzeForm">
+                    <div class="form-group">
+                        <label>사업지 주소 (도로명/지번)</label>
+                        <input type="text" id="address" value="경기도 고양시 일산동구 숲속마을로 22" placeholder="예: 서울시 강남구 역삼동 123" required>
+                    </div>
+                    <div class="form-group">
+                        <label>매장 / 건물명 (선택)</label>
+                        <input type="text" id="name" value="일산풍동점_진넥스블루오션" placeholder="예: 강남역점">
+                    </div>
+                    <div class="form-group">
+                        <label>예정 타석 수</label>
+                        <select id="rooms">
+                            <option value="4">4 타석 (소형 매장)</option>
+                            <option value="6">6 타석 (표준 매장)</option>
+                            <option value="8">8 타석 (중형 매장)</option>
+                            <option value="10">10 타석 (중대형 매장)</option>
+                            <option value="12" selected>12 타석 (대형 플래그십 - 권장)</option>
+                            <option value="16">16 타석 (초대형 센터)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>월 예상 임대료 (원)</label>
+                        <input type="number" id="rent" value="5000000" step="500000">
+                    </div>
+                    <div class="form-group">
+                        <label>전용면적 (평)</label>
+                        <input type="number" id="area" value="120">
+                    </div>
+                    <div class="form-group">
+                        <label>운영 인력 수 (명)</label>
+                        <input type="number" id="staff" value="4">
+                    </div>
+                    <button type="submit" id="btnSubmit" class="btn-submit">⚡ 상권 및 사업분석 즉시 실행</button>
+                </form>
+            </div>
+
+            <!-- Right: Results -->
+            <div class="card">
+                <div class="card-header">
+                    <span>📊 상권 및 사업 타당성 분석 결과</span>
+                    <span id="resDate" style="font-size:12px; color:var(--text-muted); font-weight:normal;"></span>
+                </div>
+
+                <div id="emptyState" class="empty-state">
+                    <div class="empty-icon">🏢</div>
+                    <p style="font-weight:700; margin-bottom:6px;">분석할 사업지 조건을 입력해주세요</p>
+                    <p style="font-size:13px;">주소를 입력하고 실행 버튼을 누르면 정밀 인구통계와 3대 손익 시나리오가 실시간 산출됩니다.</p>
+                </div>
+
+                <div id="loadingBox" class="loading-box">
+                    <div class="spinner"></div>
+                    <p style="font-weight:700; color:var(--primary); margin-bottom:6px;">공공데이터 및 재무 시뮬레이션 분석 중...</p>
+                    <p style="font-size:13px; color:var(--text-muted);">16:9 와이드 PPTX 및 DOCX 보고서를 조립하고 있습니다.</p>
+                </div>
+
+                <div id="resultContent" class="result-content">
+                    <div class="grade-banner">
+                        <div>
+                            <div class="grade-title">마이파크 입지 최적성 종합 등급</div>
+                            <div style="font-size:16px; font-weight:700;" id="gradeDesc">출점 최우선 추천 (Golden Prime Spot)</div>
+                        </div>
+                        <div class="grade-badge" id="gradeScore">S등급 (98.0점)</div>
+                    </div>
+
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-label">배후 50대이상 시니어 인구 (3km)</div>
+                            <div class="metric-value" id="valSenior">-</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">예상 월 영업이익 (보편 기준)</div>
+                            <div class="metric-value" id="valProfit" style="color:var(--primary);">-</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">손익분기점 (BEP 일회전율)</div>
+                            <div class="metric-value" id="valBEP">-</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">초기 투자금 전액 회수 기간</div>
+                            <div class="metric-value" id="valPayback" style="color:var(--success);">-</div>
+                        </div>
+                    </div>
+
+                    <div class="pitch-container">
+                        <div class="pitch-title">💡 예비 창업자 맞춤 설득 피칭 논리</div>
+                        <div class="pitch-text" id="pitchFranchisee">-</div>
+                    </div>
+
+                    <div class="pitch-container" style="background:#F0FDF4; border-color:#BBF7D0;">
+                        <div class="pitch-title" style="color:#166534;">🏢 건물주 / 임대인 대상 앵커 테넌트 제안</div>
+                        <div class="pitch-text" style="color:#14532D;" id="pitchLandlord">-</div>
+                    </div>
+
+                    <div class="download-group">
+                        <a id="btnPptx" class="btn-download primary" href="#" download>
+                            <span>📥 PPTX 프레젠테이션 (12장) 다운로드</span>
+                        </a>
+                        <a id="btnDocx" class="btn-download" href="#" download>
+                            <span>📄 DOCX 출점타당성보고서 다운로드</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('analyzeForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmit');
+            const empty = document.getElementById('emptyState');
+            const loading = document.getElementById('loadingBox');
+            const result = document.getElementById('resultContent');
+
+            empty.style.display = 'none';
+            result.style.display = 'none';
+            loading.style.display = 'block';
+            btn.disabled = true;
+
+            const payload = {
+                address: document.getElementById('address').value,
+                name: document.getElementById('name').value,
+                rooms: parseInt(document.getElementById('rooms').value),
+                rent: parseInt(document.getElementById('rent').value),
+                area: parseInt(document.getElementById('area').value),
+                staff: parseInt(document.getElementById('staff').value)
+            };
+
+            try {
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    throw new Error('서버 응답 오류: ' + response.status);
+                }
+
+                const res = await response.json();
+                
+                document.getElementById('gradeScore').innerText = `${res.grade}등급 (${res.total_score}점)`;
+                document.getElementById('gradeDesc').innerText = res.bundle.scores.grade_desc;
+                document.getElementById('valSenior').innerText = `${res.bundle.demographics.senior_50_plus.toLocaleString()}명 (${res.bundle.demographics.senior_ratio}%)`;
+                document.getElementById('valProfit').innerText = `${Math.floor(res.operating_profit_moderate / 10000).toLocaleString()}만원/월`;
+                document.getElementById('valBEP').innerText = `일 ${res.bundle.financials.investment.bep_turns_per_room}회전/타석`;
+                document.getElementById('valPayback').innerText = `약 ${res.payback_months}개월 (1년 내 회수)`;
+                document.getElementById('pitchFranchisee').innerText = res.bundle.scores.pitch_franchisee;
+                document.getElementById('pitchLandlord').innerText = res.bundle.scores.pitch_landlord;
+                document.getElementById('resDate').innerText = '분석 기준: ' + res.bundle.created_at;
+
+                if (res.pptx_base64) {
+                    document.getElementById('btnPptx').href = 'data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,' + res.pptx_base64;
+                    document.getElementById('btnPptx').setAttribute('download', `마이파크_${payload.name || '상권분석'}_사업분석.pptx`);
+                }
+                if (res.docx_base64) {
+                    document.getElementById('btnDocx').href = 'data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,' + res.docx_base64;
+                    document.getElementById('btnDocx').setAttribute('download', `마이파크_${payload.name || '상권분석'}_출점타당성보고서.docx`);
+                }
+
+                loading.style.display = 'none';
+                result.style.display = 'block';
+            } catch (err) {
+                alert('분석 처리 중 오류가 발생했습니다: ' + err.message);
+                loading.style.display = 'none';
+                empty.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
