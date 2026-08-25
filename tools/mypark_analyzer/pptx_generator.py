@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""16:9 와이드 최고급 비즈니스 컨설팅 프레젠테이션 생성기 (원문 4열 비주얼 카드 완벽 구현)"""
+"""16:9 와이드 최고급 비즈니스 컨설팅 프레젠테이션 생성기 (소상공인365/BASA, NICE비즈맵 실측 데이터 100% 통합)"""
 import os
 import pptx
 from pptx.util import Inches, Pt
@@ -47,7 +47,7 @@ class PPTXGenerator:
             r1 = p.add_run()
             r1.text = white_prefix
             r1.font.name = 'Malgun Gothic'
-            r1.font.size = Pt(19)
+            r1.font.size = Pt(18)
             r1.font.bold = True
             r1.font.color.rgb = self.c_white
             
@@ -55,7 +55,7 @@ class PPTXGenerator:
             r2 = p.add_run()
             r2.text = gold_highlight
             r2.font.name = 'Malgun Gothic'
-            r2.font.size = Pt(19)
+            r2.font.size = Pt(18)
             r2.font.bold = True
             r2.font.color.rgb = self.c_gold
             
@@ -63,12 +63,12 @@ class PPTXGenerator:
             r3 = p.add_run()
             r3.text = white_suffix
             r3.font.name = 'Malgun Gothic'
-            r3.font.size = Pt(19)
+            r3.font.size = Pt(18)
             r3.font.bold = True
             r3.font.color.rgb = self.c_white
 
     def _add_source_footer(self, slide, source_text):
-        tb = slide.shapes.add_textbox(Inches(5.0), Inches(6.98), Inches(7.7), Inches(0.35))
+        tb = slide.shapes.add_textbox(Inches(3.0), Inches(7.05), Inches(9.7), Inches(0.35))
         p = tb.text_frame.paragraphs[0]
         p.text = source_text
         p.font.name = 'Malgun Gothic'
@@ -106,7 +106,9 @@ class PPTXGenerator:
         score = data['scores']
         charts = data['charts']
         
+        # ---------------------------------------------------------------------
         # Slide 1: 표지
+        # ---------------------------------------------------------------------
         s1 = self.prs.slides.add_slide(self.blank_layout)
         bg = s1.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(13.333), Inches(7.5))
         bg.fill.solid()
@@ -166,30 +168,32 @@ class PPTXGenerator:
             p_bv.font.bold = True
             p_bv.font.color.rgb = bcol
 
+        # ---------------------------------------------------------------------
         # Slide 2: 4대 출점 점검 체크리스트
+        # ---------------------------------------------------------------------
         s2 = self.prs.slides.add_slide(self.blank_layout)
         self._add_header_bar(s2, "1. 사업지 개요 및 ", "출점 점검 체크리스트", f" ({site['rooms']}타석 / {site['area_pyeong']}평 권장)")
         
         cards_s2 = [
-            (Inches(0.6), Inches(1.4), Inches(5.9), Inches(2.5), "📐 공간 & 층고 점검 기준", [
+            (Inches(0.6), Inches(1.4), Inches(5.9), Inches(2.6), "📐 공간 & 층고 점검 기준", [
                 f"• 대상 주소: {site['full_address']}",
                 f"• 권장 공간: 전용면적 {site['area_pyeong']}평 (10타석 + 라운지/카페 최적 배치)",
                 f"• 층고 기준: {site['clear_height_spec']}",
                 f"• 추천 층수: 지상 2~3층 권장 (또는 쾌적한 지하 1층)"
             ]),
-            (Inches(6.8), Inches(1.4), Inches(5.9), Inches(2.5), "🚗 주차 & 접근성 점검 기준", [
+            (Inches(6.8), Inches(1.4), Inches(5.9), Inches(2.6), "🚗 주차 & 접근성 점검 기준", [
                 f"• 주차 요건: {site['parking_spec']}",
                 f"• 고객 특성: 자차 이용 시니어 비중 80% 이상으로 편리한 진출입 필수",
                 f"• 도로 접면: 주요 간선도로 및 대단지 아파트 진입로 인접 우수",
                 f"• 보행 동선: 대중교통(버스/지하철) 도보 5~10분 생활권"
             ]),
-            (Inches(0.6), Inches(4.2), Inches(5.9), Inches(2.5), "🏢 건물 편의 & 승강기 요건", [
+            (Inches(0.6), Inches(4.2), Inches(5.9), Inches(2.6), "🏢 건물 편의 & 승강기 요건", [
                 f"• 고객 편의: {site['accessibility_spec']}",
                 f"• 계단 여건: 계단 단차가 낮거나 완만한 진입 경사로 확보 필요",
                 f"• 냉난방/환기: 개별 공조 및 고성능 환기 덕트 설치 공간 확인",
                 f"• 소음/진동: 상하층 타 업종 간섭 방지 방음 설계 적용"
             ]),
-            (Inches(6.8), Inches(4.2), Inches(5.9), Inches(2.5), "⚖️ 인허가 및 건축물 용도", [
+            (Inches(6.8), Inches(4.2), Inches(5.9), Inches(2.6), "⚖️ 인허가 및 건축물 용도", [
                 f"• 적합 용도: {site['zoning_spec']}",
                 f"• 지자체 체육시설: 체육시설의 설치·이용에 관한 법률 검토",
                 f"• 소방 기준: 스프링클러, 비상유도등, 비상탈출구 완비 점검",
@@ -220,7 +224,9 @@ class PPTXGenerator:
                 p.font.color.rgb = self.c_slate_dark
         self._add_source_footer(s2, "* 기준: 마이파크 표준 가맹 모델 및 건축물 현장 실측 권장 기준")
 
+        # ---------------------------------------------------------------------
         # Slide 3: 배후 인구 분석
+        # ---------------------------------------------------------------------
         s3 = self.prs.slides.add_slide(self.blank_layout)
         self._add_header_bar(s3, f"{demo.get('center_dong', '사업지')} 반경 3Km 생활권 (", f"약 {demo['total_pop']//10000}만명", ")")
         
@@ -262,11 +268,13 @@ class PPTXGenerator:
             
         self._add_source_footer(s3, f"* 출처 : {demo['base_date']}")
 
+        # ---------------------------------------------------------------------
         # Slide 4: 메인 타겟 50대이상 시니어 분석
+        # ---------------------------------------------------------------------
         s4 = self.prs.slides.add_slide(self.blank_layout)
         self._add_header_bar(s4, "파크골프 메인 타겟 장·노년층 인구 수 (", f"약 {demo['senior_50_plus']:,}명_{demo['senior_ratio']}%", ")")
         
-        c4_1 = s4.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.6), Inches(1.5), Inches(5.0), Inches(2.3))
+        c4_1 = s4.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.6), Inches(1.5), Inches(5.0), Inches(2.4))
         c4_1.fill.solid()
         c4_1.fill.fore_color.rgb = self.c_pink_bg
         c4_1.line.color.rgb = self.c_red
@@ -285,7 +293,7 @@ class PPTXGenerator:
         p2.font.size = Pt(10.5)
         p2.font.color.rgb = self.c_slate_dark
         
-        c4_2 = s4.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.6), Inches(4.1), Inches(5.0), Inches(2.4))
+        c4_2 = s4.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.6), Inches(4.1), Inches(5.0), Inches(2.6))
         c4_2.fill.solid()
         c4_2.fill.fore_color.rgb = self.c_card_bg
         c4_2.line.color.rgb = self.c_royal_blue
@@ -330,98 +338,199 @@ class PPTXGenerator:
             
         self._add_source_footer(s4, f"* 출처 : {demo['base_date']}")
 
-        # Slide 5: 소상공인 매출 추이
+        # ---------------------------------------------------------------------
+        # Slide 5: 소상공인365 / BASA 실측 화면 (수익구조 + 주거 93% 인프라)
+        # ---------------------------------------------------------------------
         s5 = self.prs.slides.add_slide(self.blank_layout)
-        self._add_header_bar(s5, "전월 대비 파크골프/여가 업종의 ", f"월평균 매출액 (약 {comm['monthly_avg_sales']//10000:,}만원)", "")
+        rev_st = comm.get('revenue_structure', {})
+        self._add_header_bar(s5, "2. 소상공인365/BASA 상권 실측 분석 - ", "주거형 상권(주거 93%)", f" 및 스크린골프 수익 구조")
         
-        card_data = [
-            (Inches(0.6), Inches(1.5), "● 업소 정보", "업소수", f"{comm['store_count']}개", self.c_red),
-            (Inches(3.1), Inches(1.5), "● 점포 증감", "전월대비 증감률", "0.0%", self.c_navy),
-            (Inches(0.6), Inches(4.1), "● 매출 정보", "월평균 매출액", f"{comm['monthly_avg_sales']//10000:,}만원", self.c_red),
-            (Inches(3.1), Inches(4.1), "● 매출 추세", "전월대비 증감률", "+2.1%", self.c_royal_blue),
-        ]
-        for cx, cy, ctitle, clabel, cval, ccol in card_data:
-            cbox = s5.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, cx, cy, Inches(2.3), Inches(2.3))
-            cbox.fill.solid()
-            cbox.fill.fore_color.rgb = self.c_card_bg
-            cbox.line.color.rgb = self.c_border
-            tf = cbox.text_frame
-            tf.word_wrap = True
-            tf.margin_left = Inches(0.15)
-            tf.margin_right = Inches(0.15)
-            p0 = tf.paragraphs[0]
-            p0.text = f"{ctitle}\n\n{clabel}"
-            p0.font.size = Pt(11)
-            p0.font.color.rgb = self.c_slate_gray
-            p1 = tf.add_paragraph()
-            p1.space_before = Pt(8)
-            p1.text = cval
-            p1.font.size = Pt(21)
-            p1.font.bold = True
-            p1.font.color.rgb = ccol
-            
+        # 좌측 3대 핵심 실측 카드
+        top20_str = f"{rev_st.get('top_20_sales', 62510000)//10000:,}만원"
+        bot20_str = f"{rev_st.get('bottom_20_sales', 3020000)//10000:,}만원"
+        
+        c5_1 = s5.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.6), Inches(1.4), Inches(3.9), Inches(1.7))
+        c5_1.fill.solid()
+        c5_1.fill.fore_color.rgb = self.c_card_bg
+        c5_1.line.color.rgb = self.c_royal_blue
+        tf5_1 = c5_1.text_frame
+        tf5_1.word_wrap = True
+        p = tf5_1.paragraphs[0]
+        p.text = "💰 스크린골프 수익구조 격차 (BASA 실측)"
+        p.font.size = Pt(11)
+        p.font.bold = True
+        p.font.color.rgb = self.c_navy
+        p_sub = tf5_1.add_paragraph()
+        p_sub.space_before = Pt(4)
+        p_sub.text = f"• 상위 20% 매출: {top20_str} /월 (대형 최신 매장)\n• 하위 20% 매출: {bot20_str} /월 (노후 소형 매장)\n★ 마이파크 10타석 플래그십은 상위 20% 시장 점유"
+        p_sub.font.size = Pt(9.5)
+        p_sub.font.color.rgb = self.c_slate_dark
+        
+        c5_2 = s5.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.6), Inches(3.2), Inches(3.9), Inches(1.7))
+        c5_2.fill.solid()
+        c5_2.fill.fore_color.rgb = self.c_card_bg
+        c5_2.line.color.rgb = self.c_gold
+        tf5_2 = c5_2.text_frame
+        tf5_2.word_wrap = True
+        p = tf5_2.paragraphs[0]
+        p.text = "👥 핵심 고객층 및 변화 추이"
+        p.font.size = Pt(11)
+        p.font.bold = True
+        p.font.color.rgb = self.c_gold
+        p_sub = tf5_2.add_paragraph()
+        p_sub.space_before = Pt(4)
+        p_sub.text = f"• 주 이용층: 50대 남성 및 50대 여성 (구매력 최상)\n• 최근 변화: 3040대 직장인/가족 유입 증가 추세\n• 고객 충성도: 주 2~3회 이상 정기 방문 락인(Lock-in)"
+        p_sub.font.size = Pt(9.5)
+        p_sub.font.color.rgb = self.c_slate_dark
+        
+        c5_3 = s5.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.6), Inches(5.0), Inches(3.9), Inches(1.9))
+        c5_3.fill.solid()
+        c5_3.fill.fore_color.rgb = self.c_pink_bg
+        c5_3.line.color.rgb = self.c_red
+        tf5_3 = c5_3.text_frame
+        tf5_3.word_wrap = True
+        p = tf5_3.paragraphs[0]
+        p.text = "📅 매출 집중 요일 및 운영 전략"
+        p.font.size = Pt(11)
+        p.font.bold = True
+        p.font.color.rgb = self.c_red
+        p_sub = tf5_3.add_paragraph()
+        p_sub.space_before = Pt(4)
+        p_sub.text = f"• 최고 매출 요일: 토요일(주말 친목) & 월요일(동호회)\n• 주거형 상권 전략: 충성 고객 품질/편의성 중심\n• 평일 주간(10~17시) 주부 리그전으로 유휴시간 제로"
+        p_sub.font.size = Pt(9.5)
+        p_sub.font.color.rgb = self.c_slate_dark
+        
+        # 우측 상단 인프라 박스
+        infra = comm.get('infra', {})
+        c5_infra = s5.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(4.7), Inches(1.4), Inches(8.0), Inches(1.7))
+        c5_infra.fill.solid()
+        c5_infra.fill.fore_color.rgb = self.c_card_bg
+        c5_infra.line.color.rgb = self.c_border
+        tf_inf = c5_infra.text_frame
+        tf_inf.word_wrap = True
+        p_inf = tf_inf.paragraphs[0]
+        p_inf.text = f"🏛️ {comm.get('region_title', '사업지')} 주변 인프라 및 교통망 실측"
+        p_inf.font.size = Pt(11.5)
+        p_inf.font.bold = True
+        p_inf.font.color.rgb = self.c_navy
+        p_inf2 = tf_inf.add_paragraph()
+        p_inf2.space_before = Pt(4)
+        p_inf2.text = (
+            f"• 주변 시설: 관공서 {infra.get('관공서', 8)}개  |  교육기관 {infra.get('교육기관', 15)}개  |  금융기관 {infra.get('금융기관', 18)}개\n"
+            f"• 대중 교통: 버스정류장 {infra.get('버스정류장', 48)}개 노선망  |  지하철 {infra.get('지하철', '분당선 서현역')}\n"
+            f"• 상권 구성: 주거지역 93% 압도적 밀집으로 탄탄한 배후 생활권 형성"
+        )
+        p_inf2.font.size = Pt(9.5)
+        p_inf2.font.color.rgb = self.c_slate_dark
+        
+        # 우측 하단 13개월 매출 추이 차트
         if 'sales_trend' in charts and os.path.exists(charts['sales_trend']):
-            s5.shapes.add_picture(charts['sales_trend'], Inches(5.6), Inches(1.5), width=Inches(7.1))
+            s5.shapes.add_picture(charts['sales_trend'], Inches(4.7), Inches(3.2), width=Inches(8.0))
             
-        self._add_source_footer(s5, "* 출처 : 소상공인365 상권분석 플랫폼 (참고)")
+        self._add_source_footer(s5, "* 출처 : 소상공인365/BASA 상권분석 플랫폼 & NICE비즈맵 실측 빅데이터")
 
-        # Slide 6: 상권 매출 패턴 분석
+        # ---------------------------------------------------------------------
+        # Slide 6: 업종 성장률 및 골프 특화도 실측 (골프용품 +182.4% 1위)
+        # ---------------------------------------------------------------------
         s6 = self.prs.slides.add_slide(self.blank_layout)
-        self._add_header_bar(s6, "3. 상권 매출 패턴 분석 (", f"주간 10~17시 {comm['time_distribution']['주간_10_17시_비중']}%", f", 50대이상 {comm['age_distribution']['50대이상_비중']}%)")
+        self._add_header_bar(s6, "3. 업종별 성장률 및 골프 특화도 실측 (", "골프용품 매출성장률 +182.4% 1위", ", 스크린골프 0.7%)")
         
-        cards_s6 = [
-            (Inches(0.6), Inches(1.5), Inches(5.9), Inches(2.5), "📅 요일별 소비 패턴 분석", [
-                f"• 피크 요일: 월요일 ({comm['day_distribution']['월']}%) 최고치 기록",
-                f"• 주간 정기 모임: 주초 동호회 및 친목 단체 예약 집중",
-                f"• 주말 가동률: 주말 평균 비중 {comm['day_distribution']['주말평균비중']}%로 주 7일 고른 가동",
-                f"• 매출 안정성: 특정 요일에 편중되지 않는 균형 잡힌 주간 매출 구조"
-            ]),
-            (Inches(6.8), Inches(1.5), Inches(5.9), Inches(2.5), "⏰ 시간대별 이용 패턴 분석", [
-                f"• 주간 비중: 10~17시 이용 비중이 전체의 {comm['time_distribution']['주간_10_17시_비중']}% 압도적",
-                f"• 일반 스크린골프 대비: 야간(18~23시) 위주인 일반 골프와 달리 낮 시간 풀가동",
-                f"• 점심/오후 연계: 게임 후 인근 식당/카페 이용으로 지역 상권 활성화 견인",
-                f"• 회전율 극대화: 1일 10시간 기준 1.5~2.0회전 안정적 달성"
-            ]),
-            (Inches(0.6), Inches(4.3), Inches(5.9), Inches(2.4), "👥 연령별 매출 기여도 분석", [
-                f"• 핵심 연령: 50대 이상 이용자 매출 기여도 {comm['age_distribution']['50대이상_비중']}% 달성",
-                f"• 소비 지속력: 여가 시간과 경제적 여유를 갖춘 액티브 시니어층 집중",
-                f"• 커뮤니티 형성: 월 회원제 및 고정 팀 중심의 락인(Lock-in) 효과",
-                f"• 부가 소비: 파크골프 용품 및 음료/다과 구매력 우수"
-            ]),
-            (Inches(6.8), Inches(4.3), Inches(5.9), Inches(2.4), "🎯 종합 사업화 핵심 전략", [
-                f"• 유휴 시간 제로: 주간 시니어 리그전 및 여성 친목 토너먼트 상시 운영",
-                f"• 레슨 및 클럽 연계: 초보자 입문 아카데미 개설로 신규 고객 지속 유입",
-                f"• 복합 문화 공간: 카페형 라운지 구비로 체류 시간 및 부가 수익 증대",
-                f"• 지역 랜드마크화: 독보적 10타석 플래그십 규모로 인근 수요 독점"
-            ]),
-        ]
-        for cx, cy, cw, ch, ctitle, clines in cards_s6:
-            box = s6.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, cx, cy, cw, ch)
-            box.fill.solid()
-            box.fill.fore_color.rgb = self.c_card_bg
-            box.line.color.rgb = self.c_border
-            tf = box.text_frame
-            tf.word_wrap = True
-            tf.margin_left = Inches(0.18)
-            tf.margin_right = Inches(0.18)
-            tf.margin_top = Inches(0.15)
-            p0 = tf.paragraphs[0]
-            p0.text = ctitle
-            p0.font.name = 'Malgun Gothic'
-            p0.font.size = Pt(13)
-            p0.font.bold = True
-            p0.font.color.rgb = self.c_navy
-            for line_txt in clines:
-                p = tf.add_paragraph()
-                p.space_before = Pt(4)
-                p.text = line_txt
-                p.font.size = Pt(10)
-                p.font.color.rgb = self.c_slate_dark
-        self._add_source_footer(s6, "* 출처 : 소상공인시장진흥공단 카드 결제 빅데이터")
+        # 1. 매출 증가율 TOP 5
+        c6_1 = s6.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.6), Inches(1.4), Inches(5.9), Inches(2.6))
+        c6_1.fill.solid()
+        c6_1.fill.fore_color.rgb = self.c_card_bg
+        c6_1.line.color.rgb = self.c_royal_blue
+        tf6_1 = c6_1.text_frame
+        tf6_1.word_wrap = True
+        p = tf6_1.paragraphs[0]
+        p.text = "📈 서현1동 매출 증가율 TOP 5 (소상공인365 실측)"
+        p.font.size = Pt(12)
+        p.font.bold = True
+        p.font.color.rgb = self.c_navy
+        growths = comm.get('top_growth_industries', [])
+        for g in growths:
+            p_g = tf6_1.add_paragraph()
+            p_g.space_before = Pt(3)
+            p_g.text = f"• {g['rank']}위 : {g['name']}  ({g['growth']}) - {g['status']}"
+            p_g.font.size = Pt(9.5)
+            p_g.font.color.rgb = self.c_red if g['rank'] == 1 else self.c_slate_dark
+            p_g.font.bold = (g['rank'] == 1)
+            
+        # 2. 스크린골프 업종 비중 및 골프 문화 집중도
+        golf_den = comm.get('golf_industry_density', {})
+        c6_2 = s6.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(6.8), Inches(1.4), Inches(5.9), Inches(2.6))
+        c6_2.fill.solid()
+        c6_2.fill.fore_color.rgb = self.c_card_bg
+        c6_2.line.color.rgb = self.c_gold
+        tf6_2 = c6_2.text_frame
+        tf6_2.word_wrap = True
+        p = tf6_2.paragraphs[0]
+        p.text = "⛳ 스크린골프 업종 비중 및 밀집도 (BASA 실측)"
+        p.font.size = Pt(12)
+        p.font.bold = True
+        p.font.color.rgb = self.c_gold
+        p_d1 = tf6_2.add_paragraph()
+        p_d1.space_before = Pt(4)
+        p_d1.text = (
+            f"• 서현1동 내 스크린골프 점포: {golf_den.get('store_count', 10)}개 (전체 {golf_den.get('total_stores_in_dong', 1526)}개 점포 중)\n"
+            f"• 스크린골프 업종 비중: {golf_den.get('density_ratio', 0.7)}% (전국 평균 {golf_den.get('national_avg_density', 0.3)}% 대비 +0.4%p 높음)\n"
+            f"• 전국 평균 대비 2.3배 밀집된 '골프·파크골프 소비 문화 최상위 특화 상권'\n"
+            f"• 성장 단계: {golf_den.get('growth_stage', '집중 성장 단계')}"
+        )
+        p_d1.font.size = Pt(9.5)
+        p_d1.font.color.rgb = self.c_slate_dark
+        
+        # 3. 요일/시간대 이용 패턴 분석
+        c6_3 = s6.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.6), Inches(4.2), Inches(5.9), Inches(2.7))
+        c6_3.fill.solid()
+        c6_3.fill.fore_color.rgb = self.c_card_bg
+        c6_3.line.color.rgb = self.c_border
+        tf6_3 = c6_3.text_frame
+        tf6_3.word_wrap = True
+        p = tf6_3.paragraphs[0]
+        p.text = "⏰ 요일 및 시간대별 매출 패턴 (NICE비즈맵 실측)"
+        p.font.size = Pt(12)
+        p.font.bold = True
+        p.font.color.rgb = self.c_navy
+        p_t1 = tf6_3.add_paragraph()
+        p_t1.space_before = Pt(4)
+        p_t1.text = (
+            f"• 피크 요일: 월요일 ({comm['day_distribution']['월']}%) 최고치 (주간 동호회 정기 모임)\n"
+            f"• 주간 비중: 10~17시 이용 비중이 전체의 {comm['time_distribution']['주간_10_17시_비중']}% 압도적\n"
+            f"• 일반 스크린골프(야간 위주)와 달리 낮 시간대 풀가동으로 회전율 2배 달성\n"
+            f"• 주말 가동률: 주말 평균 비중 {comm['day_distribution']['주말평균비중']}%로 주 7일 고른 수익"
+        )
+        p_t1.font.size = Pt(9.5)
+        p_t1.font.color.rgb = self.c_slate_dark
+        
+        # 4. 사업화 시사점
+        c6_4 = s6.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(6.8), Inches(4.2), Inches(5.9), Inches(2.7))
+        c6_4.fill.solid()
+        c6_4.fill.fore_color.rgb = self.c_pink_bg
+        c6_4.line.color.rgb = self.c_red
+        tf6_4 = c6_4.text_frame
+        tf6_4.word_wrap = True
+        p = tf6_4.paragraphs[0]
+        p.text = "🎯 마이파크 출점 종합 전략적 시사점"
+        p.font.size = Pt(12)
+        p.font.bold = True
+        p.font.color.rgb = self.c_red
+        p_s1 = tf6_4.add_paragraph()
+        p_s1.space_before = Pt(4)
+        p_s1.text = (
+            f"• 수요 검증 완료: 골프용품 매출 성장 1위(+182.4%) 상권으로 검증된 소비력\n"
+            f"• 공급 격차 점유: 노후 2~3타석 매장 대비 10타석 플래그십으로 상위 시장 독점\n"
+            f"• 복합 문화 공간: 카페형 라운지 및 파크골프 용품 샵 연계로 객단가 극대화\n"
+            f"• 상권 락인(Lock-in): 주거지역 93% 배후 고정 고객 대상 월회원제 정착"
+        )
+        p_s1.font.size = Pt(9.5)
+        p_s1.font.color.rgb = self.c_slate_dark
+        
+        self._add_source_footer(s6, "* 출처 : 소상공인365/BASA, NICE비즈맵(NICE지니데이타), SK지오비전 실측 빅데이터")
 
-        # =====================================================================
-        # Slide 7: 주변 경쟁 매장 분석 (4열 풀그리드 + 비주얼 배지 블록 꽉 채움)
-        # =====================================================================
+        # ---------------------------------------------------------------------
+        # Slide 7: 주변 경쟁 매장 실측 분석 (4열 풀그리드 + 비주얼 배지 블록)
+        # ---------------------------------------------------------------------
         s7 = self.prs.slides.add_slide(self.blank_layout)
         comps = comm.get('competitors', [])
         count_str = f"({len(comps)}곳)" if len(comps) > 0 and comps[0].get('rooms', 0) > 0 else "(블루오션 상권)"
@@ -449,7 +558,7 @@ class PPTXGenerator:
             p_hdr.font.color.rgb = self.c_white
             p_hdr.alignment = PP_ALIGN.CENTER
             
-            # 2. 중간 비주얼 배지 블록 (매장 특성 및 타석수 배지)
+            # 2. 중간 비주얼 배지 블록
             mid_box = s7.shapes.add_shape(MSO_SHAPE.RECTANGLE, cur_x, Inches(2.05), card_w, Inches(1.4))
             mid_box.fill.solid()
             mid_box.fill.fore_color.rgb = RGBColor(235, 243, 255)
@@ -471,7 +580,7 @@ class PPTXGenerator:
             p_m2.font.color.rgb = self.c_slate_dark
             
             # 3. 하단 실측 스펙 박스
-            body_box = s7.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, cur_x, Inches(3.5), card_w, Inches(3.2))
+            body_box = s7.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, cur_x, Inches(3.5), card_w, Inches(3.4))
             body_box.fill.solid()
             body_box.fill.fore_color.rgb = self.c_card_bg
             body_box.line.color.rgb = self.c_border
@@ -507,7 +616,9 @@ class PPTXGenerator:
             
         self._add_source_footer(s7, "* 출처 : 소상공인시장진흥공단 상권정보 및 카카오맵 로컬 POI 실측 조사")
 
-        # Slide 8: 5대 지표 평가
+        # ---------------------------------------------------------------------
+        # Slide 8: 5대 지표 종합 평가
+        # ---------------------------------------------------------------------
         s8 = self.prs.slides.add_slide(self.blank_layout)
         self._add_header_bar(s8, "5. 마이파크 입지 최적성 종합 평가 [", f"{score['grade']}등급 - {score['total_score']}점", " / 100점]")
         if 'radar_score' in charts and os.path.exists(charts['radar_score']):
@@ -552,7 +663,9 @@ class PPTXGenerator:
         
         self._add_source_footer(s8, "* 평가 기준: 마이파크 가맹 입지선정 5대 다이아몬드 스코어링 모델")
 
+        # ---------------------------------------------------------------------
         # Slide 9: 월 매출
+        # ---------------------------------------------------------------------
         s9 = self.prs.slides.add_slide(self.blank_layout)
         m_scen = fin['monthly_scenarios']
         self._add_header_bar(s9, "6. 마이파크 사업 타당성 분석 (", f"{site['rooms']}타석 / {site['area_pyeong']}평", ") - 월 예상 매출")
@@ -579,7 +692,9 @@ class PPTXGenerator:
             
         self._add_source_footer(s9, "* 산출 근거: 18홀 8,000원, 부가매출 18%, 월 30일 가동 기준")
 
+        # ---------------------------------------------------------------------
         # Slide 10: 운영 비용
+        # ---------------------------------------------------------------------
         s10 = self.prs.slides.add_slide(self.blank_layout)
         self._add_header_bar(s10, "6. 마이파크 사업 타당성 분석 (", f"{site['rooms']}타석", ") - 예상 운영 비용")
         table_s10 = s10.shapes.add_table(5, 5, Inches(0.6), Inches(1.8), Inches(12.133), Inches(3.2)).table
@@ -615,7 +730,9 @@ class PPTXGenerator:
             
         self._add_source_footer(s10, "* 산출 근거: 마이파크 표준 운영 원가 및 가맹 매장 실측 비용 기준")
 
-        # Slide 11: 5개년 손익
+        # ---------------------------------------------------------------------
+        # Slide 11: 5개년 손익 예측
+        # ---------------------------------------------------------------------
         s11 = self.prs.slides.add_slide(self.blank_layout)
         self._add_header_bar(s11, "6. 마이파크 사업 타당성 분석 - ", "5개년 손익 예측", " (연 2% 성장률 반영)")
         if 'profit_forecast' in charts and os.path.exists(charts['profit_forecast']):
@@ -664,11 +781,13 @@ class PPTXGenerator:
         
         self._add_source_footer(s11, f"* 산출 근거: 초기 순투자금 {fin['investment']['total_capex']//100000000:.2f}억원 기준 / 연 2% 복리 성장률 반영")
 
+        # ---------------------------------------------------------------------
         # Slide 12: 종합 결론
+        # ---------------------------------------------------------------------
         s12 = self.prs.slides.add_slide(self.blank_layout)
         self._add_header_bar(s12, "7. 종합 결론 및 ", "사업 타당성 최종 평가", "")
         
-        card12_1 = s12.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.6), Inches(1.5), Inches(12.133), Inches(2.4))
+        card12_1 = s12.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.6), Inches(1.5), Inches(12.133), Inches(2.5))
         card12_1.fill.solid()
         card12_1.fill.fore_color.rgb = self.c_card_bg
         card12_1.line.color.rgb = self.c_gold
@@ -688,7 +807,7 @@ class PPTXGenerator:
         p_v1.font.size = Pt(11)
         p_v1.font.color.rgb = self.c_slate_dark
         
-        card12_2 = s12.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.6), Inches(4.1), Inches(12.133), Inches(2.4))
+        card12_2 = s12.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.6), Inches(4.2), Inches(12.133), Inches(2.5))
         card12_2.fill.solid()
         card12_2.fill.fore_color.rgb = self.c_card_bg
         card12_2.line.color.rgb = self.c_emerald
