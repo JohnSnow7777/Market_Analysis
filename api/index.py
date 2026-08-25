@@ -43,6 +43,10 @@ class handler(BaseHTTPRequestHandler):
             
             pptx_b64 = None
             docx_b64 = None
+            pdf_b64 = None
+            if 'pdf_path' in result and os.path.exists(result['pdf_path']):
+                with open(result['pdf_path'], 'rb') as f:
+                    pdf_b64 = base64.b64encode(f.read()).decode('utf-8')
             if os.path.exists(result['pptx_path']):
                 with open(result['pptx_path'], 'rb') as f:
                     pptx_b64 = base64.b64encode(f.read()).decode('utf-8')
@@ -50,6 +54,7 @@ class handler(BaseHTTPRequestHandler):
                 with open(result['docx_path'], 'rb') as f:
                     docx_b64 = base64.b64encode(f.read()).decode('utf-8')
                     
+            result['pdf_base64'] = pdf_b64
             result['pptx_base64'] = pptx_b64
             result['docx_base64'] = docx_b64
             

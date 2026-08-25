@@ -11,6 +11,7 @@ from .scoring_engine import ScoringEngine
 from .visualizer import Visualizer
 from .pptx_generator import PPTXGenerator
 from .docx_generator import DOCXGenerator
+from .pdf_generator import PDFGenerator
 from .address_resolver import AddressResolver
 
 class MyParkReportGenerator:
@@ -73,13 +74,16 @@ class MyParkReportGenerator:
         date_str = datetime.now().strftime("%y%m%d")
         pptx_path = os.path.join(self.output_dir, f"{date_str}_마이파크_{safe_name}_상권및사업분석_v1.0.pptx")
         docx_path = os.path.join(self.output_dir, f"{date_str}_마이파크_{safe_name}_출점타당성보고서_v1.0.docx")
+        pdf_path = os.path.join(self.output_dir, f"{date_str}_마이파크_{safe_name}_상권및사업분석_v1.0.pdf")
         
         PPTXGenerator().generate(bundle, pptx_path)
         DOCXGenerator.generate(bundle, docx_path)
+        PDFGenerator().generate(bundle, pdf_path)
         
         return {
             'pptx_path': pptx_path,
             'docx_path': docx_path,
+            'pdf_path': pdf_path,
             'bundle': bundle,
             'total_score': scores['total_score'],
             'grade': scores['grade'],

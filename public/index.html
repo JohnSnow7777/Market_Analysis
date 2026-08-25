@@ -415,12 +415,16 @@
                         <div class="value-text" style="color:#14532D;" id="valueLandlord">-</div>
                     </div>
 
-                    <div class="download-group">
-                        <a id="btnPptx" class="btn-download primary" href="#" download>
-                            <span>📥 PPTX 프레젠테이션 (12장) 다운로드</span>
+                    <div class="download-group" style="grid-template-columns: 1.2fr 1fr 1fr;">
+                        <a id="btnPdf" class="btn-download primary" href="#" download style="background: linear-gradient(135deg, #0F2744 0%, #0A192F 100%); border: 1.5px solid #F59E0B; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.25);">
+                            <span style="color:#F59E0B; font-size:16px;">📄</span>
+                            <span style="color:#FFFFFF; font-weight:800;">PDF 분석 보고서 (12장) 다운로드</span>
+                        </a>
+                        <a id="btnPptx" class="btn-download" href="#" download>
+                            <span>📥 PPTX 프레젠테이션</span>
                         </a>
                         <a id="btnDocx" class="btn-download" href="#" download>
-                            <span>📄 DOCX 출점타당성보고서 다운로드</span>
+                            <span>📝 DOCX 출점기획서</span>
                         </a>
                     </div>
                 </div>
@@ -511,6 +515,10 @@
                 document.getElementById('valueLandlord').innerText = res.bundle.scores.value_landlord || res.bundle.scores.pitch_landlord;
                 document.getElementById('resDate').innerText = '분석 기준: ' + res.bundle.created_at;
 
+                if (res.pdf_base64) {
+                    document.getElementById('btnPdf').href = 'data:application/pdf;base64,' + res.pdf_base64;
+                    document.getElementById('btnPdf').setAttribute('download', `마이파크_${payload.name || site.sigungu || '상권분석'}_사업분석.pdf`);
+                }
                 if (res.pptx_base64) {
                     document.getElementById('btnPptx').href = 'data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,' + res.pptx_base64;
                     document.getElementById('btnPptx').setAttribute('download', `마이파크_${payload.name || site.sigungu || '상권분석'}_사업분석.pptx`);
