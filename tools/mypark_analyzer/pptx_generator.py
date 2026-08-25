@@ -610,11 +610,11 @@ class PPTXGenerator:
         tf8.word_wrap = True
         
         indicators = [
-            ("1) 골든 시니어 집적도", score['scores']['senior_population'], 25, "반경 3km 내 50대 이상 시니어 72,400명 (38.4%) 실측 매핑"),
-            ("2) 접근성 및 주차 인프라", score['scores']['accessibility_parking'], 25, "10타석 표준 주차 10~12대 확보 권장 기준 충족 가정치"),
-            ("3) 공간 적합성 및 임대료", score['scores']['space_efficiency'], 15, "권장 유효 층고 2.8m 이상 센서 작동 물리 규격 기준 충족"),
-            ("4) 수요 공급 갭 (블루오션)", score['scores']['supply_gap'], 15, "반경 3km 내 전문 매장 1~2곳으로 공급 부족 (1호점 선점)"),
-            ("5) 지역 소비력 및 여가지출", score['scores']['commercial_spending'], 20, "스포츠/여가 월평균 카드 매출 2,150만원 소비력 우수"),
+            ("1) 골든 시니어 집적도", score['scores']['senior_population'], 25, "KOSIS 실측: 반경 3km 내 50대 이상 시니어 72,400명 (비중 38.4%) 밀집"),
+            ("2) 접근성 및 주차 인프라", score['scores']['accessibility_parking'], 25, "간선도로 접면 및 대중교통 우수(20점) / 10타석 권장 10~12대 주차면은 '현장 실측' 요망"),
+            ("3) 공간 적합성 및 층고", score['scores']['space_efficiency'], 15, "120평 10타석 배치 최적(13점) / 권장 유효 층고 2.8m 이상 여부는 '인테리어 실측' 필수"),
+            ("4) 수요 공급 갭 (블루오션)", score['scores']['supply_gap'], 15, "상업용 전문 매장은 단 1곳('마실파크골프')뿐으로, 18.8만 인구 대비 10타석 플래그십 공급 절대 부족"),
+            ("5) 지역 소비력 및 여가지출", score['scores']['commercial_spending'], 20, "BASA 실측: 골프용품 성장률 1위(+182.4%) 및 스크린골프 상위 20% 월 6,251만원 상권"),
         ]
         for idx, (iname, iscore, imax, idesc) in enumerate(indicators):
             p = tf8.add_paragraph() if idx > 0 else tf8.paragraphs[0]
@@ -642,7 +642,7 @@ class PPTXGenerator:
         r_res.font.size = Pt(12)
         r_res.font.color.rgb = self.c_red
         
-        self._add_source_footer(s8, "MYPARK 5-Dimension Diamond Scoring Methodology (22+25+15+15+20=97.0)")
+        self._add_source_footer(s8, "MYPARK 5-Dimension Diamond Scoring Methodology (22+20+13+15+20=90.0 S-Grade)")
 
         # Slide 9: 월 예상 매출 (3단 복합 인포그래픽)
         s9 = self.prs.slides.add_slide(self.blank_layout)
@@ -736,9 +736,9 @@ class PPTXGenerator:
         
         # 1. 상단 3대 비용 지표
         s10_metrics = [
-            (Inches(0.6), "인건비 (상주 인력 3명)", "750만원 /월", "점장 1명 + 매니저 2명 교대 근무"),
-            (Inches(4.68), "임대료 (전용 120평 기준)", f"{fin['monthly_rent']//10000:,}만원 /월", "평당 약 4.5만원 기준 상권 적정가"),
-            (Inches(8.76), "변동비 & 운영관리비", "956만원 /월", "원가 3종 + 카드수수료 + 매장운영비")
+            (Inches(0.6), "초기 순투자금 (총 3.86억원)", "3억 8,600만원", "장비 2.0억 + 인테리어 1.56억 + 초도 0.3억"),
+            (Inches(4.68), "월 고정비 (인건비+임대료)", f"{fin['monthly_rent']//10000 + 750:,}만원 /월", f"인력 3명(750만) + 임대료({fin['monthly_rent']//10000:,}만)"),
+            (Inches(8.76), "월 변동비 & 매장운영비", "956만원 /월", "원가 3종 + 카드수수료 + 매장운영비")
         ]
         for bx, btitle, bval, bsub in s10_metrics:
             m_card = s10.shapes.add_shape(MSO_SHAPE.RECTANGLE, bx, Inches(1.45), Inches(3.96), Inches(1.05))
@@ -890,7 +890,7 @@ class PPTXGenerator:
             ("배후 시니어 인구", f"{demo['senior_50_plus']:,}명", f"({demo['senior_ratio']}% 점유)", self.c_mck_navy),
             ("예상 월 영업이익", f"{fin['monthly_scenarios']['moderate']['operating_profit']//10000:,}만원", "(영업이익률 48.6%)", self.c_mck_navy),
             ("손익분기점 (BEP)", "타석당 0.8회전", "(월 240명 시 돌파)", self.c_mck_teal),
-            ("순투자금 회수", f"약 {fin['investment']['payback_months_moderate']:.1f}개월", f"({fin['investment']['total_capex']//100000000:.2f}억원 기준)", self.c_red)
+            ("순투자금 회수", f"약 {fin['investment']['payback_months_moderate']:.1f}개월", "(순투자금 3.86억원 기준)", self.c_red)
         ]
         for i, (title, val, sub, col) in enumerate(kpis):
             x = Inches(0.6 + (i * 3.08))
