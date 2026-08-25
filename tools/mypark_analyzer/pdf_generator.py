@@ -647,15 +647,15 @@ class PDFGenerator:
         
         # 3. 하단 콜아웃 2단
         cost_callouts = [
-            (40, "■ 고정비 안정화 전략", [
-                "• 장기 임대차 계약 체결로 임대료 상승 억제 및 공실 리스크 제로",
-                "• 본사 키오스크 무인 관제 연동으로 심야/오전 인건비 대폭 절감",
-                "• 고정비 비중을 전체 매출의 37% 이하로 통제하여 손익 안정성 방어"
+            (40, "■ 운영 모델별 인건비 및 손익 비교", [
+                "• 오토/위탁 운영 (직원 3명): 월 인건비 750만, 월 순익 2,120만, 회수 15.8개월",
+                "★ 창업주 직접 운영 (점주+파트 1명): 월 인건비 250만 (500만원 절감)",
+                "↳ 직접 운영 시 월 순영업익 2,620만원 달성 및 단 12.8개월(1년 1개월) 회수"
             ]),
-            (495, "■ 높은 공헌이익률 구조", [
+            (495, "■ 높은 공헌이익률 및 BEP 방어력", [
                 "• 전체 매출의 82%가 타석 이용료(마진 98%)로 구성되어 이익률 최상",
-                "• 손익분기점(BEP) 초과 이후 추가 매출의 78%가 순영업이익으로 직결",
-                "• 보편 가동 시 48.6%의 압도적 영업이익률로 강력한 현금흐름 창출"
+                "• 창업주 직접 운영 시 월 고정비가 1,140만원으로 급감하여 손익 안정성 극대화",
+                "• 손익분기점(BEP)이 기기당 일 0.5회전(월 135명)으로 낮아져 적자 불가능"
             ])
         ]
         for bx, btitle, blines in cost_callouts:
@@ -705,16 +705,20 @@ class PDFGenerator:
         c.rect(560, 48, 360, 210, fill=1, stroke=1)
         c.setFont(FONT_BOLD, 10.5)
         c.setFillColor(self.c_mck_teal)
-        c.drawString(576, 238, "■ 손익분기점(BEP) 및 투자금 회수 기간")
-        c.setFont(FONT_REGULAR, 8.8)
+        c.drawString(576, 238, "■ 손익분기점(BEP) 및 운영모델별 회수 기간")
+        c.setFont(FONT_REGULAR, 8.5)
         c.setFillColor(self.c_charcoal)
-        c.drawString(576, 212, "• 손익분기점(BEP): 기기(타석)당 1일 단 0.8회전")
-        c.drawString(576, 188, "  ↳ 매장 전체 1일 8명(월 240명), 월 1,940만원 돌파")
-        c.drawString(576, 164, f"• 순투자금 회수: 초기 순투자금 {fin['investment']['total_capex']//100000000:.2f}억원 ({fin['investment']['total_capex']//10000:,}만원) 기준")
-        c.drawString(576, 140, f"  ↳ 보편 가동 시 약 1년 4개월 ({fin['investment']['payback_months_moderate']:.1f}개월) 만에 전액 회수")
-        c.drawString(576, 116, "• 안전 마진: 보편(150명) 대비 BEP(8명)는 5.3% 수준")
+        c.drawString(576, 212, "• 오토 운영 BEP: 기기당 1일 0.8회전 (월 240명 돌파 / 15.8개월 회수)")
+        c.setFont(FONT_BOLD, 8.8)
+        c.setFillColor(self.c_mck_teal)
+        c.drawString(576, 190, "★ 창업주 직접 운영 BEP: 기기당 1일 단 0.5회전 (월 135명 돌파)")
+        c.setFont(FONT_REGULAR, 8.2)
+        c.setFillColor(self.c_charcoal)
+        c.drawString(576, 172, "  ↳ 인건비 500만원 절감으로 월 순영업이익 2,620만원 (이익률 60.0%)")
+        c.drawString(576, 154, "  ↳ 순투자금 3.36억원 전액 회수 기간: 단 12.8개월 (약 1년 1개월)")
+        c.drawString(576, 134, "• 안전 마진: 보편 가동(150명) 대비 BEP(4.5명)는 3.0%로 적자 불가능")
         
-        self._draw_footer(c, f"CAPEX {fin['investment']['total_capex']//100000000:.2f} Billion KRW / Compound Growth Rate 2% p.a.")
+        self._draw_footer(c, f"CAPEX {fin['investment']['total_capex'] / 100000000.0:.2f} Billion KRW / Compound Growth Rate 2% p.a.")
         c.showPage()
 
         # ---------------------------------------------------------------------
@@ -765,9 +769,9 @@ class PDFGenerator:
                 "• 카페형 휴게 라운지 및 파크골프 용품 샵 결합으로 객단가 극대화"
             ]),
             ("● 3. 빠른 원금 회수 및 압도적 고수익성", [
-                f"• 월 순영업이익 약 {fin['monthly_scenarios']['moderate']['operating_profit']//10000:,}만원 (영업이익률 48.6%) 안정적 창출",
-                f"• 초기 순투자금 3.36억원 기준 약 1년 4개월 ({fin['investment']['payback_months_moderate']:.1f}개월) 만에 전액 회수",
-                "• 손익분기점(BEP)이 기기당 하루 단 0.8회전에 불과하여 적자 리스크 제로"
+                f"• 오토 운영: 월 순영업익 약 {fin['monthly_scenarios']['moderate']['operating_profit']//10000:,}만원 (이익률 48.6%) / 15.8개월 회수",
+                f"★ 창업주 직접 운영: 월 순영업익 2,620만원 (이익률 60.0%) / 단 12.8개월(1년 1개월) 회수",
+                "• 손익분기점(BEP)이 기기당 하루 0.5~0.8회전에 불과하여 적자 리스크 제로"
             ])
         ]
         for title, lines in f_points:

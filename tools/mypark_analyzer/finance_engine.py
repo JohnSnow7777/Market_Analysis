@@ -139,6 +139,26 @@ class FinanceEngine:
                 })
             forecast_5y[sc_key] = sc_list
             
+        # 창업주 직접 운영 모델 (점주 1명 상주 + 파트 1명 = 인건비 250만, 월 500만원 절감)
+        owner_fixed_cost = (1 * 2500000) + monthly_rent + 2000000 + 800000 + 700000
+        owner_bep_monthly_users = int(owner_fixed_cost / margin_per_user)
+        owner_bep_daily_users = round(owner_bep_monthly_users / 30.0, 1)
+        owner_bep_turns = round(owner_bep_daily_users / float(rooms), 2)  # 타석당 0.5회전
+        owner_op_mod = op_mod + 5000000  # 월 2,620만원
+        owner_payback = round(capex / owner_op_mod, 1)  # 약 12.8개월
+        
+        inv['owner_operated'] = {
+            'fixed_cost': owner_fixed_cost,
+            'bep_monthly_sales': int(owner_bep_monthly_users * (8000 * 1.18)),
+            'bep_turns_per_room': owner_bep_turns,
+            'bep_monthly_users': owner_bep_monthly_users,
+            'bep_daily_users': int(owner_bep_daily_users),
+            'monthly_operating_profit_moderate': owner_op_mod,
+            'profit_margin_moderate': round((owner_op_mod / scenarios['moderate']['total_revenue']) * 100, 1),
+            'payback_months': owner_payback,
+            'labor_savings_monthly': 5000000
+        }
+        
         return {
             'investment': inv,
             'monthly_scenarios': scenarios,
@@ -146,5 +166,6 @@ class FinanceEngine:
             'staff_count': staff_count,
             'monthly_rent': monthly_rent,
             'area_pyeong': area_pyeong,
-            'rooms': rooms
+            'rooms': rooms,
+            'owner_operated': inv['owner_operated']
         }

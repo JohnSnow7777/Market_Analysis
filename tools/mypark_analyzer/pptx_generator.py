@@ -811,12 +811,12 @@ class PPTXGenerator:
             
         # 3. 하단 비용 최적화 전략 콜아웃 카드
         cost_callouts = [
-            (Inches(0.6), "■ 고정비 안정화 전략",
-             "• 장기 임대차 계약 체결로 임대료 상승 억제 및 본사 키오스크 무인 관제 연동으로 심야/오전 인건비 절감\n"
-             "• 고정비 비중을 전체 매출의 37% 이하로 통제하여 매출 변동 시에도 손익 안정성 완벽 방어"),
-            (Inches(6.8), "■ 높은 공헌이익률 구조",
-             "• 전체 매출의 82%가 타석 이용료(마진 98%)로 구성되어 매출 증가 시 영업이익이 가파르게 상승\n"
-             "• 손익분기점(BEP) 초과 이후 발생하는 추가 매출의 약 78%가 순영업이익으로 직결되는 고수익 체계")
+            (Inches(0.6), "■ 운영 모델별 인건비 및 손익 비교",
+             "• 오토/위탁 운영 (직원 3명 고용): 월 인건비 750만원, 월 순영업이익 2,120만원, 회수 15.8개월\n"
+             "★ 창업주 직접 운영 (점주 상주 + 파트 1명): 월 인건비 250만(500만원 절감), 월 순영업이익 2,620만원, 회수 12.8개월(1년 1개월)"),
+            (Inches(6.8), "■ 높은 공헌이익률 및 BEP 방어력",
+             "• 전체 매출의 82%가 타석 이용료(마진 98%)로 구성되어 손익분기점 초과 시 매출의 78%가 순이익 직결\n"
+             "• 창업주 직접 운영 시 고정비가 1,140만원으로 감소하여 손익분기점이 타석당 일 0.5회전으로 초안정화")
         ]
         for bx, btitle, bdesc in cost_callouts:
             c_box = s10.shapes.add_shape(MSO_SHAPE.RECTANGLE, bx, Inches(5.3), Inches(5.9), Inches(1.7))
@@ -885,23 +885,23 @@ class PPTXGenerator:
         tf_k2.word_wrap = True
         tf_k2.margin_left = tf_k2.margin_right = Inches(0.16)
         p = tf_k2.paragraphs[0]
-        p.text = "■ 손익분기점(BEP) 및 투자금 회수 기간"
+        p.text = "■ 손익분기점(BEP) 및 운영모델별 회수 기간"
         p.font.size = Pt(11)
         p.font.bold = True
         p.font.color.rgb = self.c_mck_teal
         p2 = tf_k2.add_paragraph()
         p2.space_before = Pt(6)
         p2.text = (
-            f"• 손익분기점(BEP): 기기(타석)당 1일 단 0.8회전\n"
-            f"  ↳ 매장 전체 1일 8명(월 240명), 월매출 약 1,940만원 달성 시 BEP 돌파\n"
-            f"• 순투자금 회수: 초기 순투자금 약 {fin['investment']['total_capex']//100000000:.2f}억원 ({fin['investment']['total_capex']//10000:,}만원) 기준\n"
-            f"  ↳ 보편 가동 시 약 1년 4개월 ({fin['investment']['payback_months_moderate']:.1f}개월) 만에 전액 회수\n"
-            f"• 안전 마진: 보편 가동(1일 150명) 대비 BEP(1일 8명)는 5.3% 수준으로 적자 리스크 전무"
+            f"• 오토 운영 BEP: 기기당 1일 0.8회전 (월 240명 돌파 시 흑자 / 회수 15.8개월)\n"
+            f"★ 창업주 직접 운영 BEP: 기기당 1일 단 0.5회전 (월 135명 돌파 시 흑자)\n"
+            f"  ↳ 인건비 500만원 절감으로 월 순영업이익 2,620만원 (이익률 60.0%)\n"
+            f"  ↳ 순투자금 3.36억원 전액 회수 기간: 단 12.8개월 (약 1년 1개월)\n"
+            f"• 안전 마진: 보편 가동(150명) 대비 BEP(4.5명)는 3.0%로 적자 불가능 구조"
         )
         p2.font.size = Pt(9.0)
         p2.font.color.rgb = self.c_charcoal
         
-        self._add_source_footer(s11, f"CAPEX {fin['investment']['total_capex']//100000000:.2f} Billion KRW / Compound Growth Rate 2% p.a.")
+        self._add_source_footer(s11, f"CAPEX {fin['investment']['total_capex'] / 100000000.0:.2f} Billion KRW / Compound Growth Rate 2% p.a.")
 
         # ---------------------------------------------------------------------
         # Slide 12: 7. 종합 결론 및 사업 타당성 최종 평가
@@ -970,9 +970,9 @@ class PPTXGenerator:
              "• 소상공인365 실측 상위 20% 월매출 6,251만원 시장을 단독 선점 점유\n"
              "• 카페형 휴게 라운지 및 파크골프 용품 샵 결합으로 객단가 및 체류시간 극대화"),
             ("3. 빠른 원금 회수 및 압도적 고수익성",
-             f"• 월 순영업이익 약 {fin['monthly_scenarios']['moderate']['operating_profit']//10000:,}만원 (영업이익률 48.6%) 안정적 창출\n"
-             f"• 초기 순투자금 3.36억원 기준 약 1년 4개월 ({fin['investment']['payback_months_moderate']:.1f}개월) 만에 전액 회수\n"
-             "• 손익분기점(BEP)이 기기당 하루 단 0.8회전에 불과하여 사업 실패 리스크 제로")
+             f"• 오토 운영: 월 순영업익 약 {fin['monthly_scenarios']['moderate']['operating_profit']//10000:,}만원 (이익률 48.6%) / 회수 15.8개월\n"
+             f"★ 창업주 직접 운영 시: 월 순영업익 2,620만원 (이익률 60.0%) / 단 12.8개월(1년 1개월) 회수\n"
+             "• 손익분기점(BEP)이 기기당 하루 0.5~0.8회전에 불과하여 적자 리스크 전무")
         ]
         for idx, (title, desc) in enumerate(f_points):
             p_t = tf_lb.add_paragraph() if idx > 0 else tf_lb.paragraphs[0]
