@@ -1,6 +1,16 @@
 # -*- coding: utf-8 -*-
-"""5대 핵심 입지 지표(100점 만점) 채점 및 고객 제시용 사업 타당성 분석 엔진"""
+"""5대 핵심 입지 지표(100점 만점) 채점 및 고객 친화적 쉬운 제안서 생성 엔진"""
 from .config import SCORING_WEIGHTS
+
+def format_payback_text(months):
+    m = float(months)
+    if m < 12:
+        return f"약 {m:.1f}개월 (1년 이내 전액 회수)"
+    years = int(m // 12)
+    rem = round(m % 12)
+    if rem == 0:
+        return f"약 {years}년 ({m:.1f}개월)"
+    return f"약 {years}년 {rem}개월 ({m:.1f}개월)"
 
 class ScoringEngine:
     """입지 최적성 5대 다이아몬드 스코어링 및 기대효과 리포트 생성기"""
@@ -58,20 +68,21 @@ class ScoringEngine:
         senior_f_pop = demographics.get('senior_50_female', 50000)
         moderate_op = financials['monthly_scenarios']['moderate']['operating_profit']
         moderate_rev = financials['monthly_scenarios']['moderate']['total_revenue']
-        payback = financials['investment']['payback_months_moderate']
+        payback_months = financials['investment']['payback_months_moderate']
+        payback_str = format_payback_text(payback_months)
         
-        # 고객 전달용 전문 비즈니스 제안 문구 (설득/피칭 단어 완전 제거)
+        # 누구나 쉽게 이해하는 고객 맞춤형 사업성 제안 문구
         value_franchisee = (
-            f"반경 3km 내 50대 이상 골든 시니어 인구 {senior_pop:,}명(여성 {senior_f_pop:,}명)이 밀집한 특급 배후 상권으로, "
-            f"일반 스크린골프의 비가동 시간대인 '평일 주간 10~17시'에 100% 예약 풀가동이 가능합니다. "
-            f"보편 가동 기준 월 예상 총매출 {moderate_rev/10000000:.1f}천만원, 월 영업이익 {moderate_op/10000000:.1f}천만원(영업이익률 약 45~50%)을 달성하여 "
-            f"초기 투자금은 약 {payback:.0f}개월(1년 6개월 내외) 이내에 전액 회수되는 최고 수준의 안정적 수익 모델입니다."
+            f"반경 3km 내 50대 이상 골든 시니어 인구 {senior_pop:,}명(여성 {senior_f_pop:,}명)이 밀집한 특급 배후 상권입니다. "
+            f"일반 스크린골프 손님이 없는 '평일 낮 10시~오후 5시' 시간대에 시니어 주간 동호회 모임으로 100% 예약 풀가동이 가능합니다. "
+            f"보편 가동 기준 월 예상 총매출 {moderate_rev/10000000:.1f}천만원, 월 순영업이익 {moderate_op/10000000:.1f}천만원(영업이익률 약 45~50%)을 달성하며, "
+            f"초기 투자금은 {payback_str} 만에 전액 회수 가능한 안정적인 고수익 생활체육 창업 모델입니다."
         )
         
         value_landlord = (
-            f"본 매장 입점 시 구매력 높은 지역 액티브 시니어 고객층이 매일 고정 방문하여, "
-            f"건물 내 식음료/상업시설 전반의 집객력을 견인하는 핵심 앵커 테넌트(Anchor Tenant) 역할을 수행합니다. "
-            f"마이파크 직영/가맹 본부와의 연계를 바탕으로 장기 우량 임대차 계약을 통한 안정적 임대 수익과 건물 자산 가치 상승을 실현합니다."
+            f"본 매장 입점 시 구매력 높은 지역 액티브 시니어 고객 수백 명이 매일 건물을 찾아와, "
+            f"1층 카페, 식당 등 상가 내 다른 상점들의 손님까지 함께 늘려주는 '상가 전체를 살리는 대표 핵심 매장' 역할을 톡톡히 해냅니다. "
+            f"마이파크 본사와의 연계를 통해 5년 이상의 장기 우량 임대차 계약으로 공실 걱정 없이 안정적인 월세 수익과 건물 가치 상승을 동시에 누리실 수 있습니다."
         )
         
         return {
@@ -85,9 +96,9 @@ class ScoringEngine:
             'total_score': total_score,
             'grade': grade,
             'grade_desc': grade_desc,
+            'payback_text': payback_str,
             'value_franchisee': value_franchisee,
             'value_landlord': value_landlord,
-            # 호환용 키
             'pitch_franchisee': value_franchisee,
             'pitch_landlord': value_landlord
         }

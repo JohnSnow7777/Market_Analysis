@@ -221,7 +221,7 @@
                     </div>
 
                     <div class="value-container" style="background:#F0FDF4; border-color:#BBF7D0;">
-                        <div class="value-title" style="color:#166534;">🏢 건물 가치 제고 및 앵커 테넌트 입점 효과</div>
+                        <div class="value-title" style="color:#166534;">🏢 상가 전체 상권 활성화 및 건물 가치 상승 효과</div>
                         <div class="value-text" style="color:#14532D;" id="valueLandlord">-</div>
                     </div>
 
@@ -251,6 +251,20 @@
                 toggleIcon.innerText = '▲';
             }
         });
+
+        // 정확한 기간 텍스트 포맷터
+        function formatPaybackPeriod(months) {
+            const m = parseFloat(months);
+            if (m < 12) {
+                return `약 ${m.toFixed(1)}개월 (1년 이내 전액 회수)`;
+            }
+            const years = Math.floor(m / 12);
+            const rem = Math.round(m % 12);
+            if (rem === 0) {
+                return `약 ${years}년 (${m.toFixed(1)}개월)`;
+            }
+            return `약 ${years}년 ${rem}개월 (${m.toFixed(1)}개월)`;
+        }
 
         document.getElementById('analyzeForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -302,7 +316,10 @@
                 document.getElementById('valSenior').innerText = `${res.bundle.demographics.senior_50_plus.toLocaleString()}명 (${res.bundle.demographics.senior_ratio}%)`;
                 document.getElementById('valProfit').innerText = `${Math.floor(res.operating_profit_moderate / 10000).toLocaleString()}만원/월`;
                 document.getElementById('valBEP').innerText = `일 ${res.bundle.financials.investment.bep_turns_per_room}회전/타석`;
-                document.getElementById('valPayback').innerText = `약 ${res.payback_months}개월 (1년 내외 회수)`;
+                
+                // 정확한 회수 기간 표기 (약 1년 4개월 / 1년 5개월)
+                document.getElementById('valPayback').innerText = formatPaybackPeriod(res.payback_months);
+                
                 document.getElementById('valueFranchisee').innerText = res.bundle.scores.value_franchisee || res.bundle.scores.pitch_franchisee;
                 document.getElementById('valueLandlord').innerText = res.bundle.scores.value_landlord || res.bundle.scores.pitch_landlord;
                 document.getElementById('resDate').innerText = '분석 기준: ' + res.bundle.created_at;

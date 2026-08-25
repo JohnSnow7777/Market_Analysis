@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""16:9 와이드 전문 프레젠테이션 보고서 생성기 (고객 제안용 전문 텍스트)"""
+"""16:9 와이드 전문 프레젠테이션 보고서 생성기 (고객 친화적 쉬운 비즈니스 텍스트)"""
 import os
 import pptx
 from pptx.util import Inches, Pt
@@ -74,7 +74,7 @@ class PPTXGenerator:
         p1.font.bold = True
         
         p2 = tf1.add_paragraph()
-        p2.text = f"{site.get('building_name', '사업지')} 상권 및 사업분석"
+        p2.text = f"{site.get('building_name', '사업지')} 상권 및 사업성 분석"
         p2.font.name = 'Malgun Gothic'
         p2.font.size = Pt(36)
         p2.font.color.rgb = self.c_white
@@ -344,15 +344,15 @@ class PPTXGenerator:
         add_bullet(tf11, f"1년차 연매출 {mod_1y['total_revenue']//100000000:.1f}억원 / 영업이익 {mod_1y['operating_profit']//100000000:.1f}억원", "▲ 1년차(기준):")
         add_bullet(tf11, f"5년차 연매출 {mod_5y['total_revenue']//100000000:.1f}억원 / 영업이익 {mod_5y['operating_profit']//100000000:.1f}억원", "▲ 5년차(기준):")
         add_bullet(tf11, f"손익분기점(BEP) 월매출: 약 {fin['investment']['bep_monthly_sales']//10000:,}만원 (일 {fin['investment']['bep_turns_per_room']}회전)", "▲ 손익분기점:")
-        add_bullet(tf11, f"초기 순투자금 회수 기간: 약 {fin['investment']['payback_months_moderate']}개월", "▲ 투자금 회수:")
+        add_bullet(tf11, f"초기 순투자금 회수 기간: {score['payback_text']}", "▲ 투자금 회수:")
 
-        # Slide 12: 종합 결론 및 출점 제안
+        # Slide 12: 종합 결론 및 기대효과
         s12 = self.prs.slides.add_slide(self.blank_layout)
         self._add_header_bar(s12, "7. 종합 결론 및 사업 타당성 평가")
         tb12 = s12.shapes.add_textbox(Inches(1.0), Inches(1.8), Inches(11.3), Inches(4.8))
         tf12 = tb12.text_frame
         add_bullet(tf12, score['value_franchisee'], "【 가맹점 출점 기대효과 및 핵심 경쟁력 】", 13)
-        add_bullet(tf12, score['value_landlord'], "【 건물 가치 제고 및 앵커 테넌트 입점 효과 】", 13)
+        add_bullet(tf12, score['value_landlord'], "【 상가 전체 상권 활성화 및 건물 가치 상승 효과 】", 13)
         add_bullet(tf12, f"종합 입지 평가 [{score['grade']}등급 - {score['total_score']}점]으로 마이파크 스크린 파크골프 출점에 최적의 조건을 갖추고 있으며, 신속한 상권 선점을 권장합니다.", "★ 최종 권고안:", 13)
         
         os.makedirs(os.path.dirname(output_pptx_path), exist_ok=True)
