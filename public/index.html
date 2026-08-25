@@ -524,19 +524,19 @@
                             <div class="metric-sub" id="valSeniorSub">KOSIS 실측 인구 집계</div>
                         </div>
                         <div class="metric-card">
-                            <div class="metric-label">예상 월 영업이익 (보편 기준)</div>
+                            <div class="metric-label">예상 월 영업이익 (보편 4회전)</div>
                             <div class="metric-value" id="valProfit" style="color:var(--emerald);">-</div>
-                            <div class="metric-sub" id="valProfitSub">영업이익률 약 67.3% 달성</div>
+                            <div class="metric-sub" id="valProfitSub">★ 직접운영: 2,583만원 | 직원채용: 2,083만원</div>
                         </div>
                         <div class="metric-card">
                             <div class="metric-label">손익분기점 (BEP 일회전율)</div>
                             <div class="metric-value" id="valBEP" style="font-size:17px;">-</div>
-                            <div class="metric-sub" id="valBEPSub">1일 약 43명(1.08회전) 이용 시 즉시 흑자</div>
+                            <div class="metric-sub" id="valBEPSub">★ 직접운영: 일 1.08회전 (43명) | 직원채용: 일 1.62회전 (64명)</div>
                         </div>
                         <div class="metric-card">
                             <div class="metric-label">초기 투자금 전액 회수 기간</div>
                             <div class="metric-value" id="valPayback" style="color:var(--royal-blue); font-size:17px;">-</div>
-                            <div class="metric-sub" id="valPaybackSub">초기 순투자금 3.19억원 기준 전액 회수</div>
+                            <div class="metric-sub" id="valPaybackSub">★ 직접운영: 12.3개월 (1년1개월) | 직원채용: 15.3개월</div>
                         </div>
                     </div>
 
@@ -756,12 +756,12 @@
             document.getElementById('specStaff').innerText = item.staff + "명";
             
             document.getElementById('valSenior').innerText = (item.seniorPop ? item.seniorPop.toLocaleString() : '72,400') + "명 (" + (item.seniorRatio || '38.4') + "%)";
-            document.getElementById('valProfit').innerText = (Math.floor(item.profit / 10000)).toLocaleString() + "만원/월";
-            document.getElementById('valProfitSub').innerText = "보편적 4회전 가동 기준 월 순영업익";
-            document.getElementById('valBEP').innerHTML = '일 1.08회전 <span style="font-size:13px; color:var(--royal-blue); font-weight:normal;">(1일 약 43명)</span>';
-            document.getElementById('valBEPSub').innerText = '타석당 1일 1.2팀 이용 시 월 고정비 전액 커버';
-            document.getElementById('valPayback').innerText = formatPaybackPeriod(item.payback);
-            document.getElementById('valPaybackSub').innerText = '순투자금 3.19억원 기준 약 ' + item.payback + '개월 만에 전액 회수';
+            document.getElementById('valProfit').innerHTML = (Math.floor(item.profit / 10000)).toLocaleString() + "만원/월";
+            document.getElementById('valProfitSub').innerHTML = "★ <strong>직접운영</strong>: " + (Math.floor(item.profit / 10000)).toLocaleString() + "만원 | 직원채용: " + (Math.floor((item.profit - 5000000) / 10000)).toLocaleString() + "만원";
+            document.getElementById('valBEP').innerHTML = '일 1.08회전 <span style="font-size:13px; color:var(--royal-blue); font-weight:normal;">(직접운영 시 1일 43명)</span>';
+            document.getElementById('valBEPSub').innerHTML = '★ <strong>직접운영</strong>: 일 1.08회전 (43명) | 직원채용: 일 1.62회전 (64명)';
+            document.getElementById('valPayback').innerHTML = formatPaybackPeriod(item.payback) + ' <span style="font-size:12.5px; color:var(--royal-blue); font-weight:normal;">(' + item.payback + '개월)</span>';
+            document.getElementById('valPaybackSub').innerHTML = '★ <strong>직접운영</strong>: ' + item.payback + '개월 | 직원채용: 약 ' + (Math.round((319000000 / Math.max(1, item.profit - 5000000)) * 10) / 10) + '개월';
 
             if (item.pdfBase64) {
                 document.getElementById('btnPdf').href = 'data:application/pdf;base64,' + item.pdfBase64;
@@ -897,18 +897,24 @@
                 document.getElementById('specRent').innerText = (Math.floor(site.monthly_rent / 10000)).toLocaleString() + "만원/월";
                 document.getElementById('specStaff').innerText = site.staff_count + "명";
                 
-                const invData = res.bundle.financials.investment;
-                const modScen = res.bundle.financials.monthly_scenarios.moderate;
+                const finBundle = res.bundle.financials;
+                const invData = finBundle.investment;
+                const modScen = finBundle.monthly_scenarios.moderate;
+                const ownData = finBundle.owner_operated;
                 
                 document.getElementById('valSenior').innerText = res.bundle.demographics.senior_50_plus.toLocaleString() + "명 (" + res.bundle.demographics.senior_ratio + "%)";
-                document.getElementById('valProfit').innerText = (Math.floor(res.operating_profit_moderate / 10000)).toLocaleString() + "만원/월";
-                document.getElementById('valProfitSub').innerText = "영업이익률 약 " + modScen.profit_margin + "% 달성";
                 
-                document.getElementById('valBEP').innerHTML = '일 ' + invData.bep_turns_per_room + '회전 <span style="font-size:13px; color:var(--royal-blue); font-weight:normal;">(1일 약 ' + invData.bep_daily_users + '명)</span>';
-                document.getElementById('valBEPSub').innerText = '타석당 1일 1.2팀 이용 시 월 고정비 전액 커버 및 흑자';
+                // 1. 월 영업이익 (직접운영 2,583만 vs 직원채용 2,083만)
+                document.getElementById('valProfit').innerHTML = (Math.floor(res.operating_profit_moderate / 10000)).toLocaleString() + '만원/월 <span style="font-size:12.5px; color:var(--text-muted); font-weight:normal;">(이익률 ' + modScen.profit_margin + '%)</span>';
+                document.getElementById('valProfitSub').innerHTML = '★ <strong>직접운영</strong>: ' + (Math.floor(res.operating_profit_moderate / 10000)).toLocaleString() + '만원 | 직원채용: ' + (Math.floor(ownData.staff3_operating_profit / 10000)).toLocaleString() + '만원';
                 
-                document.getElementById('valPayback').innerText = formatPaybackPeriod(res.payback_months);
-                document.getElementById('valPaybackSub').innerText = '순투자금 3.19억원 기준 약 ' + res.payback_months + '개월 만에 전액 회수';
+                // 2. 손익분기점 BEP (직접운영 1.08회전 vs 직원채용 1.62회전)
+                document.getElementById('valBEP').innerHTML = '일 ' + invData.bep_turns_per_room + '회전 <span style="font-size:13px; color:var(--royal-blue); font-weight:normal;">(직접운영 시 1일 ' + invData.bep_daily_users + '명)</span>';
+                document.getElementById('valBEPSub').innerHTML = '★ <strong>직접운영</strong>: 일 ' + invData.bep_turns_per_room + '회전 (' + invData.bep_daily_users + '명) | 직원채용: 일 ' + ownData.staff3_bep_turns + '회전';
+                
+                // 3. 회수기간 (직접운영 12.3개월 vs 직원채용 15.3개월)
+                document.getElementById('valPayback').innerHTML = formatPaybackPeriod(res.payback_months) + ' <span style="font-size:12.5px; color:var(--royal-blue); font-weight:normal;">(' + res.payback_months + '개월)</span>';
+                document.getElementById('valPaybackSub').innerHTML = '★ <strong>직접운영</strong>: ' + res.payback_months + '개월 | 직원채용: ' + ownData.staff3_payback_months + '개월 (3.19억 회수)';
                 
                 document.getElementById('valueFranchisee').innerText = res.bundle.scores.value_franchisee || res.bundle.scores.pitch_franchisee;
                 document.getElementById('valueLandlord').innerText = res.bundle.scores.value_landlord || res.bundle.scores.pitch_landlord;
