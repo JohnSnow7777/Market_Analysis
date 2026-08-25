@@ -1,13 +1,39 @@
 # -*- coding: utf-8 -*-
-"""데이터 시각화 차트 및 반경 3km 상권 분석 지도 이미지 생성기 (하이엔드 디자인)"""
+"""데이터 시각화 차트 및 반경 3km 상권 분석 지도 이미지 생성기 (Vercel Linux 한글 폰트 완벽 지원)"""
 import os
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
 import numpy as np
 
-plt.rcParams['font.family'] = 'Malgun Gothic'
+# -----------------------------------------------------------------------------
+# Vercel Linux / Windows 환경 TTF 폰트 파일 직접 로드 (한글 네모 박스 tofu 깨짐 완전 해결)
+# -----------------------------------------------------------------------------
+current_dir = os.path.dirname(os.path.abspath(__file__))
+font_candidates = [
+    os.path.join(current_dir, 'fonts', 'MalgunGothic.ttf'),
+    os.path.join(current_dir, 'fonts', 'MalgunGothicBold.ttf'),
+    r'C:\Windows\Fonts\malgun.ttf',
+    r'C:\Windows\Fonts\NanumGothic.ttf',
+    '/usr/share/fonts/truetype/nanum/NanumGothic.ttf'
+]
+
+korean_font_name = None
+for fpath in font_candidates:
+    if os.path.exists(fpath):
+        try:
+            fm.fontManager.addfont(fpath)
+            prop = fm.FontProperties(fname=fpath)
+            korean_font_name = prop.get_name()
+            plt.rcParams['font.family'] = korean_font_name
+            plt.rcParams['font.sans-serif'] = [korean_font_name, 'Malgun Gothic', 'DejaVu Sans', 'Arial']
+            break
+        except Exception as e:
+            print(f"Font load warning for {fpath}: {e}")
+
 plt.rcParams['axes.unicode_minus'] = False
+
 
 class Visualizer:
     """마이파크 보고서용 프리미엄 차트 및 지도 이미지 생성기"""
@@ -23,12 +49,10 @@ class Visualizer:
         fig.patch.set_facecolor('#FFFFFF')
         ax.set_facecolor('#F8FAFC')
         
-        # 선 그래프
         ax.plot(months, selected, marker='o', markersize=6, color='#2563EB', linewidth=2.8, label='선택영역 (반경 3km)', zorder=4)
         ax.plot(months, dong, marker='s', markersize=5, color='#DC2626', linewidth=2.0, label='해당 행정동 평균', zorder=3)
         ax.plot(months, city, marker='^', markersize=5, color='#F59E0B', linewidth=2.0, label='시군구 전체 평균', zorder=3)
         
-        # 주요 지점 수치 레이블
         for i, (m, v) in enumerate(zip(months, selected)):
             if i in [0, 3, 6, 8, 11, 12]:
                 ax.annotate(f"{v:,}", (m, v), textcoords="offset points", xytext=(0, 8),
@@ -53,7 +77,7 @@ class Visualizer:
 
     @staticmethod
     def generate_radius_map(site_info, competitors_data, output_path):
-        """반경 3km 생활권 상권 지도 그래픽 생성 (프리미엄 인포그래픽)"""
+        """반경 3km 생활권 상권 지도 그래픽 생성 (Vercel 한글 폰트 완전 지원)"""
         fig, ax = plt.subplots(figsize=(6.0, 5.2), dpi=200)
         fig.patch.set_facecolor('#FFFFFF')
         ax.set_facecolor('#F8FAFC')
@@ -66,7 +90,9 @@ class Visualizer:
         
         # 중심 사업지 핀
         ax.plot(0, 0, marker='*', markersize=20, color='#DC2626', markeredgecolor='#FFFFFF', markeredgewidth=1.5, zorder=6)
-        ax.text(0, -0.45, f"★ {site_info.get('building_name', '사업지')}\n({site_info.get('dong', '해당지')})",
+        b_name = site_info.get('building_name', '사업지')
+        s_dong = site_info.get('dong', '서현동')
+        ax.text(0, -0.45, f"★ {b_name}\n({s_dong})",
                 ha='center', va='top', fontsize=9.5, fontweight='bold', color='#991B1B', zorder=7,
                 bbox=dict(boxstyle='round,pad=0.3', facecolor='#FEF2F2', edgecolor='#FCA5A5', alpha=0.95))
         
@@ -80,7 +106,7 @@ class Visualizer:
                 x = dist * np.cos(ang)
                 y = dist * np.sin(ang)
                 ax.plot(x, y, marker='o', markersize=11, color='#0284C7', markeredgecolor='#FFFFFF', markeredgewidth=1.5, zorder=5)
-                short_name = store['name'].split('(')[0][:7]
+                short_name = store['name'].split('(')[0][:8]
                 ax.text(x, y + 0.35, f"{idx+1}. {short_name}", ha='center', fontsize=8, fontweight='bold', color='#0369A1', zorder=7,
                         bbox=dict(boxstyle='round,pad=0.2', facecolor='#F0F9FF', edgecolor='#BAE6FD', alpha=0.9))
         
@@ -93,9 +119,8 @@ class Visualizer:
         ax.set_aspect('equal')
         ax.axis('off')
         
-        plt.title(f"스크린 파크골프 상권 분석 지도 (반경 3km)", fontsize=12, fontweight='bold', pad=12, color='#0F172A')
+        plt.title("스크린 파크골프 상권 분석 지도 (반경 3km)", fontsize=12, fontweight='bold', pad=12, color='#0F172A')
         
-        # 하단 주소 바
         addr_text = f"※ 대상지: {site_info['full_address']}"
         fig.text(0.5, 0.02, addr_text, ha='center', fontsize=8.5, fontweight='bold', color='#1E293B',
                  bbox=dict(boxstyle='round,pad=0.5', facecolor='#FEF08A', edgecolor='#FACC15', alpha=0.95))
@@ -108,7 +133,7 @@ class Visualizer:
 
     @staticmethod
     def generate_radar_score_chart(scores_data, output_path):
-        labels = ['골든 시니어\n집적도', '접근성 &\n주차 인프라', '공간 적합성\n& 임대료', '수요공급 갭\n(블루오션)', '지역 소비력\n& 여가지출']
+        labels = ['골든 시니어\n집적도(25)', '접근성 &\n주차 인프라(25)', '공간 적합성\n& 층고(15)', '수요공급 갭\n블루오션(15)', '지역 소비력\n& 매출(20)']
         s = scores_data['scores']
         values = [
             (s['senior_population'] / 25.0) * 100,
@@ -129,7 +154,7 @@ class Visualizer:
         ax.set_theta_offset(np.pi / 2)
         ax.set_theta_direction(-1)
         
-        plt.xticks(angles[:-1], labels, color='#1E293B', size=9.5, fontweight='bold')
+        plt.xticks(angles[:-1], labels, color='#1E293B', size=9, fontweight='bold')
         ax.set_rlabel_position(0)
         plt.yticks([40, 60, 80, 100], ["40", "60", "80", "100"], color='#94A3B8', size=7.5)
         plt.ylim(0, 105)

@@ -72,9 +72,12 @@ class MyParkReportGenerator:
         
         safe_name = site_info['building_name'].replace(' ', '_').replace('/', '_')
         date_str = datetime.now().strftime("%y%m%d")
-        pptx_path = os.path.join(self.output_dir, f"{date_str}_마이파크_{safe_name}_상권및사업분석_v1.0.pptx")
-        docx_path = os.path.join(self.output_dir, f"{date_str}_마이파크_{safe_name}_출점타당성보고서_v1.0.docx")
-        pdf_path = os.path.join(self.output_dir, f"{date_str}_마이파크_{safe_name}_상권및사업분석_v1.0.pdf")
+        now = datetime.now()
+        date_kor = f"{now.strftime('%y')}년{now.month}월{now.day}일"
+        
+        pptx_path = os.path.join(self.output_dir, f"{date_str}_마이파크_{safe_name}_상권및사업분석_{date_kor}.pptx")
+        docx_path = os.path.join(self.output_dir, f"{date_str}_마이파크_{safe_name}_출점타당성보고서_{date_kor}.docx")
+        pdf_path = os.path.join(self.output_dir, f"{date_str}_마이파크_{safe_name}_상권및사업분석_{date_kor}.pdf")
         
         PPTXGenerator().generate(bundle, pptx_path)
         DOCXGenerator.generate(bundle, docx_path)

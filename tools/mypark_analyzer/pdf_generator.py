@@ -41,11 +41,9 @@ class PDFGenerator:
     """마이파크 16:9 와이드 비즈니스 PDF 생성기 (12페이지 전문 슬라이드 덱)"""
     
     def __init__(self):
-        # 16:9 비율 (가로 960 x 세로 540 pt)
         self.width = 960
         self.height = 540
         
-        # 럭셔리 컬러
         self.c_navy_dark = colors.HexColor('#0A192F')
         self.c_navy = colors.HexColor('#0F2744')
         self.c_royal_blue = colors.HexColor('#2563EB')
@@ -58,6 +56,7 @@ class PDFGenerator:
         self.c_border = colors.HexColor('#E2E8F0')
         self.c_pink_bg = colors.HexColor('#FEF2F2')
         self.c_pink_border = colors.HexColor('#FECACA')
+        self.c_blue_light = colors.HexColor('#EBF3FF')
         self.c_white = colors.white
 
     def _draw_header(self, c, white_prefix, gold_highlight, white_suffix=""):
@@ -87,9 +86,7 @@ class PDFGenerator:
         os.makedirs(os.path.dirname(output_pdf_path), exist_ok=True)
         c = canvas.Canvas(output_pdf_path, pagesize=(self.width, self.height))
         
-        # =====================================================================
         # Page 1: 표지
-        # =====================================================================
         c.setFillColor(self.c_navy_dark)
         c.rect(0, 0, self.width, self.height, fill=1, stroke=0)
         
@@ -111,7 +108,7 @@ class PDFGenerator:
         badges = [
             (80, "입지 최적성 등급", f"{score['grade']}등급 ({score['total_score']}점)", self.c_gold),
             (360, "예상 월 영업이익 (보편)", f"{fin['monthly_scenarios']['moderate']['operating_profit']//10000:,}만원/월", self.c_emerald),
-            (640, "투자금 회수 기간", f"{score['payback_text'].split('(')[0].strip()}", self.c_white)
+            (640, "투자금 회수 기간", f"{score['payback_text'].split('기준')[1].split('만에')[0].strip() if '기준' in score['payback_text'] else score['payback_text']}", self.c_white)
         ]
         for bx, btitle, bval, bcol in badges:
             c.setFillColor(self.c_navy)
@@ -123,17 +120,14 @@ class PDFGenerator:
             c.setFillColor(self.c_slate_gray)
             c.drawString(bx + 16, 115, btitle)
             
-            c.setFont(FONT_BOLD, 13)
+            c.setFont(FONT_BOLD, 12)
             c.setFillColor(bcol)
             c.drawString(bx + 16, 85, bval)
             
         c.showPage()
 
-        # =====================================================================
-        # Page 2: 4대 출점 점검 체크리스트 (2x2 그리드)
-        # =====================================================================
+        # Page 2: 4대 출점 점검 체크리스트
         self._draw_header(c, "1. 사업지 개요 및 ", "출점 점검 체크리스트", f" ({site['rooms']}타석 / {site['area_pyeong']}평 권장)")
-        
         cards_p2 = [
             (40, 270, 425, 195, "📐 공간 & 층고 점검 기준", [
                 f"• 대상 주소: {site['full_address']}",
@@ -165,32 +159,26 @@ class PDFGenerator:
             c.setStrokeColor(self.c_border)
             c.setLineWidth(1)
             c.roundRect(cx, cy, cw, ch, 8, fill=1, stroke=1)
-            
             c.setFont(FONT_BOLD, 11)
             c.setFillColor(self.c_navy)
             c.drawString(cx + 16, cy + ch - 24, ctitle)
-            
             c.setFont(FONT_REGULAR, 8.5)
             c.setFillColor(self.c_slate_dark)
             y_offset = cy + ch - 48
             for line_txt in clines:
                 c.drawString(cx + 16, y_offset, line_txt)
                 y_offset -= 22
-                
         self._draw_footer(c, "* 기준: 마이파크 표준 가맹 모델 및 건축물 현장 실측 권장 기준")
         c.showPage()
 
-        # =====================================================================
         # Page 3: 배후 인구 분석
-        # =====================================================================
-        self._draw_header(c, "사업지 반경 3Km & 자동차 10분 생활권 (", f"약 {demo['total_pop']//10000}만명", ")")
-        
+        self._draw_header(c, f"{demo.get('center_dong', '사업지')} 반경 3Km 생활권 (", f"약 {demo['total_pop']//10000}만명", ")")
         if 'map_radius' in charts and os.path.exists(charts['map_radius']):
             c.drawImage(charts['map_radius'], 40, 60, width=420, height=400, preserveAspectRatio=True)
             
         c.setFont(FONT_BOLD, 10.5)
         c.setFillColor(self.c_red)
-        c.drawString(495, 455, f"▲ 사업지 주변 총 인구수 : {demo['total_pop']:,}명 (반경 3km 생활권)")
+        c.drawString(495, 455, f"▲ 사업지 주변 총 인구수 : {demo['total_pop']:,}명 (반경 3km {len(demo['dongs'])}개 행정동)")
         
         table_data_3 = [['행정구역(동)', '남자(명)', '여자(명)', '합계(명)']]
         for d in demo['dongs']:
@@ -212,15 +200,11 @@ class PDFGenerator:
         ]))
         t3.wrapOn(c, 495, 60)
         t3.drawOn(c, 495, 435 - (len(table_data_3) * 22))
-        
         self._draw_footer(c, f"* 출처 : {demo['base_date']}")
         c.showPage()
 
-        # =====================================================================
         # Page 4: 메인 타겟 장·노년층 인구 수
-        # =====================================================================
         self._draw_header(c, "파크골프 메인 타겟 장·노년층 인구 수 (", f"약 {demo['senior_50_plus']:,}명_{demo['senior_ratio']}%", ")")
-        
         c.setFillColor(self.c_pink_bg)
         c.setStrokeColor(self.c_pink_border)
         c.roundRect(40, 265, 380, 190, 8, fill=1, stroke=1)
@@ -265,15 +249,11 @@ class PDFGenerator:
         ]))
         t4.wrapOn(c, 460, 60)
         t4.drawOn(c, 460, 455 - (len(table_data_4) * 23))
-        
         self._draw_footer(c, f"* 출처 : {demo['base_date']}")
         c.showPage()
 
-        # =====================================================================
         # Page 5: 소상공인 매출 추이
-        # =====================================================================
         self._draw_header(c, "전월 대비 파크골프/여가 업종의 ", f"월평균 매출액 (약 {comm['monthly_avg_sales']//10000:,}만원)", "")
-        
         cards_p5 = [
             (40, 360, 180, 95, "● 업소 정보", "업소수", f"{comm['store_count']}개", self.c_red),
             (240, 360, 180, 95, "● 점포 증감", "전월대비 증감률", "0.0%", self.c_navy),
@@ -293,15 +273,11 @@ class PDFGenerator:
             
         if 'sales_trend' in charts and os.path.exists(charts['sales_trend']):
             c.drawImage(charts['sales_trend'], 440, 60, width=480, height=395, preserveAspectRatio=True)
-            
         self._draw_footer(c, "* 출처 : 소상공인365 상권분석 플랫폼 (참고)")
         c.showPage()
 
-        # =====================================================================
         # Page 6: 상권 매출 패턴 분석
-        # =====================================================================
         self._draw_header(c, "3. 상권 매출 패턴 분석 (", f"주간 10~17시 {comm['time_distribution']['주간_10_17시_비중']}%", f", 50대이상 {comm['age_distribution']['50대이상_비중']}%)")
-        
         cards_p6 = [
             (40, 270, 425, 195, "📅 요일별 소비 패턴 분석", [
                 f"• 피크 요일: 월요일 ({comm['day_distribution']['월']}%) 최고치 기록",
@@ -341,16 +317,15 @@ class PDFGenerator:
             for line_txt in clines:
                 c.drawString(cx + 16, y_offset, line_txt)
                 y_offset -= 22
-                
         self._draw_footer(c, "* 출처 : 소상공인시장진흥공단 카드 결제 빅데이터")
         c.showPage()
 
         # =====================================================================
-        # Page 7: 주변 경쟁 매장 분석
+        # Page 7: 주변 경쟁 매장 분석 (4열 풀그리드 + 비주얼 배지 블록)
         # =====================================================================
         comps = comm.get('competitors', [])
         count_str = f"({len(comps)}곳)" if len(comps) > 0 and comps[0].get('rooms', 0) > 0 else "(블루오션 상권)"
-        self._draw_header(c, "주변 스크린 ", f"파크골프 매장{count_str}", " 분석")
+        self._draw_header(c, "주변 스크린 ", f"파크골프 매장{count_str}", " 실측 분석")
         
         card_w = 205
         gap = 18
@@ -358,41 +333,57 @@ class PDFGenerator:
         for idx, comp in enumerate(comps[:4]):
             cur_x = start_x + (idx * (card_w + gap))
             
+            # 1. 상단 다크 네이비 바
             c.setFillColor(self.c_navy)
             c.roundRect(cur_x, 400, card_w, 35, 6, fill=1, stroke=0)
             c.setFont(FONT_BOLD, 9.5)
             c.setFillColor(self.c_white)
             c.drawCentredString(cur_x + card_w/2, 412, str(comp['name'])[:15])
             
+            # 2. 중간 비주얼 배지 블록
+            c.setFillColor(self.c_blue_light)
+            c.setStrokeColor(self.c_border)
+            c.rect(cur_x, 310, card_w, 90, fill=1, stroke=1)
+            c.setFont(FONT_BOLD, 12)
+            c.setFillColor(self.c_royal_blue)
+            rooms_label = f"🏌️ {comp.get('rooms', 0)}타석 규모" if comp.get('rooms', 0) > 0 else "⛳ 전문 1호점 선점"
+            c.drawCentredString(cur_x + card_w/2, 360, rooms_label)
+            c.setFont(FONT_REGULAR, 8.5)
+            c.setFillColor(self.c_slate_dark)
+            c.drawCentredString(cur_x + card_w/2, 335, f"[{comp.get('status', '실측완료')}] {comp.get('system', '스크린 시뮬레이터')[:14]}")
+            
+            # 3. 하단 실측 스펙 박스
             c.setFillColor(self.c_card_bg)
             c.setStrokeColor(self.c_border)
-            c.roundRect(cur_x, 60, card_w, 335, 6, fill=1, stroke=1)
+            c.roundRect(cur_x, 60, card_w, 250, 6, fill=1, stroke=1)
             
-            c.setFont(FONT_REGULAR, 8.5)
+            c.setFont(FONT_REGULAR, 8)
             c.setFillColor(self.c_slate_dark)
-            c.drawString(cur_x + 12, 365, "▲ 주소:")
-            c.drawString(cur_x + 12, 345, str(comp['address'])[:18])
-            
+            c.drawString(cur_x + 10, 280, "▲ 주소:")
+            c.drawString(cur_x + 10, 262, str(comp['address'])[:18])
+            if len(str(comp['address'])) > 18:
+                c.drawString(cur_x + 10, 246, str(comp['address'])[18:36])
+                
             c.setFillColor(self.c_royal_blue)
             c.setFont(FONT_BOLD, 8.5)
-            c.drawString(cur_x + 12, 310, f"▲ 시스템: {comp['system']}")
+            c.drawString(cur_x + 10, 215, f"▲ 시스템: {comp['system'][:15]}")
             
             c.setFillColor(self.c_slate_dark)
-            c.setFont(FONT_REGULAR, 8.5)
-            rooms_str = f"{comp['rooms']}타석" if comp.get('rooms', 0) > 0 else "전문매장 미등록"
-            c.drawString(cur_x + 12, 275, f"▲ 규모: {rooms_str}")
+            c.setFont(FONT_REGULAR, 8)
+            rooms_str = f"{comp['rooms']}타석 운영" if comp.get('rooms', 0) > 0 else "상업용 매장 미등록"
+            c.drawString(cur_x + 10, 180, f"▲ 규모: {rooms_str}")
             
             c.setFillColor(self.c_slate_gray)
-            c.drawString(cur_x + 12, 240, f"▲ 특징: {comp.get('features', '-')}")
+            c.drawString(cur_x + 10, 145, f"▲ 특징:")
+            c.drawString(cur_x + 10, 128, str(comp.get('features', '-'))[:18])
+            if len(str(comp.get('features', ''))) > 18:
+                c.drawString(cur_x + 10, 112, str(comp.get('features', ''))[18:36])
             
-        self._draw_footer(c, "* 출처 : 소상공인시장진흥공단 상권정보 및 현장 POI 실측 조사")
+        self._draw_footer(c, "* 출처 : 소상공인시장진흥공단 상권정보 및 카카오맵 로컬 POI 실측 조사")
         c.showPage()
 
-        # =====================================================================
         # Page 8: 5대 지표 종합 평가
-        # =====================================================================
         self._draw_header(c, "5. 마이파크 입지 최적성 종합 평가 [", f"{score['grade']}등급 - {score['total_score']}점", " / 100점]")
-        
         if 'radar_score' in charts and os.path.exists(charts['radar_score']):
             c.drawImage(charts['radar_score'], 40, 60, width=420, height=400, preserveAspectRatio=True)
             
@@ -419,15 +410,11 @@ class PDFGenerator:
         c.setFont(FONT_BOLD, 12)
         c.setFillColor(self.c_red)
         c.drawString(495, y_ind - 10, f"★ 종합 판정: 총점 {score['total_score']}점 ({score['grade_desc']})")
-        
         self._draw_footer(c, "* 평가 기준: 마이파크 가맹 입지선정 5대 다이아몬드 스코어링 모델")
         c.showPage()
 
-        # =====================================================================
         # Page 9: 월 예상 매출
-        # =====================================================================
         self._draw_header(c, "6. 마이파크 사업 타당성 분석 (", f"{site['rooms']}타석 / {site['area_pyeong']}평", ") - 월 예상 매출")
-        
         m_scen = fin['monthly_scenarios']
         table_data_9 = [['구분', '타석 이용료', '용품(10%)', '카페(5%)', '레슨(3%)', '월 총매출 합계', '비고 (1일 이용자)']]
         for k in ['conservative', 'moderate', 'optimistic']:
@@ -441,7 +428,6 @@ class PDFGenerator:
                 f"{sc['total_revenue']:,}원",
                 f"1일 {sc['daily_users']}명 (월 {sc['monthly_users']:,}명)"
             ])
-            
         t9 = Table(table_data_9, colWidths=[100, 120, 105, 105, 105, 170, 175])
         t9.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), self.c_navy),
@@ -456,15 +442,11 @@ class PDFGenerator:
         ]))
         t9.wrapOn(c, 40, 60)
         t9.drawOn(c, 40, 310)
-        
         self._draw_footer(c, "* 산출 근거: 18홀 8,000원, 부가매출 18%, 월 30일 가동 기준")
         c.showPage()
 
-        # =====================================================================
         # Page 10: 예상 운영 비용
-        # =====================================================================
         self._draw_header(c, "6. 마이파크 사업 타당성 분석 (", f"{site['rooms']}타석", ") - 예상 운영 비용")
-        
         c_sc = m_scen['conservative']
         m_sc = m_scen['moderate']
         o_sc = m_scen['optimistic']
@@ -475,7 +457,6 @@ class PDFGenerator:
             ['매장운영비 + 렌탈/마케팅', f"{c_sc['store_ops_cost']+c_sc['rental_cost']+c_sc['marketing_cost']:,}원", f"{m_sc['store_ops_cost']+m_sc['rental_cost']+m_sc['marketing_cost']:,}원", f"{o_sc['store_ops_cost']+o_sc['rental_cost']+o_sc['marketing_cost']:,}원", "수도광열, 소모품, 공청기, 보험 등"],
             ['월 총 비용 합계', f"{c_sc['total_cost']:,}원", f"{m_sc['total_cost']:,}원", f"{o_sc['total_cost']:,}원", "부가가치세(VAT) 별도 기준"]
         ]
-        
         t10 = Table(table_data_10, colWidths=[150, 135, 135, 135, 325])
         t10.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), self.c_navy),
@@ -492,15 +473,11 @@ class PDFGenerator:
         ]))
         t10.wrapOn(c, 40, 60)
         t10.drawOn(c, 40, 270)
-        
         self._draw_footer(c, "* 산출 근거: 마이파크 표준 운영 원가 및 가맹 매장 실측 비용 기준")
         c.showPage()
 
-        # =====================================================================
         # Page 11: 5개년 손익 예측
-        # =====================================================================
         self._draw_header(c, "6. 마이파크 사업 타당성 분석 - ", "5개년 손익 예측", " (연 2% 성장률 반영)")
-        
         if 'profit_forecast' in charts and os.path.exists(charts['profit_forecast']):
             c.drawImage(charts['profit_forecast'], 40, 60, width=500, height=400, preserveAspectRatio=True)
             
@@ -527,16 +504,12 @@ class PDFGenerator:
         c.setFont(FONT_REGULAR, 8.5)
         c.setFillColor(self.c_slate_dark)
         c.drawString(576, 190, f"• 손익분기점(BEP): 월매출 약 {fin['investment']['bep_monthly_sales']//10000:,}만원 (일 {fin['investment']['bep_turns_per_room']}회전)")
-        c.drawString(576, 165, f"• 순투자금 회수: {score['payback_text']} 만에 전액 회수")
-        
-        self._draw_footer(c, "* 산출 근거: 초기 순투자금 3.86억원 기준 / 연 2% 복리 성장률 반영")
+        c.drawString(576, 165, f"• 순투자금 회수: {score['payback_text']}")
+        self._draw_footer(c, f"* 산출 근거: 초기 순투자금 {fin['investment']['total_capex']//100000000:.2f}억원 기준 / 연 2% 복리 성장률 반영")
         c.showPage()
 
-        # =====================================================================
-        # Page 12: 종합 결론 및 2대 기대효과 카드
-        # =====================================================================
+        # Page 12: 종합 결론
         self._draw_header(c, "7. 종합 결론 및 ", "사업 타당성 최종 평가", "")
-        
         c.setFillColor(self.c_card_bg)
         c.setStrokeColor(self.c_gold)
         c.setLineWidth(1.5)

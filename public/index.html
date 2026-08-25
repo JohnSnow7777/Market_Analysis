@@ -515,17 +515,24 @@
                 document.getElementById('valueLandlord').innerText = res.bundle.scores.value_landlord || res.bundle.scores.pitch_landlord;
                 document.getElementById('resDate').innerText = '분석 기준: ' + res.bundle.created_at;
 
+                const now = new Date();
+                const yy = String(now.getFullYear()).slice(-2);
+                const m = now.getMonth() + 1;
+                const d = now.getDate();
+                const dateSuffix = `_${yy}년${m}월${d}일`;
+                const fileBase = `마이파크_${payload.name || site.sigungu || '상권분석'}_상권및사업분석${dateSuffix}`;
+
                 if (res.pdf_base64) {
                     document.getElementById('btnPdf').href = 'data:application/pdf;base64,' + res.pdf_base64;
-                    document.getElementById('btnPdf').setAttribute('download', `마이파크_${payload.name || site.sigungu || '상권분석'}_사업분석.pdf`);
+                    document.getElementById('btnPdf').setAttribute('download', `${fileBase}.pdf`);
                 }
                 if (res.pptx_base64) {
                     document.getElementById('btnPptx').href = 'data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,' + res.pptx_base64;
-                    document.getElementById('btnPptx').setAttribute('download', `마이파크_${payload.name || site.sigungu || '상권분석'}_사업분석.pptx`);
+                    document.getElementById('btnPptx').setAttribute('download', `${fileBase}.pptx`);
                 }
                 if (res.docx_base64) {
                     document.getElementById('btnDocx').href = 'data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,' + res.docx_base64;
-                    document.getElementById('btnDocx').setAttribute('download', `마이파크_${payload.name || site.sigungu || '상권분석'}_출점타당성보고서.docx`);
+                    document.getElementById('btnDocx').setAttribute('download', `마이파크_${payload.name || site.sigungu || '상권분석'}_출점타당성보고서${dateSuffix}.docx`);
                 }
 
                 loading.style.display = 'none';
