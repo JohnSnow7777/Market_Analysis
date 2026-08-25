@@ -139,10 +139,11 @@ class FinanceEngine:
         return years
 
     @staticmethod
-    def get_full_financial_analysis(rooms=12, monthly_rent=5000000, staff_count=4):
+    def get_full_financial_analysis(rooms=10, monthly_rent=5000000, staff_count=3, area_pyeong=120):
         actual_rent = monthly_rent if monthly_rent else DEFAULT_SETTINGS['default_monthly_rent']
-        actual_rooms = rooms if rooms else 12
-        actual_staff = staff_count if staff_count else 4
+        actual_rooms = rooms if rooms else DEFAULT_SETTINGS['default_rooms']
+        actual_staff = staff_count if staff_count else DEFAULT_SETTINGS['default_staff_count']
+        actual_area = area_pyeong if area_pyeong else DEFAULT_SETTINGS['default_area_pyeong']
         
         conservative_m = FinanceEngine.calculate_scenario_monthly('conservative', actual_rooms, actual_rent, actual_staff)
         moderate_m = FinanceEngine.calculate_scenario_monthly('moderate', actual_rooms, actual_rent, actual_staff)
@@ -152,9 +153,8 @@ class FinanceEngine:
         moderate_5y = FinanceEngine.calculate_5year_forecast('moderate', actual_rooms, actual_rent, actual_staff)
         optimistic_5y = FinanceEngine.calculate_5year_forecast('optimistic', actual_rooms, actual_rent, actual_staff)
         
-        pyeong = actual_rooms * 8.5 + 20
         capex_equipment = actual_rooms * 20000000
-        capex_interior = int(pyeong * 1300000)
+        capex_interior = int(actual_area * 1300000)
         capex_etc = 30000000
         deposit = actual_rent * 10
         total_capex = capex_equipment + capex_interior + capex_etc

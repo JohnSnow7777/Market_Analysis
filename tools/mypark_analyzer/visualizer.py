@@ -1,113 +1,176 @@
 # -*- coding: utf-8 -*-
-"""Matplotlib 기반 상권/인구/재무 시각화 차트 생성 모듈"""
+"""데이터 시각화 차트 및 반경 3km 상권 분석 지도 이미지 생성기"""
 import os
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 
+# 한글 폰트 설정
 plt.rcParams['font.family'] = 'Malgun Gothic'
 plt.rcParams['axes.unicode_minus'] = False
 
 class Visualizer:
-    """차트 및 그래프 렌더러"""
-    
-    @staticmethod
-    def create_radar_chart(scores, output_path):
-        categories = ['골든 시니어\n집적도(25)', '접근성 및\n주차(25)', '공간적합성\n임대료(15)', '공급 갭\n블루오션(15)', '지역 소비력\n여가지출(20)']
-        max_scores = [25.0, 25.0, 15.0, 15.0, 20.0]
-        actual_scores = [
-            scores['senior_population'],
-            scores['accessibility_parking'],
-            scores['space_efficiency'],
-            scores['supply_gap'],
-            scores['commercial_spending']
-        ]
-        
-        ratios = [(a / m) * 100 for a, m in zip(actual_scores, max_scores)]
-        ratios += ratios[:1]
-        
-        angles = np.linspace(0, 2 * np.pi, len(categories), endpoint=False).tolist()
-        angles += angles[:1]
-        
-        fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
-        fig.patch.set_facecolor('#FFFFFF')
-        
-        ax.fill(angles, ratios, color='#003366', alpha=0.3)
-        ax.plot(angles, ratios, color='#003366', linewidth=2.5, marker='o', markersize=7)
-        
-        ax.set_yticklabels([])
-        ax.set_xticks(angles[:-1])
-        ax.set_xticklabels(categories, fontsize=10, fontweight='bold', color='#333333')
-        ax.set_ylim(0, 100)
-        ax.grid(color='#CCCCCC', linestyle='--', linewidth=0.8)
-        
-        plt.title('마이파크 입지 최적성 5대 다이아몬드 평가', fontsize=13, fontweight='bold', pad=20, color='#003366')
-        plt.tight_layout()
-        
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        plt.savefig(output_path, dpi=200, bbox_inches='tight')
-        plt.close()
-        return output_path
+    """마이파크 보고서용 차트 및 지도 이미지 생성기"""
 
     @staticmethod
-    def create_sales_trend_chart(commercial_data, output_path):
+    def generate_sales_trend_chart(commercial_data, output_path):
         months = commercial_data['months']
         selected = commercial_data['selected_area_sales']
         dong = commercial_data['dong_avg_sales']
         city = commercial_data['city_avg_sales']
         
-        fig, ax = plt.subplots(figsize=(8, 4))
-        fig.patch.set_facecolor('#FFFFFF')
+        fig, ax = plt.subplots(figsize=(7.5, 4.2), dpi=150)
         
-        ax.plot(months, city, marker='o', color='#FF9800', label='시/구 평균', linewidth=2)
-        ax.plot(months, dong, marker='o', color='#E91E63', label='행정동 평균', linewidth=2)
-        ax.plot(months, selected, marker='s', color='#2196F3', label='선택 상권 (사업지 반경)', linewidth=2.5)
+        ax.plot(months, selected, marker='o', color='#1E88E5', linewidth=2.2, label='선택영역 (반경 3km)')
+        ax.plot(months, dong, marker='s', color='#E53935', linewidth=2.0, label='해당 행정동 평균')
+        ax.plot(months, city, marker='^', color='#FFB300', linewidth=2.0, label='시군구 전체 평균')
         
-        ax.set_title('업소당 월평균 매출액 추이 (단위: 만원)', fontsize=12, fontweight='bold', pad=12, color='#003366')
-        ax.set_xlabel('기준 년월', fontsize=9, color='#666666')
-        ax.set_ylabel('월평균 매출 (만원)', fontsize=9, color='#666666')
-        ax.legend(loc='upper left', frameon=True, facecolor='#F5F7FA')
-        ax.grid(axis='y', linestyle='--', alpha=0.5)
-        plt.xticks(rotation=45, fontsize=8)
+        for i, (m, v) in enumerate(zip(months, selected)):
+            if i in [0, 3, 6, 8, 11, 12]:
+                ax.annotate(f"{v:,}", (m, v), textcoords="offset points", xytext=(0, 7),
+                            ha='center', fontsize=7.5, fontweight='bold', color='#1E88E5')
+                
+        ax.set_title("● 업소당 월평균 매출액 추이 (단위: 만원)", fontsize=11, fontweight='bold', pad=12, loc='left', color='#003366')
+        ax.set_ylabel("매출액 (만원)", fontsize=9)
+        ax.grid(True, linestyle='--', alpha=0.5)
+        ax.legend(loc='lower center', bbox_to_anchor=(0.5, -0.22), ncol=3, frameon=False, fontsize=8.5)
+        
         plt.tight_layout()
-        
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        plt.savefig(output_path, dpi=200, bbox_inches='tight')
+        plt.savefig(output_path, dpi=150, bbox_inches='tight')
         plt.close()
         return output_path
 
     @staticmethod
-    def create_5year_profit_chart(financials, output_path):
-        years = ['1년차(N+1)', '2년차(N+2)', '3년차(N+3)', '4년차(N+4)', '5년차(N+5)']
-        cons_ops = [y['operating_profit'] / 100000000.0 for y in financials['forecast_5year']['conservative']]
-        mod_ops = [y['operating_profit'] / 100000000.0 for y in financials['forecast_5year']['moderate']]
-        opt_ops = [y['operating_profit'] / 100000000.0 for y in financials['forecast_5year']['optimistic']]
+    def generate_radius_map(site_info, competitors_data, output_path):
+        """반경 3km 생활권 상권 지도 그래픽 생성"""
+        fig, ax = plt.subplots(figsize=(5.8, 5.0), dpi=150)
+        ax.set_facecolor('#F8FAFC')
         
-        x = np.arange(len(years))
-        width = 0.25
+        # 중심점 및 3km 원
+        circle_3km = plt.Circle((0, 0), 3.0, color='#818CF8', fill=True, alpha=0.15, linestyle='-', linewidth=1.5)
+        circle_1km = plt.Circle((0, 0), 1.5, color='#A5B4FC', fill=False, linestyle='--', linewidth=1.0)
+        ax.add_patch(circle_3km)
+        ax.add_patch(circle_1km)
         
-        fig, ax = plt.subplots(figsize=(8, 4))
-        fig.patch.set_facecolor('#FFFFFF')
+        # 중심 사업지 핀
+        ax.plot(0, 0, marker='*', markersize=18, color='#E53935', label='사업지 대상 위치', zorder=5)
+        ax.text(0, -0.4, f"★ 사업지\n({site_info.get('dong', '해당지')})", ha='center', va='top', fontsize=9, fontweight='bold', color='#B91C1C', zorder=6)
         
-        r1 = ax.bar(x - width, cons_ops, width, label='보수적 시나리오', color='#78909C')
-        r2 = ax.bar(x, mod_ops, width, label='보편적 시나리오 (기준)', color='#1E88E5')
-        r3 = ax.bar(x + width, opt_ops, width, label='긍정적 시나리오', color='#43A047')
+        # 주변 경쟁 매장 핀 마킹
+        stores = competitors_data.get('stores', [])
+        angles = [45, 135, 225, 315, 90]
+        for idx, store in enumerate(stores[:4]):
+            if store.get('rooms', 0) > 0:
+                ang = np.radians(angles[idx % len(angles)])
+                dist = 1.6 + (idx * 0.4)
+                x = dist * np.cos(ang)
+                y = dist * np.sin(ang)
+                ax.plot(x, y, marker='o', markersize=10, color='#1E88E5', zorder=4)
+                short_name = store['name'].split('(')[0][:8]
+                ax.text(x, y + 0.3, f"{idx+1}. {short_name}", ha='center', fontsize=7.5, fontweight='bold', color='#1E40AF', zorder=6)
         
-        ax.set_title('신규 마이파크 5개년 연간 영업이익 추정 (단위: 억원)', fontsize=12, fontweight='bold', pad=12, color='#003366')
-        ax.set_ylabel('영업이익 (억원)', fontsize=9, color='#666666')
-        ax.set_xticks(x)
-        ax.set_xticklabels(years, fontsize=9, fontweight='bold')
-        ax.legend(loc='upper left', frameon=True)
-        ax.grid(axis='y', linestyle='--', alpha=0.5)
-        
-        for bar in r2:
-            h = bar.get_height()
-            ax.annotate(f'{h:.1f}억',
-                        xy=(bar.get_x() + bar.get_width() / 2, h),
-                        xytext=(0, 3), textcoords="offset points",
-                        ha='center', va='bottom', fontsize=8, fontweight='bold', color='#0D47A1')
+        # 주변 행정동 라벨
+        dong_labels = [
+            (2.2, 2.0, "인접 주거타운 A"),
+            (-2.2, 1.8, "인접 역세권 B"),
+            (-1.8, -2.0, "배후 아파트단지 C"),
+            (2.0, -1.8, "상업/여가타운 D"),
+        ]
+        for dx, dy, dlabel in dong_labels:
+            ax.text(dx, dy, dlabel, ha='center', va='center', fontsize=8, color='#64748B', style='italic')
             
+        ax.set_xlim(-3.6, 3.6)
+        ax.set_ylim(-3.6, 3.6)
+        ax.set_aspect('equal')
+        ax.axis('off')
+        
+        plt.title(f"스크린 파크골프 상권 분석 지도 (반경 3km)", fontsize=11, fontweight='bold', pad=10, color='#003366')
+        
+        # 하단 주소 배너
+        addr_text = f"※ 사업지 주소: {site_info['full_address']}"
+        fig.text(0.5, 0.02, addr_text, ha='center', fontsize=8, color='#1E293B', bbox=dict(boxstyle='round,pad=0.4', facecolor='#FEF08A', edgecolor='#EAB308', alpha=0.9))
+        
         plt.tight_layout()
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        plt.savefig(output_path, dpi=200, bbox_inches='tight')
+        plt.savefig(output_path, dpi=150, bbox_inches='tight')
+        plt.close()
+        return output_path
+
+    @staticmethod
+    def generate_radar_score_chart(scores_data, output_path):
+        labels = ['골든 시니어\n집적도', '접근성 &\n주차 인프라', '공간 적합성\n& 임대료', '수요공급 갭\n(블루오션)', '지역 소비력\n& 여가지출']
+        s = scores_data['scores']
+        values = [
+            (s['senior_population'] / 25.0) * 100,
+            (s['accessibility_parking'] / 25.0) * 100,
+            (s['space_efficiency'] / 15.0) * 100,
+            (s['supply_gap'] / 15.0) * 100,
+            (s['commercial_spending'] / 20.0) * 100
+        ]
+        
+        num_vars = len(labels)
+        angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
+        values_loop = values + values[:1]
+        angles += angles[:1]
+        
+        fig, ax = plt.subplots(figsize=(5.5, 4.5), subplot_kw=dict(polar=True), dpi=150)
+        ax.set_theta_offset(np.pi / 2)
+        ax.set_theta_direction(-1)
+        
+        plt.xticks(angles[:-1], labels, color='#333333', size=9, fontweight='bold')
+        ax.set_rlabel_position(0)
+        plt.yticks([40, 60, 80, 100], ["40", "60", "80", "100"], color='#999999', size=7)
+        plt.ylim(0, 105)
+        
+        ax.plot(angles, values_loop, linewidth=2.2, linestyle='solid', color='#003366')
+        ax.fill(angles, values_loop, color='#1E88E5', alpha=0.35)
+        
+        plt.title(f"입지 최적성 5대 지표 [{scores_data['grade']}등급 - {scores_data['total_score']}점]",
+                  size=11, fontweight='bold', color='#003366', pad=15)
+                  
+        plt.tight_layout()
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        plt.savefig(output_path, dpi=150, bbox_inches='tight')
+        plt.close()
+        return output_path
+
+    @staticmethod
+    def generate_profit_forecast_chart(forecast_data, output_path):
+        years = [f"{item['year']}년차" for item in forecast_data['moderate']]
+        mod_rev = [item['total_revenue'] / 100000000 for item in forecast_data['moderate']]
+        mod_op = [item['operating_profit'] / 100000000 for item in forecast_data['moderate']]
+        opt_op = [item['operating_profit'] / 100000000 for item in forecast_data['optimistic']]
+        con_op = [item['operating_profit'] / 100000000 for item in forecast_data['conservative']]
+        
+        fig, ax = plt.subplots(figsize=(7.2, 4.2), dpi=150)
+        x = np.arange(len(years))
+        width = 0.35
+        
+        rects1 = ax.bar(x - width/2, mod_rev, width, label='연간 총매출 (보편)', color='#003366', alpha=0.85)
+        rects2 = ax.bar(x + width/2, mod_op, width, label='연간 영업이익 (보편)', color='#43A047', alpha=0.85)
+        
+        ax.plot(x, opt_op, color='#FFB300', marker='o', linewidth=2.0, label='긍정 시나리오 영업이익')
+        ax.plot(x, con_op, color='#757575', marker='s', linewidth=2.0, linestyle='--', label='보수 시나리오 영업이익')
+        
+        for rect in rects2:
+            height = rect.get_height()
+            ax.annotate(f'{height:.1f}억',
+                        xy=(rect.get_x() + rect.get_width() / 2, height),
+                        xytext=(0, 4),
+                        textcoords="offset points",
+                        ha='center', va='bottom', fontsize=8, fontweight='bold', color='#1B5E20')
+                        
+        ax.set_ylabel('금액 (억원)', fontsize=9)
+        ax.set_title('마이파크 10타석 5개년 손익 예측 (연 2% 성장률 반영)', fontsize=11, fontweight='bold', pad=12, color='#003366')
+        ax.set_xticks(x)
+        ax.set_xticklabels(years, fontsize=9)
+        ax.grid(True, linestyle='--', alpha=0.4, axis='y')
+        ax.legend(loc='lower center', bbox_to_anchor=(0.5, -0.25), ncol=2, frameon=False, fontsize=8)
+        
+        plt.tight_layout()
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        plt.savefig(output_path, dpi=150, bbox_inches='tight')
         plt.close()
         return output_path
