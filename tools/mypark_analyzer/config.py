@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
-"""마이파크 전역 설정 및 파라미터 모듈"""
+"""마이파크 전역 설정 및 파라미터 모듈 (10타석 120평 플래그십 표준)"""
 
 DEFAULT_SETTINGS = {
     # 기본 단가 및 이용료
     'game_price_18hole': 8000,          # 파크골프 18홀 이용료 8,000원
     'screengolf_price_18hole': 15000,   # 일반 스크린골프 18홀 이용료 15,000원
     
-    # 영업 기준
+    # 영업 및 공간 기준 (플래그십 표준: 10타석 120평)
     'hours_per_game': 1.0,              # 18홀 1게임 1시간
     'daily_business_hours': 10.0,       # 1일 10시간 영업
-    'default_rooms': 12,                # 기본 12타석
+    'default_rooms': 10,                # 기본 10타석 (플래그십 표준)
+    'default_area_pyeong': 120,         # 기본 120평
     
     # 부가 매출 비율
     'ratio_goods': 0.10,                # 용품 매출 10%
@@ -26,19 +27,19 @@ DEFAULT_SETTINGS = {
     # 5개년 연간 매출 성장률
     'annual_growth_rate': 0.02,         # 연 2.0% 복리 성장
     
-    # 고정 및 운영비용 (12타석 기준 표준)
+    # 고정 및 운영비용 (10타석 기준 표준)
     'labor_cost_per_person': 2500000,   # 인건비 1인당 250만원
-    'default_staff_count': 4,           # 4명 운영
+    'default_staff_count': 3,           # 10타석 표준 3~4명 (기본 3명)
     'default_monthly_rent': 5000000,    # 임대료 월 500만원
     
     # 타석 연동 비용
-    'sensor_consumables_monthly': 20000,    # 타석당 소모품비 2만원 (12타석 24만)
-    'sensor_utilities_monthly': 50000,      # 타석당 수도광열비 5만원 (12타석 60만)
+    'sensor_consumables_monthly': 20000,    # 타석당 소모품비 2만원 (10타석 20만)
+    'sensor_utilities_monthly': 50000,      # 타석당 수도광열비 5만원 (10타석 50만)
     
     # 매장 고정 관리비
     'monthly_telecom': 100000,          # 통신비 10만원
-    'monthly_welfare': 1000000,         # 복리후생비 100만원
-    'monthly_maintenance': 500000,      # 유지보수비 50만원
+    'monthly_welfare': 800000,          # 복리후생비 80만원
+    'monthly_maintenance': 400000,      # 유지보수비 40만원
     'monthly_air_cleaner_per_5rooms': 400000, # 공기청정기 렌탈 (5타석당 40만원)
     'monthly_water_purifier': 100000,   # 정수기 10만원
     'monthly_insurance': 200000,        # 영업배상보험료 20만원
@@ -49,22 +50,22 @@ SCENARIO_CONFIG = {
     'conservative': {
         'name': '보수적',
         'name_en': 'Conservative',
-        'avg_daily_users_per_room': 12.5,   # 타석당 1일 12.5명 (12타석=150명/일, 월 4,500명)
-        'daily_operating_hours': 5.0,       # 1일 5시간 가동 (타석당 2.5명/시간)
+        'avg_daily_users_per_room': 12.5,   # 타석당 1일 12.5명 (10타석=125명/일, 월 3,750명)
+        'daily_operating_hours': 5.0,       # 1일 5시간 가동
         'description': '상권 초기 진입 및 평일 주간 위주 가동',
     },
     'moderate': {
         'name': '보편적',
         'name_en': 'Moderate',
-        'avg_daily_users_per_room': 15.0,   # 타석당 1일 15.0명 (12타석=180명/일, 월 5,400명)
-        'daily_operating_hours': 5.0,       # 1일 5시간 가동 (타석당 3.0명/시간)
+        'avg_daily_users_per_room': 15.0,   # 타석당 1일 15.0명 (10타석=150명/일, 월 4,500명)
+        'daily_operating_hours': 5.0,       # 1일 5시간 가동
         'description': '지역 내 안정적 회원 확보 및 정기 모임 정착',
     },
     'optimistic': {
         'name': '긍정적',
         'name_en': 'Optimistic',
-        'avg_daily_users_per_room': 20.0,   # 타석당 1일 20.0명 (12타석=240명/일, 월 7,200명)
-        'daily_operating_hours': 5.0,       # 1일 5시간 가동 (타석당 4.0명/시간)
+        'avg_daily_users_per_room': 20.0,   # 타석당 1일 20.0명 (10타석=200명/일, 월 6,000명)
+        'daily_operating_hours': 5.0,       # 1일 5시간 가동
         'description': '지역 랜드마크 매장 선점 및 동호회/대회 유치 활성화',
     }
 }

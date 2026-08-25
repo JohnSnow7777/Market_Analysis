@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""16:9 와이드 전문 프레젠테이션 보고서 생성기 (python-pptx 기반)"""
+"""16:9 와이드 전문 프레젠테이션 보고서 생성기 (고객 제안용 전문 텍스트)"""
 import os
 import pptx
 from pptx.util import Inches, Pt
@@ -82,7 +82,7 @@ class PPTXGenerator:
         p2.space_before = Pt(15)
         
         p3 = tf1.add_paragraph()
-        p3.text = f"위치: {site['full_address']} | {site['rooms']}타석 기준"
+        p3.text = f"위치: {site['full_address']} | {site['rooms']}타석 ({site['area_pyeong']}평) 기준"
         p3.font.name = 'Malgun Gothic'
         p3.font.size = Pt(16)
         p3.font.color.rgb = self.c_white
@@ -97,7 +97,7 @@ class PPTXGenerator:
 
         # Slide 2: 개요
         s2 = self.prs.slides.add_slide(self.blank_layout)
-        self._add_header_bar(s2, f"1. 사업지 개요 및 공간 구성 ({site['rooms']}타석)")
+        self._add_header_bar(s2, f"1. 사업지 개요 및 공간 구성 ({site['rooms']}타석 / {site['area_pyeong']}평)")
         tb2 = s2.shapes.add_textbox(Inches(0.8), Inches(1.5), Inches(11.7), Inches(5.0))
         tf2 = tb2.text_frame
         
@@ -116,9 +116,9 @@ class PPTXGenerator:
             r2.font.color.rgb = self.c_dark
             
         add_bullet(tf2, f"{site['full_address']} ({site.get('building_name', '상가')})", "▲ 사업지 주소:")
-        add_bullet(tf2, f"전용면적 약 {site['area_pyeong']}평 | {site['rooms']}타석 + 로비/카페 + 휴게존 구성", "▲ 공간 규모:")
-        add_bullet(tf2, f"순수 유효 층고 {site['clear_height']}m (파크골프 권장 2.8m 이상 완벽 충족)", "▲ 층고 요건:")
-        add_bullet(tf2, f"{site['parking_type']} ({site['parking_spaces']}대 이상 확보 가능, 시니어 자차 접근 용이)", "▲ 주차 인프라:")
+        add_bullet(tf2, f"전용면적 {site['area_pyeong']}평 | {site['rooms']}타석 + 라운지/카페 + 휴게존 최적 동선 배치", "▲ 공간 규모:")
+        add_bullet(tf2, f"순수 유효 층고 {site['clear_height']}m (파크골프 권장 기준 2.8m 이상 완벽 충족)", "▲ 층고 요건:")
+        add_bullet(tf2, f"{site['parking_type']} ({site['parking_spaces']}대 이상 확보 가능, 시니어 자차 접근 편리)", "▲ 주차 인프라:")
         add_bullet(tf2, f"{site['elevator']} 및 {site['zoning']}", "▲ 건물 편의성:")
         add_bullet(tf2, f"반경 3km 내 대규모 주거단지 밀집, 교통 간선도로 인접 생활밀착형 최적 상권", "▲ 입지 특성:")
 
@@ -174,9 +174,9 @@ class PPTXGenerator:
         self._add_header_bar(s4, f"2. 메인 타겟 분석 (50대 이상 시니어 약 {demo['senior_50_plus']:,}명_{demo['senior_ratio']}%)")
         tb4 = s4.shapes.add_textbox(Inches(0.8), Inches(1.5), Inches(5.5), Inches(5.0))
         tf4 = tb4.text_frame
-        add_bullet(tf4, f"스크린 파크골프 핵심 소비층은 50대 이상 여성(약 {demo['senior_50_female']:,}명)", "▲ 핵심 소비층:")
-        add_bullet(tf4, f"여성 인구가 남성보다 많아, 평일 낮 주도적인 단체/친목 모임 유치 필수", "▲ 타겟 시사점:")
-        add_bullet(tf4, f"은퇴자와 액티브 시니어의 날씨 무관 생활체육 참여 급증", "▲ 수요 트렌드:")
+        add_bullet(tf4, f"스크린 파크골프 핵심 소비층은 50대 이상 여성(약 {demo['senior_50_female']:,}명)", "▲ 핵심 타겟군:")
+        add_bullet(tf4, f"여성 인구 비중이 높아 평일 낮 주간 단체/친목 모임 유치에 최적", "▲ 타겟 시사점:")
+        add_bullet(tf4, f"은퇴 세대 및 액티브 시니어의 날씨 무관 4계절 생활체육 참여 급증", "▲ 수요 트렌드:")
         
         ages = demo['age_distribution']
         rows4 = len(ages) + 1
@@ -209,8 +209,8 @@ class PPTXGenerator:
             s5.shapes.add_picture(charts['sales_trend'], Inches(0.8), Inches(1.6), width=Inches(7.2))
         tb5 = s5.shapes.add_textbox(Inches(8.3), Inches(1.8), Inches(4.3), Inches(4.5))
         tf5 = tb5.text_frame
-        add_bullet(tf5, f"반경 1.5~3km 내 유사업종 매장 총 {comm['store_count']}개소 운영 중", "▲ 업소 정보:")
-        add_bullet(tf5, f"월평균 매출액 {comm['monthly_avg_sales']//10000:,}만원 수준 (안정적 상승 추세)", "▲ 매출 동향:")
+        add_bullet(tf5, f"반경 1.5~3km 내 유사업종 매장 총 {comm['store_count']}개소 운영 중", "▲ 업소 현황:")
+        add_bullet(tf5, f"월평균 매출액 {comm['monthly_avg_sales']//10000:,}만원 수준 (안정적 상승세)", "▲ 매출 동향:")
         add_bullet(tf5, f"소상공인 365 플랫폼 실측 데이터 기반 분석", "▲ 데이터 출처:")
 
         # Slide 6: 패턴 분석
@@ -219,14 +219,14 @@ class PPTXGenerator:
         tb6 = s6.shapes.add_textbox(Inches(0.8), Inches(1.6), Inches(11.7), Inches(5.0))
         tf6 = tb6.text_frame
         add_bullet(tf6, f"주말 평균 비중 {comm['day_distribution']['주말평균비중']}%, 평일 월요일 {comm['day_distribution']['월']}% 피크 (정기 모임)", "▲ 요일별 패턴:")
-        add_bullet(tf6, f"주간(10~17시) 이용 비중 {comm['time_distribution']['주간_10_17시_비중']}% 차지 -> 타 스크린골프 대비 주간 고가동률", "▲ 시간대별 패턴:")
-        add_bullet(tf6, f"50대 이상 이용자 매출 기여도 {comm['age_distribution']['50대이상_비중']}% -> 압도적 시니어 타겟 일치", "▲ 연령별 패턴:")
-        add_bullet(tf6, f"평일 낮 공실 시간대를 주간 여성/시니어 동호회가 풀가동하는 독보적 구조", "▲ 사업화 시사점:")
+        add_bullet(tf6, f"주간(10~17시) 이용 비중 {comm['time_distribution']['주간_10_17시_비중']}% 차지 -> 일반 스크린골프 대비 주간 고가동률 달성", "▲ 시간대별 패턴:")
+        add_bullet(tf6, f"50대 이상 이용자 매출 기여도 {comm['age_distribution']['50대이상_비중']}% -> 압도적 타겟 일치도", "▲ 연령별 패턴:")
+        add_bullet(tf6, f"평일 낮 유휴 시간대를 주간 시니어 동호회가 풀가동하는 독보적 수익 구조", "▲ 사업화 시사점:")
 
         # Slide 7: 경쟁점
         s7 = self.prs.slides.add_slide(self.blank_layout)
         comps = comm.get('competitors', [])
-        self._add_header_bar(s7, f"4. 주변 스크린 파크골프 경쟁 매장({len(comps)}곳) 분석")
+        self._add_header_bar(s7, f"4. 주변 스크린 파크골프 경쟁 매장({len(comps)}곳) 현황")
         rows7 = len(comps) + 1
         table_s7 = s7.shapes.add_table(rows7, 5, Inches(0.8), Inches(1.8), Inches(11.7), Inches(0.6 * rows7)).table
         headers7 = ['매장명', '소재지 주소', '사용 시스템', '보유 타석', '주요 특징']
@@ -253,7 +253,7 @@ class PPTXGenerator:
 
         # Slide 8: 5대 지표 평가
         s8 = self.prs.slides.add_slide(self.blank_layout)
-        self._add_header_bar(s8, f"5. 마이파크 입지 최적성 평가 [{score['grade']}등급 - {score['total_score']}점 / 100점]")
+        self._add_header_bar(s8, f"5. 마이파크 입지 최적성 종합 평가 [{score['grade']}등급 - {score['total_score']}점 / 100점]")
         if 'radar_score' in charts and os.path.exists(charts['radar_score']):
             s8.shapes.add_picture(charts['radar_score'], Inches(0.8), Inches(1.6), width=Inches(5.2))
         tb8 = s8.shapes.add_textbox(Inches(6.3), Inches(1.6), Inches(6.2), Inches(5.0))
@@ -268,7 +268,7 @@ class PPTXGenerator:
         # Slide 9: 월 매출
         s9 = self.prs.slides.add_slide(self.blank_layout)
         m_scen = fin['monthly_scenarios']
-        self._add_header_bar(s9, f"6. 마이파크 사업분석 ({site['rooms']}타석) - 월 예상 매출")
+        self._add_header_bar(s9, f"6. 마이파크 사업 타당성 분석 ({site['rooms']}타석) - 월 예상 매출")
         table_s9 = s9.shapes.add_table(4, 7, Inches(0.8), Inches(2.0), Inches(11.7), Inches(2.2)).table
         h9 = ['구분', '타석 이용료', '용품(10%)', '카페(5%)', '레슨(3%)', '월 총매출 합계', '비고 (1일 이용자)']
         for col_idx, h in enumerate(h9):
@@ -300,7 +300,7 @@ class PPTXGenerator:
 
         # Slide 10: 운영 비용
         s10 = self.prs.slides.add_slide(self.blank_layout)
-        self._add_header_bar(s10, f"6. 마이파크 사업분석 ({site['rooms']}타석) - 예상 운영 비용")
+        self._add_header_bar(s10, f"6. 마이파크 사업 타당성 분석 ({site['rooms']}타석) - 예상 운영 비용")
         table_s10 = s10.shapes.add_table(5, 5, Inches(0.8), Inches(1.8), Inches(11.7), Inches(3.0)).table
         h10 = ['구분', '보수적 시나리오', '보편적 시나리오', '긍정적 시나리오', '비고']
         for col_idx, h in enumerate(h10):
@@ -334,7 +334,7 @@ class PPTXGenerator:
 
         # Slide 11: 5개년 손익
         s11 = self.prs.slides.add_slide(self.blank_layout)
-        self._add_header_bar(s11, f"6. 마이파크 사업분석 - 5개년 손익 예측 (연 2% 성장률 반영)")
+        self._add_header_bar(s11, f"6. 마이파크 사업 타당성 분석 - 5개년 손익 예측 (연 2% 성장률 반영)")
         if 'profit_forecast' in charts and os.path.exists(charts['profit_forecast']):
             s11.shapes.add_picture(charts['profit_forecast'], Inches(0.8), Inches(1.6), width=Inches(6.5))
         tb11 = s11.shapes.add_textbox(Inches(7.6), Inches(1.8), Inches(5.0), Inches(4.5))
@@ -344,16 +344,16 @@ class PPTXGenerator:
         add_bullet(tf11, f"1년차 연매출 {mod_1y['total_revenue']//100000000:.1f}억원 / 영업이익 {mod_1y['operating_profit']//100000000:.1f}억원", "▲ 1년차(기준):")
         add_bullet(tf11, f"5년차 연매출 {mod_5y['total_revenue']//100000000:.1f}억원 / 영업이익 {mod_5y['operating_profit']//100000000:.1f}억원", "▲ 5년차(기준):")
         add_bullet(tf11, f"손익분기점(BEP) 월매출: 약 {fin['investment']['bep_monthly_sales']//10000:,}만원 (일 {fin['investment']['bep_turns_per_room']}회전)", "▲ 손익분기점:")
-        add_bullet(tf11, f"초기 순투자금 회수 기간: 약 {fin['investment']['payback_months_moderate']}개월 (1년 이내 회수)", "▲ 투자 회수:")
+        add_bullet(tf11, f"초기 순투자금 회수 기간: 약 {fin['investment']['payback_months_moderate']}개월", "▲ 투자금 회수:")
 
-        # Slide 12: 종합 결론
+        # Slide 12: 종합 결론 및 출점 제안
         s12 = self.prs.slides.add_slide(self.blank_layout)
-        self._add_header_bar(s12, "7. 종합 결론 및 출점 권고안")
+        self._add_header_bar(s12, "7. 종합 결론 및 사업 타당성 평가")
         tb12 = s12.shapes.add_textbox(Inches(1.0), Inches(1.8), Inches(11.3), Inches(4.8))
         tf12 = tb12.text_frame
-        add_bullet(tf12, score['pitch_franchisee'], "【 예비 창업자 맞춤 제안 】", 13)
-        add_bullet(tf12, score['pitch_landlord'], "【 건물주/임대인 맞춤 제안 】", 13)
-        add_bullet(tf12, f"종합 입지 평가 [{score['grade']}등급 - {score['total_score']}점]으로 마이파크 스크린 파크골프 출점에 최적의 조건을 갖추고 있으며, 신속한 선점을 권장합니다.", "★ 최종 권고안:", 13)
+        add_bullet(tf12, score['value_franchisee'], "【 가맹점 출점 기대효과 및 핵심 경쟁력 】", 13)
+        add_bullet(tf12, score['value_landlord'], "【 건물 가치 제고 및 앵커 테넌트 입점 효과 】", 13)
+        add_bullet(tf12, f"종합 입지 평가 [{score['grade']}등급 - {score['total_score']}점]으로 마이파크 스크린 파크골프 출점에 최적의 조건을 갖추고 있으며, 신속한 상권 선점을 권장합니다.", "★ 최종 권고안:", 13)
         
         os.makedirs(os.path.dirname(output_pptx_path), exist_ok=True)
         self.prs.save(output_pptx_path)

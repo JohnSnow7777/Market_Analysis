@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-"""5대 핵심 입지 지표(100점 만점) 채점 및 맞춤형 피칭 논리 생성 엔진"""
+"""5대 핵심 입지 지표(100점 만점) 채점 및 고객 제시용 사업 타당성 분석 엔진"""
 from .config import SCORING_WEIGHTS
 
 class ScoringEngine:
-    """입지 최적성 5대 다이아몬드 스코어링 및 피칭 생성기"""
+    """입지 최적성 5대 다이아몬드 스코어링 및 기대효과 리포트 생성기"""
     
     @staticmethod
     def evaluate_site(demographics, commercial_data, site_info, financials):
@@ -60,17 +60,18 @@ class ScoringEngine:
         moderate_rev = financials['monthly_scenarios']['moderate']['total_revenue']
         payback = financials['investment']['payback_months_moderate']
         
-        pitch_franchisee = (
-            f"반경 3km 내 50대 이상 시니어 인구 {senior_pop:,}명(여성 {senior_f_pop:,}명)이 밀집되어 있어, "
-            f"일반 스크린골프가 비어 있는 '평일 주간 10~17시'에 100% 예약 풀가동이 가능합니다. "
-            f"보편 가동 시 월 총매출 {moderate_rev/10000000:.1f}천만원, 월 영업이익 {moderate_op/10000000:.1f}천만원(영업이익률 50% 이상)을 달성하며, "
-            f"초기 투자금은 약 {payback:.0f}개월 이내에 전액 회수되는 최고 수준의 안정적 캐시카우입니다."
+        # 고객 전달용 전문 비즈니스 제안 문구 (설득/피칭 단어 완전 제거)
+        value_franchisee = (
+            f"반경 3km 내 50대 이상 골든 시니어 인구 {senior_pop:,}명(여성 {senior_f_pop:,}명)이 밀집한 특급 배후 상권으로, "
+            f"일반 스크린골프의 비가동 시간대인 '평일 주간 10~17시'에 100% 예약 풀가동이 가능합니다. "
+            f"보편 가동 기준 월 예상 총매출 {moderate_rev/10000000:.1f}천만원, 월 영업이익 {moderate_op/10000000:.1f}천만원(영업이익률 약 45~50%)을 달성하여 "
+            f"초기 투자금은 약 {payback:.0f}개월(1년 6개월 내외) 이내에 전액 회수되는 최고 수준의 안정적 수익 모델입니다."
         )
         
-        pitch_landlord = (
-            f"본 입점 시 지역 내 구매력 높은 액티브 시니어 수백 명이 매일 건물을 방문하여 1층 식당, 카페 등 "
-            f"건물 전체 상권의 가치와 매출을 견인하는 강력한 앵커 테넌트(Anchor Tenant) 역할을 수행합니다. "
-            f"마이파크 본사와의 연계를 통해 5년 이상의 장기 우량 임차 계약을 보장합니다."
+        value_landlord = (
+            f"본 매장 입점 시 구매력 높은 지역 액티브 시니어 고객층이 매일 고정 방문하여, "
+            f"건물 내 식음료/상업시설 전반의 집객력을 견인하는 핵심 앵커 테넌트(Anchor Tenant) 역할을 수행합니다. "
+            f"마이파크 직영/가맹 본부와의 연계를 바탕으로 장기 우량 임대차 계약을 통한 안정적 임대 수익과 건물 자산 가치 상승을 실현합니다."
         )
         
         return {
@@ -84,6 +85,9 @@ class ScoringEngine:
             'total_score': total_score,
             'grade': grade,
             'grade_desc': grade_desc,
-            'pitch_franchisee': pitch_franchisee,
-            'pitch_landlord': pitch_landlord
+            'value_franchisee': value_franchisee,
+            'value_landlord': value_landlord,
+            # 호환용 키
+            'pitch_franchisee': value_franchisee,
+            'pitch_landlord': value_landlord
         }
