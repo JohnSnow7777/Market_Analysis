@@ -747,6 +747,7 @@
             if (!item) return;
 
             document.getElementById('address').value = item.address;
+            document.getElementById('special_notes').value = item.special_notes || '';
             if (item.name) document.getElementById('name').value = item.name;
 
             document.getElementById('gradeScore').innerText = item.grade + "등급 (" + item.score + "점)";
@@ -861,6 +862,7 @@
 
             const payload = {
                 address: document.getElementById('address').value,
+                special_notes: document.getElementById('special_notes').value || null,
                 name: document.getElementById('name').value || null,
                 rooms: roomsVal ? parseInt(roomsVal) : null,
                 rent: rentVal ? parseInt(rentVal) : null,
@@ -948,6 +950,7 @@
                     timestamp: now.toLocaleString(),
                     dateSuffix: dateSuffix,
                     address: payload.address,
+                    special_notes: payload.special_notes || '',
                     name: payload.name || site.building_name,
                     rooms: site.rooms,
                     area: site.area_pyeong,

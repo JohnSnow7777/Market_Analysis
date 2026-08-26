@@ -39,7 +39,8 @@ class handler(BaseHTTPRequestHandler):
                 rooms=int(params['rooms']) if params.get('rooms') else None,
                 monthly_rent=int(params['rent']) if params.get('rent') else None,
                 staff_count=int(params['staff']) if params.get('staff') else None,
-                area_pyeong=int(params['area']) if params.get('area') else None
+                area_pyeong=int(params['area']) if params.get('area') else None,
+                special_notes=params.get('special_notes')
             )
             
             pptx_b64 = None

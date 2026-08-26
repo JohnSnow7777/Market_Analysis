@@ -45,7 +45,7 @@ class GeoEngine:
         }
 
     @staticmethod
-    def analyze_site(address, building_name=None, area_pyeong=None, rooms=None, monthly_rent=None, staff_count=None):
+    def analyze_site(address, building_name=None, area_pyeong=None, rooms=None, monthly_rent=None, staff_count=None, special_notes=None):
         resolved = AddressResolver.resolve(address)
         smart = GeoEngine.estimate_smart_defaults(address, rooms, monthly_rent, area_pyeong, staff_count)
         
@@ -71,5 +71,6 @@ class GeoEngine:
             'accessibility_spec': '시니어 고객 특성상 승강기 완비 또는 완만한 접근 동선 점검 권장',
             'zoning_spec': '제2종 근린생활시설 또는 운동시설 (※ 지자체 체육시설 인허가 및 건축물 용도 검토 필요)',
             'electrical_spec': f"계약전력 최소 {max(25, smart['rooms']*3)}kW 이상 (타석당 1.5kW + 냉난방)",
-            'building_use_spec': '제2종 근린생활시설 또는 운동시설 (※ 건축물대장 용도 확인 필요)'
+            'building_use_spec': '제2종 근린생활시설 또는 운동시설 (※ 건축물대장 용도 확인 필요)',
+            'special_notes': special_notes.strip() if (special_notes and special_notes.strip()) else ''
         }

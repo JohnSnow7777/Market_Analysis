@@ -137,9 +137,13 @@ class PDFGenerator:
         
         c.setFillColor(self.c_white)
         c.setFont(FONT_REGULAR, 10)
-        c.drawString(56, 105, f"• 대상 사업지: {site['full_address']}")
-        c.drawString(56, 88, f"• 분석 기준일: {bundle['created_at']}")
-        c.drawString(56, 71, "• 주관: 마이파크(MYPARK) 가맹본부 데이터전략실")
+        c.drawString(56, 108, f"• 대상 사업지: {site['full_address']}")
+        if site.get('special_notes'):
+            c.drawString(56, 91, f"• 고객 특이사항: {site['special_notes']}")
+            c.drawString(56, 74, f"• 분석 기준일: {bundle['created_at']}  |  주관: 마이파크(MYPARK) 데이터전략실")
+        else:
+            c.drawString(56, 91, f"• 분석 기준일: {bundle['created_at']}")
+            c.drawString(56, 74, "• 주관: 마이파크(MYPARK) 가맹본부 데이터전략실")
         c.showPage()
 
         # ---------------------------------------------------------------------
@@ -499,12 +503,12 @@ class PDFGenerator:
                 f"• 대중교통 연계: 도보 5분 내 버스정류장 및 지하철역 접근성",
                 f"• 장애인 편의: 휠체어 경사로 및 단차 없는 출입구 동선 확보"
             ]),
-            (495, 48, 425, 204, "■ 인허가 및 용도 적합성 검토", [
+            (495, 48, 425, 204, "■ 인허가 및 현장 특이사항 검토", [
                 f"• 건축물 용도: {site['building_use_spec']}",
                 f"• 정화구역 검토: 학교환경위생정화구역 및 학원 연면적 규제 확인",
                 f"• 장애인 편의시설: 바닥면적 500㎡ 이상 시 장애인 화장실/점자블록 요건",
                 f"• 옥외 간판: 도로변 가시성 높은 전면/돌출 LED 간판 설치 구역 확보",
-                f"• 원상복구 및 임대차: 5년 장기 계약 및 시설 감가상각 기간 보장",
+                f"• 특이사항 반영: {site['special_notes']}" if site.get('special_notes') else "• 원상복구 및 임대차: 5년 장기 계약 및 시설 감가상각 기간 보장",
                 f"• 종합 의견: 10타석 플래그십 매장 구축을 위한 '현장 실측' 필수 진행"
             ])
         ]
@@ -769,7 +773,10 @@ class PDFGenerator:
         c.drawString(516, 172, "2. 10타석 대규모 플래그십: 소규모 매장 대비 압도적 집객력과 쾌적성")
         c.drawString(516, 146, "3. 1인 18홀 7,000원 경쟁력: 일반 스크린골프 대비 가격 우위 및 높은 회전율")
         c.drawString(516, 120, f"4. 빠른 투자 회수: 보편적 가동 기준 약 {inv['payback_months_moderate']:.1f}개월 만에 3.19억원 전액 회수")
-        c.drawString(516, 94, "5. 선점 추천: 상권 내 마이파크 플래그십 1호점 출점 즉시 진행 권장")
+        if site.get('special_notes'):
+            c.drawString(516, 94, f"5. 맞춤 실행 전략: '{site['special_notes']}' 연계 맞춤 출점 권장")
+        else:
+            c.drawString(516, 94, "5. 선점 추천: 상권 내 마이파크 플래그십 1호점 출점 즉시 진행 권장")
         
         self._draw_footer(c, "MYPARK 5-Year Long-term Strategic Feasibility Valuation")
         c.showPage()

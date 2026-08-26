@@ -19,9 +19,9 @@ class MyParkReportGenerator:
         self.output_dir = output_dir
         os.makedirs(self.output_dir, exist_ok=True)
 
-    def analyze_and_generate(self, address, building_name=None, rooms=None, monthly_rent=None, area_pyeong=None, staff_count=None):
+    def analyze_and_generate(self, address, building_name=None, rooms=None, monthly_rent=None, area_pyeong=None, staff_count=None, special_notes=None):
         resolved = AddressResolver.resolve(address)
-        site_info = GeoEngine.analyze_site(address, building_name, area_pyeong, rooms, monthly_rent, staff_count)
+        site_info = GeoEngine.analyze_site(address, building_name, area_pyeong, rooms, monthly_rent, staff_count, special_notes)
         demographics = DemographicsEngine.get_demographics(address)
         commercial = CommercialDataEngine.get_commercial_trends(address)
         competitors = CompetitorEngine.search_competitors(address, site_info['sigungu'], site_info['dong'])
