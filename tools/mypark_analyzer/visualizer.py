@@ -32,6 +32,9 @@ for fpath in font_candidates:
         except Exception:
             pass
 
+if korean_font_name is None:
+    print("[FONT WARNING] 한글 폰트를 찾지 못해 matplotlib 기본 폰트로 대체합니다 — 차트의 한글이 깨질 수 있습니다.")
+
 plt.rcParams['axes.unicode_minus'] = False
 
 

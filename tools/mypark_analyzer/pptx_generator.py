@@ -196,7 +196,7 @@ class PPTXGenerator:
         self._format_cell(table_s2.cell(last_r2, 2), f"{demo['female_pop']:,}", font_size=10, bold=True, color=self.c_mck_navy, bg_color=self.c_tint_blue)
         self._format_cell(table_s2.cell(last_r2, 3), f"{demo['total_pop']:,}", font_size=10, bold=True, color=self.c_mck_navy, bg_color=self.c_tint_blue)
             
-        self._add_source_footer(s2, f"KOSIS National Statistics Portal ({demo['base_date']})")
+        self._add_source_footer(s2, "KOSIS National Statistics Portal" + (" (※ 행정동 추정 모델 적용)" if demo.get("is_estimated") else f" ({demo['base_date']})"))
 
         # ---------------------------------------------------------------------
         # Slide 3: 1. 타겟 시니어 인구 분석
@@ -605,16 +605,19 @@ class PPTXGenerator:
         s8 = self.prs.slides.add_slide(self.blank_layout)
         self._add_mckinsey_header(s8, "5. 사업지 개요 및 현장 출점 요건", f"10타석 {site['area_pyeong']}평 규모 출점을 위한 4대 건축·인프라 현장 실측 기준")
         
+        base_bullets = [
+            f"• 대상 주소: {site['full_address']}",
+            f"• 권장 면적: 전용 {site['area_pyeong']}평 (10타석 + 카페/락커룸 최적 배치)",
+            f"• 층고 기준: {site['clear_height_spec']}",
+            f"• 보/배관 간섭: 센서 투사 영역 및 스윙 궤적 내 장애물 사전 실측 필수",
+            f"• 권장 층수: 고객 접근성 높은 지상 2~3층 권장 (쾌적한 지하 1층 가능)",
+            f"• 바닥 하중: 스크린 타석 및 키오스크 하중(300kg/㎡ 이상) 적합 여부"
+        ]
+        if site.get('special_notes'):
+            base_bullets.insert(1, f"• 고객 특이사항: {site['special_notes']}")
+
         cards_s8 = [
-            (Inches(0.6), Inches(1.45), Inches(5.9), Inches(2.72), "■ 공간 및 유효 층고 요건", [
-                f"• 대상 주소: {site['full_address']}",
-                f"• 고객 특이사항: {site['special_notes']}" if site.get('special_notes') else f"• 권장 면적: 전용 {site['area_pyeong']}평 (10타석 + 카페/락커룸 최적 배치)",
-                f"• 권장 면적: 전용 {site['area_pyeong']}평 (10타석 + 카페/락커룸 최적 배치)" if site.get('special_notes') else f"• 층고 기준: {site['clear_height_spec']}",
-                f"• 층고 기준: {site['clear_height_spec']}",
-                f"• 보/배관 간섭: 센서 투사 영역 및 스윙 궤적 내 장애물 사전 실측 필수",
-                f"• 권장 층수: 고객 접근성 높은 지상 2~3층 권장 (쾌적한 지하 1층 가능)",
-                f"• 바닥 하중: 스크린 타석 및 키오스크 하중(300kg/㎡ 이상) 적합 여부"
-            ]),
+            (Inches(0.6), Inches(1.45), Inches(5.9), Inches(2.72), "■ 공간 및 유효 층고 요건", base_bullets),
             (Inches(6.8), Inches(1.45), Inches(5.9), Inches(2.72), "■ 주차 및 차량 접근성 기준", [
                 f"• 주차 요건: {site['parking_spec']}",
                 f"• 고객 특성: 자차 이용 시니어 비중 80% 이상으로 편리한 진출입 필수",
@@ -996,6 +999,19 @@ class PPTXGenerator:
             p_d.text = desc
             p_d.font.size = Pt(8.6)
             p_d.font.color.rgb = self.c_charcoal
+
+        if site.get('special_notes'):
+            p_sn = tf_lb.add_paragraph()
+            p_sn.space_before = Pt(6)
+            p_sn.text = f"● 4. 고객 맞춤형 출점 전략 ('{site['special_notes']}')"
+            p_sn.font.size = Pt(10)
+            p_sn.font.bold = True
+            p_sn.font.color.rgb = self.c_mck_navy
+            p_snd = tf_lb.add_paragraph()
+            p_snd.space_before = Pt(2)
+            p_snd.text = f"• 고객 요청 특이사항('{site['special_notes']}')을 반영한 1:1 맞춤형 인테리어 및 운영 모델을 제안합니다."
+            p_snd.font.size = Pt(8.6)
+            p_snd.font.color.rgb = self.c_charcoal
             
         # 3. 우측: 건물주 및 상가 상생 활성화 효과 (공백 없이 꽉 찬 카드)
         rect_r = s12.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(6.8), Inches(2.72), Inches(5.9), Inches(4.35))
