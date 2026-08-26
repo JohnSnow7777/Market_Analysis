@@ -662,7 +662,7 @@ class PDFGenerator:
         # ---------------------------------------------------------------------
         # Page 11: 8. 손익분기점(BEP) 및 투자금 회수 기간 (SSOT 3.19억원)
         # ---------------------------------------------------------------------
-        self._draw_mckinsey_header(c, "8. 손익분기점(BEP) 및 투자금 회수 기간", f"초기 순투자금 3.19억원 기준: 1일 {inv['bep_turns_per_room']}회전(1일 {inv['bep_daily_users']}명) 돌파 시 즉시 흑자 달성")
+        self._draw_mckinsey_header(c, "8. 손익분기점(BEP) 및 투자금 회수 기간", "초기 순투자금 3.19억원 기준: 타석당 하루 1팀 이용 시 손익분기점 달성")
         
         bep_cards = [
             (40, 268, 425, 192, "■ 초기 순투자비용 세부 내역 (SSOT)", [
@@ -674,11 +674,11 @@ class PDFGenerator:
                 f"• ★ 초기 총 투자비용 (CAPEX): 3.19억원 ({inv['total_capex']//10000:,}만원)"
             ]),
             (495, 268, 425, 192, "■ 손익분기점(BEP) 달성 요건", [
-                f"• 월 고정비: 약 {fin['owner_operated']['fixed_cost']//10000:,}만원 (점주 상주 기준)",
-                f"• 1인 18홀 7,000원 기준 공헌이익: 팀당 약 29,000원 (1인 약 7,250원)",
+                f"• 월 고정비: 약 {fin['owner_operated']['fixed_cost']//10000:,}만원 (임대료 {site['monthly_rent']//10000:,}만 + 점주 인건비 250만 + 운영비 230만)",
                 f"• 손익분기 월 매출: 약 {inv['bep_monthly_sales']//10000:,}만원",
-                f"• 손익분기 1일 회전수: 일 {inv['bep_turns_per_room']}회전 (1일 약 {inv['bep_daily_users']}명)",
-                f"• 타석당 1일 1.2팀만 이용해도 월 고정비 전액 커버 및 흑자 전환"
+                f"• 손익분기 이용 기준: 타석당 하루 1팀 (약 4명)",
+                f"• ★ 타석당 하루 1팀 이용 시 월 고정비({fin['owner_operated']['fixed_cost']//10000:,}만원) 전액 커버 가능",
+                f"• 운영 방식별 기준: 직접운영 일 {inv['bep_turns_per_room']}회전 | 직원채용 일 {fin['owner_operated']['staff3_bep_turns']}회전"
             ])
         ]
         for x, y, w, h, title, items in bep_cards:

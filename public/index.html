@@ -530,8 +530,8 @@
                         </div>
                         <div class="metric-card">
                             <div class="metric-label">손익분기점 (BEP 일회전율)</div>
-                            <div class="metric-value" id="valBEP" style="font-size:17px;">-</div>
-                            <div class="metric-sub" id="valBEPSub">★ 직접운영: 일 1.08회전 (43명) | 직원채용: 일 1.62회전 (64명)</div>
+                            <div class="metric-value" id="valBEP" style="font-size:17px;">타석당 1일 1.1팀 (약 4명)</div>
+                            <div class="metric-sub" id="valBEPSub">• 타석당 하루 1팀 이용 시 월 고정비(940만원) 전액 커버 가능<br>• ★ 직접운영: 일 1.08회전 | 직원채용: 일 1.62회전</div>
                         </div>
                         <div class="metric-card">
                             <div class="metric-label">초기 투자금 전액 회수 기간</div>
@@ -758,8 +758,8 @@
             document.getElementById('valSenior').innerText = (item.seniorPop ? item.seniorPop.toLocaleString() : '72,400') + "명 (" + (item.seniorRatio || '38.4') + "%)";
             document.getElementById('valProfit').innerHTML = (Math.floor(item.profit / 10000)).toLocaleString() + "만원/월";
             document.getElementById('valProfitSub').innerHTML = "★ <strong>직접운영</strong>: " + (Math.floor(item.profit / 10000)).toLocaleString() + "만원 | 직원채용: " + (Math.floor((item.profit - 5000000) / 10000)).toLocaleString() + "만원";
-            document.getElementById('valBEP').innerHTML = '일 1.08회전 <span style="font-size:13px; color:var(--royal-blue); font-weight:normal;">(직접운영 시 1일 43명)</span>';
-            document.getElementById('valBEPSub').innerHTML = '★ <strong>직접운영</strong>: 일 1.08회전 (43명) | 직원채용: 일 1.62회전 (64명)';
+            document.getElementById('valBEP').innerHTML = '타석당 1일 1.1팀 (약 4명)';
+            document.getElementById('valBEPSub').innerHTML = '• 타석당 하루 1팀 이용 시 월 고정비 전액 커버 가능<br>• ★ <strong>직접운영</strong>: 일 1.08회전 | 직원채용: 일 1.62회전';
             document.getElementById('valPayback').innerHTML = formatPaybackPeriod(item.payback) + ' <span style="font-size:12.5px; color:var(--royal-blue); font-weight:normal;">(' + item.payback + '개월)</span>';
             document.getElementById('valPaybackSub').innerHTML = '★ <strong>직접운영</strong>: ' + item.payback + '개월 | 직원채용: 약 ' + (Math.round((319000000 / Math.max(1, item.profit - 5000000)) * 10) / 10) + '개월';
 
@@ -908,9 +908,10 @@
                 document.getElementById('valProfit').innerHTML = (Math.floor(res.operating_profit_moderate / 10000)).toLocaleString() + '만원/월 <span style="font-size:12.5px; color:var(--text-muted); font-weight:normal;">(이익률 ' + modScen.profit_margin + '%)</span>';
                 document.getElementById('valProfitSub').innerHTML = '★ <strong>직접운영</strong>: ' + (Math.floor(res.operating_profit_moderate / 10000)).toLocaleString() + '만원 | 직원채용: ' + (Math.floor(ownData.staff3_operating_profit / 10000)).toLocaleString() + '만원';
                 
-                // 2. 손익분기점 BEP (직접운영 1.08회전 vs 직원채용 1.62회전)
-                document.getElementById('valBEP').innerHTML = '일 ' + invData.bep_turns_per_room + '회전 <span style="font-size:13px; color:var(--royal-blue); font-weight:normal;">(직접운영 시 1일 ' + invData.bep_daily_users + '명)</span>';
-                document.getElementById('valBEPSub').innerHTML = '★ <strong>직접운영</strong>: 일 ' + invData.bep_turns_per_room + '회전 (' + invData.bep_daily_users + '명) | 직원채용: 일 ' + ownData.staff3_bep_turns + '회전';
+                // 2. 손익분기점 BEP (타석당 1일 1.1팀)
+                const fixedCostMan = Math.floor(ownData.fixed_cost / 10000);
+                document.getElementById('valBEP').innerHTML = '타석당 1일 ' + invData.bep_turns_per_room + '팀 (약 4명)';
+                document.getElementById('valBEPSub').innerHTML = '• 타석당 하루 1팀 이용 시 월 고정비(' + fixedCostMan.toLocaleString() + '만원) 전액 커버 가능<br>• ★ <strong>직접운영</strong>: 일 ' + invData.bep_turns_per_room + '회전 | 직원채용: 일 ' + ownData.staff3_bep_turns + '회전';
                 
                 // 3. 회수기간 (직접운영 12.3개월 vs 직원채용 15.3개월)
                 document.getElementById('valPayback').innerHTML = formatPaybackPeriod(res.payback_months) + ' <span style="font-size:12.5px; color:var(--royal-blue); font-weight:normal;">(' + res.payback_months + '개월)</span>';
