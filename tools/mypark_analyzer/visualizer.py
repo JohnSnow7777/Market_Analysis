@@ -194,6 +194,139 @@ class Visualizer:
         return output_path
 
     @staticmethod
+    def generate_industry_growth_chart(commercial_data, output_path):
+        """업종 성장률 및 골프 특화도 페이지용 — TOP 5 매출 증가 업종 가로 막대 차트"""
+        industries = commercial_data.get('top_growth_industries', [])
+        names = [it['name'] for it in industries][::-1]
+        growths = [float(str(it['growth']).replace('%', '').replace('+', '')) for it in industries][::-1]
+
+        fig, ax = plt.subplots(figsize=(7.5, 4.4), dpi=200)
+        fig.patch.set_facecolor('#FFFFFF')
+        ax.set_facecolor('#FFFFFF')
+
+        colors = ['#008080' if i == len(growths) - 1 else '#94A3B8' for i in range(len(growths))]
+        bars = ax.barh(names, growths, color=colors, zorder=3, height=0.55)
+
+        for bar, g in zip(bars, growths):
+            ax.text(bar.get_width() + 3, bar.get_y() + bar.get_height() / 2, f"+{g:.1f}%",
+                    va='center', fontsize=9.5, fontweight='bold', color='#002B49')
+
+        ax.set_title('업종별 매출 성장률 TOP 5 (전년 대비)', fontsize=11.5, fontweight='bold', pad=14, loc='left', color='#002B49')
+        ax.set_xlabel('매출 성장률 (%)', fontsize=9, fontweight='bold', color='#475569')
+        ax.tick_params(axis='y', labelsize=9.5, colors='#334155')
+        ax.tick_params(axis='x', labelsize=8.5, colors='#475569')
+        ax.grid(True, linestyle='-', alpha=0.3, axis='x', color='#CBD5E1', lw=0.8)
+        for spine in ax.spines.values():
+            spine.set_color('#CBD5E1')
+            spine.set_linewidth(0.8)
+        ax.set_xlim(0, max(growths) * 1.25 if growths else 100)
+
+        plt.tight_layout()
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        plt.savefig(output_path, dpi=200, bbox_inches='tight')
+        plt.close()
+        return output_path
+
+    @staticmethod
+    def generate_cost_waterfall_chart(monthly_scenario, output_path):
+        """비용 구조 및 순영업이익 페이지용 — 보편 시나리오 매출→비용→순이익 워터폴 차트"""
+        sc = monthly_scenario
+        steps = [
+            ('총매출', sc['total_revenue'], 'total'),
+            ('인건비', -sc['labor_cost'], 'cost'),
+            ('임대료', -sc['rent_cost'], 'cost'),
+            ('용품원가', -sc['cost_goods'], 'cost'),
+            ('음료원가', -sc['cost_beverage'], 'cost'),
+            ('카드수수료', -sc['card_fee'], 'cost'),
+            ('운영비', -sc['store_ops_cost'], 'cost'),
+            ('마케팅비', -sc['marketing_cost'], 'cost'),
+            ('순영업이익', sc['operating_profit'], 'total'),
+        ]
+
+        fig, ax = plt.subplots(figsize=(7.5, 4.4), dpi=200)
+        fig.patch.set_facecolor('#FFFFFF')
+        ax.set_facecolor('#FFFFFF')
+
+        cum = 0
+        labels = []
+        for i, (name, val, kind) in enumerate(steps):
+            man = val / 10000.0
+            if kind == 'total' and i == 0:
+                bottom = 0
+                height = man
+                color = '#002B49'
+            elif kind == 'total':
+                bottom = 0
+                height = man
+                color = '#008080'
+            else:
+                bottom = cum + min(man, 0)
+                height = abs(man)
+                color = '#DC2626'
+            ax.bar(i, height, bottom=bottom, color=color, width=0.6, zorder=3)
+            if kind != 'total':
+                cum += man
+            else:
+                cum = man
+            labels.append(name)
+            label_y = bottom + height + (max(steps, key=lambda s: abs(s[1]))[1] / 10000.0) * 0.02
+            ax.text(i, label_y, f"{man:,.0f}", ha='center', va='bottom', fontsize=8, fontweight='bold', color='#334155')
+
+        ax.set_xticks(range(len(labels)))
+        ax.set_xticklabels(labels, fontsize=8.5, rotation=20, ha='right', color='#334155')
+        ax.set_ylabel('금액 (만원)', fontsize=9, fontweight='bold', color='#475569')
+        ax.set_title('보편적 시나리오 매출 → 비용 → 순영업이익 구조', fontsize=11.5, fontweight='bold', pad=14, loc='left', color='#002B49')
+        ax.grid(True, linestyle='-', alpha=0.3, axis='y', color='#CBD5E1', lw=0.8)
+        ax.axhline(0, color='#94A3B8', linewidth=0.8)
+        for spine in ax.spines.values():
+            spine.set_color('#CBD5E1')
+            spine.set_linewidth(0.8)
+
+        plt.tight_layout()
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        plt.savefig(output_path, dpi=200, bbox_inches='tight')
+        plt.close()
+        return output_path
+
+    @staticmethod
+    def generate_bep_chart(financial_data, output_path):
+        """손익분기점(BEP) 및 투자금 회수기간 페이지용 — 3대 시나리오 회수기간 비교 차트"""
+        inv = financial_data['investment']
+        scenarios = [
+            ('보수적', inv['payback_months_conservative'], '#94A3B8'),
+            ('보편적', inv['payback_months_moderate'], '#008080'),
+            ('긍정적', inv['payback_months_optimistic'], '#002B49'),
+        ]
+        names = [s[0] for s in scenarios]
+        months = [s[1] for s in scenarios]
+        colors = [s[2] for s in scenarios]
+
+        fig, ax = plt.subplots(figsize=(7.5, 4.4), dpi=200)
+        fig.patch.set_facecolor('#FFFFFF')
+        ax.set_facecolor('#FFFFFF')
+
+        bars = ax.bar(names, months, color=colors, width=0.5, zorder=3)
+        for bar, m in zip(bars, months):
+            ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + max(months) * 0.02,
+                    f"{m:.1f}개월", ha='center', va='bottom', fontsize=10, fontweight='bold', color='#002B49')
+
+        ax.axhline(12, color='#DC2626', linestyle='--', linewidth=1.2, zorder=2)
+        ax.text(len(names) - 0.4, 12 + max(months) * 0.02, '1년', fontsize=8.5, color='#DC2626', fontweight='bold')
+
+        ax.set_ylabel('투자금 회수 기간 (개월)', fontsize=9, fontweight='bold', color='#475569')
+        ax.set_title(f"시나리오별 투자금(3.19억원) 회수 기간 비교", fontsize=11.5, fontweight='bold', pad=14, loc='left', color='#002B49')
+        ax.grid(True, linestyle='-', alpha=0.3, axis='y', color='#CBD5E1', lw=0.8)
+        for spine in ax.spines.values():
+            spine.set_color('#CBD5E1')
+            spine.set_linewidth(0.8)
+
+        plt.tight_layout()
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        plt.savefig(output_path, dpi=200, bbox_inches='tight')
+        plt.close()
+        return output_path
+
+    @staticmethod
     def generate_profit_forecast_chart(forecast_data, output_path):
         years = [f"{item['year']}년차" for item in forecast_data['moderate']]
         mod_rev = [item['total_revenue'] / 100000000 for item in forecast_data['moderate']]

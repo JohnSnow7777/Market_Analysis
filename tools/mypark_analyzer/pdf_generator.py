@@ -66,6 +66,29 @@ class PDFGenerator:
         self.c_white = HexColor('#FFFFFF')
         self.c_red = HexColor('#C00000')
 
+    def _wrap_text_to_width(self, c, text, font_name, font_size, max_width, max_lines=2):
+        """긴 텍스트를 max_width 안에 들어오도록 줄바꿈. max_lines 초과분은 말줄임표 처리."""
+        words = text.split(' ')
+        lines = []
+        cur = ''
+        for w in words:
+            candidate = f"{cur} {w}".strip()
+            if pdfmetrics.stringWidth(candidate, font_name, font_size) <= max_width:
+                cur = candidate
+            else:
+                if cur:
+                    lines.append(cur)
+                cur = w
+        if cur:
+            lines.append(cur)
+        if len(lines) > max_lines:
+            lines = lines[:max_lines]
+            last = lines[-1]
+            while pdfmetrics.stringWidth(last + '…', font_name, font_size) > max_width and len(last) > 1:
+                last = last[:-1]
+            lines[-1] = last + '…'
+        return lines
+
     def _draw_mckinsey_header(self, c, section_title, lead_text):
         c.setFillColor(self.c_mck_navy)
         c.rect(0, self.height - 24, self.width, 24, fill=1, stroke=0)
@@ -198,8 +221,12 @@ class PDFGenerator:
             
             c.setFont(FONT_REGULAR, 8.5)
             c.setFillColor(self.c_slate)
-            c.drawString(510, y_ind - 18, f"↳ 산출 근거: {idesc}")
-            y_ind -= 54
+            desc_lines = self._wrap_text_to_width(c, f"↳ 산출 근거: {idesc}", FONT_REGULAR, 8.5, self.width - 40 - 510, max_lines=3)
+            dy = y_ind - 18
+            for dl in desc_lines:
+                c.drawString(510, dy, dl)
+                dy -= 10
+            y_ind -= (18 + len(desc_lines) * 10 + 10)
             
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
@@ -471,16 +498,18 @@ class PDFGenerator:
         # ---------------------------------------------------------------------
         self._draw_mckinsey_header(c, "6. 사업지 개요 및 현장 출점 요건", f"10타석 {site['area_pyeong']}평 규모 출점을 위한 4대 건축·인프라 현장 실측 기준")
         
+        space_card_lines = [f"• 대상 주소: {site['full_address']}"]
+        if site.get('special_notes'):
+            space_card_lines.append(f"• 고객 특이사항: {site['special_notes']}")
+        space_card_lines += [
+            f"• 권장 면적: 전용 {site['area_pyeong']}평 (10타석 + 카페/락커룸 최적 배치)",
+            f"• 층고 기준: {site['clear_height_spec']}",
+            f"• 보/배관 간섭: 센서 투사 영역 및 스윙 궤적 내 장애물 사전 실측 필수",
+            f"• 권장 층수: 고객 접근성 높은 지상 2~3층 권장 (쾌적한 지하 1층 가능)",
+            f"• 바닥 하중: 스크린 타석 및 키오스크 하중(300kg/㎡ 이상) 적합 여부"
+        ]
         cards = [
-            (40, 260, 425, 200, "■ 공간 및 유효 층고 요건", [
-                f"• 대상 주소: {site['full_address']}",
-                f"• 고객 특이사항: {site['special_notes']}" if site.get('special_notes') else f"• 권장 면적: 전용 {site['area_pyeong']}평 (10타석 + 카페/락커룸 최적 배치)",
-                f"• 권장 면적: 전용 {site['area_pyeong']}평 (10타석 + 카페/락커룸 최적 배치)" if site.get('special_notes') else f"• 층고 기준: {site['clear_height_spec']}",
-                f"• 층고 기준: {site['clear_height_spec']}",
-                f"• 보/배관 간섭: 센서 투사 영역 및 스윙 궤적 내 장애물 사전 실측 필수",
-                f"• 권장 층수: 고객 접근성 높은 지상 2~3층 권장 (쾌적한 지하 1층 가능)",
-                f"• 바닥 하중: 스크린 타석 및 키오스크 하중(300kg/㎡ 이상) 적합 여부"
-            ]),
+            (40, 260, 425, 200, "■ 공간 및 유효 층고 요건", space_card_lines),
             (495, 260, 425, 200, "■ 주차 및 차량 접근성 기준", [
                 f"• 주차 요건: {site['parking_spec']}",
                 f"• 고객 특성: 자차 이용 시니어 비중 80% 이상으로 편리한 진출입 필수",

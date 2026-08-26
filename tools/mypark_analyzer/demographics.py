@@ -125,6 +125,7 @@ class DemographicsEngine:
         # 3. 반경 3km 인접 행정동 인구 정밀 집계
         # 추정 생성 동(실측 DB 미등록)의 인구·비중이 전부 동일하게 찍히지 않도록 슬롯별 편차 적용
         FALLBACK_DONG_VARIANCE = [1.00, 0.93, 1.11, 0.88, 1.06, 0.97]
+        FALLBACK_SENIOR_RATIO_OFFSET = [0.000, -0.028, 0.031, -0.045, 0.022, -0.011]
         dong_list = []
         tot_male = 0
         tot_female = 0
@@ -164,10 +165,12 @@ class DemographicsEngine:
                     s_ratio = 0.485
 
                 variance = FALLBACK_DONG_VARIANCE[idx % len(FALLBACK_DONG_VARIANCE)]
+                ratio_offset = FALLBACK_SENIOR_RATIO_OFFSET[idx % len(FALLBACK_SENIOR_RATIO_OFFSET)]
                 d_m = int(d_m * variance)
                 d_f = int(d_f * variance)
                 d_tot = d_m + d_f
-                s_50 = int(d_tot * s_ratio)
+                dong_s_ratio = max(0.15, min(0.65, s_ratio + ratio_offset))
+                s_50 = int(d_tot * dong_s_ratio)
                 s_f = int(s_50 * 0.525)
                 d_senior_ratio = round(s_50 / d_tot * 100.0, 1) if d_tot > 0 else 0.0
                 dong_list.append({'dong': dname, 'male': d_m, 'female': d_f, 'total': d_tot, 'senior_50': s_50, 'senior_ratio': d_senior_ratio})

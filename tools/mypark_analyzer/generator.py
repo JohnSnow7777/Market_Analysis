@@ -47,17 +47,26 @@ class MyParkReportGenerator:
         chart_radar = os.path.join(chart_dir, f"radar_score_{timestamp}.png")
         chart_profit = os.path.join(chart_dir, f"profit_forecast_{timestamp}.png")
         map_radius = os.path.join(chart_dir, f"map_radius_{timestamp}.png")
-        
+        chart_growth = os.path.join(chart_dir, f"growth_radar_{timestamp}.png")
+        chart_waterfall = os.path.join(chart_dir, f"waterfall_cost_{timestamp}.png")
+        chart_bep = os.path.join(chart_dir, f"bep_chart_{timestamp}.png")
+
         Visualizer.generate_sales_trend_chart(commercial, chart_sales)
         Visualizer.generate_radar_score_chart(scores, chart_radar)
         Visualizer.generate_profit_forecast_chart(financials['forecast_5year'], chart_profit)
         Visualizer.generate_radius_map(site_info, competitors, map_radius)
-        
+        Visualizer.generate_industry_growth_chart(commercial, chart_growth)
+        Visualizer.generate_cost_waterfall_chart(financials['monthly_scenarios']['moderate'], chart_waterfall)
+        Visualizer.generate_bep_chart(financials, chart_bep)
+
         charts = {
             'sales_trend': chart_sales,
             'radar_score': chart_radar,
             'profit_forecast': chart_profit,
-            'map_radius': map_radius
+            'map_radius': map_radius,
+            'growth_radar': chart_growth,
+            'waterfall_cost': chart_waterfall,
+            'bep_chart': chart_bep
         }
         
         bundle = {
