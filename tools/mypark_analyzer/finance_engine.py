@@ -90,13 +90,16 @@ class FinanceEngine:
             'room_revenue': game_revenue,
             'goods_revenue': goods_revenue,
             'beverage_revenue': beverage_revenue,
+            'fnb_revenue': beverage_revenue,
             'cafe_revenue': beverage_revenue,
             'total_revenue': total_revenue,
+            'annual_revenue': total_revenue * 12,
             'labor_cost': labor_cost,
             'rent_cost': rent_cost,
             'cost_goods': cost_goods,
             'goods_cost': cost_goods,
             'cost_beverage': cost_beverage,
+            'fnb_cost': cost_beverage,
             'cafe_cost': cost_beverage,
             'card_fee': card_fee,
             'store_ops_cost': store_ops_cost + pos_telecom,
@@ -195,11 +198,39 @@ class FinanceEngine:
                     'margin': round((y_op / y_rev) * 100, 1)
                 })
             forecast_5y[sc_key] = sc_list
+
+        # 5개년 누적 및 연차별 요약 데이터 (보편적 시나리오 기준)
+        mod_5y = forecast_5y.get('moderate', [])
+        years_summary = []
+        cum_profit = 0
+        tot_5yr_rev = 0
+        tot_5yr_cost = 0
+        tot_5yr_profit = 0
+        for y in mod_5y:
+            cum_profit += y['operating_profit']
+            tot_5yr_rev += y['total_revenue']
+            tot_5yr_cost += y['total_cost']
+            tot_5yr_profit += y['operating_profit']
+            years_summary.append({
+                'year': y['year'],
+                'revenue': y['total_revenue'],
+                'cost': y['total_cost'],
+                'profit': y['operating_profit'],
+                'cumulative_profit': cum_profit
+            })
             
+        five_year = {
+            'years': years_summary,
+            'total_5yr_revenue': tot_5yr_rev,
+            'total_5yr_cost': tot_5yr_cost,
+            'total_5yr_profit': tot_5yr_profit
+        }
+
         return {
             'investment': inv,
             'monthly_scenarios': scenarios,
             'forecast_5year': forecast_5y,
+            'five_year': five_year,
             'staff_count': staff_count,
             'monthly_rent': monthly_rent,
             'area_pyeong': area_pyeong,

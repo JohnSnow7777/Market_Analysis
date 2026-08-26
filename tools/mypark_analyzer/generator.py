@@ -10,7 +10,6 @@ from .finance_engine import FinanceEngine
 from .scoring_engine import ScoringEngine
 from .visualizer import Visualizer
 from .pptx_generator import PPTXGenerator
-from .docx_generator import DOCXGenerator
 from .pdf_generator import PDFGenerator
 from .address_resolver import AddressResolver
 
@@ -68,6 +67,7 @@ class MyParkReportGenerator:
             'competitors': competitors,
             'financials': financials,
             'scores': scores,
+            'score': scores,
             'charts': charts,
             'created_at': datetime.now().strftime("%Y. %m. %d")
         }
@@ -78,16 +78,13 @@ class MyParkReportGenerator:
         date_kor = f"{now.strftime('%y')}년{now.month}월{now.day}일"
         
         pptx_path = os.path.join(self.output_dir, f"{date_str}_마이파크_{safe_name}_상권및사업분석_{date_kor}.pptx")
-        docx_path = os.path.join(self.output_dir, f"{date_str}_마이파크_{safe_name}_출점타당성보고서_{date_kor}.docx")
         pdf_path = os.path.join(self.output_dir, f"{date_str}_마이파크_{safe_name}_상권및사업분석_{date_kor}.pdf")
-        
+
         PPTXGenerator().generate(bundle, pptx_path)
-        DOCXGenerator.generate(bundle, docx_path)
         PDFGenerator().generate(bundle, pdf_path)
-        
+
         return {
             'pptx_path': pptx_path,
-            'docx_path': docx_path,
             'pdf_path': pdf_path,
             'bundle': bundle,
             'total_score': scores['total_score'],

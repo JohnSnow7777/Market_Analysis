@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""소상공인 365 및 BASA 상권 분석 빅데이터 엔진 (전국 지역별 실측 소비력 및 업종 특화도)"""
+"""MYPARK 지역등급 추정 모델 엔진 (전국 지역을 4단계 등급으로 분류한 소비력·업종 특화도 추정)"""
 from .address_resolver import AddressResolver
 from .competitor_engine import CompetitorEngine
 
@@ -31,6 +31,9 @@ class CommercialEngine:
             nat_avg = 0.3
             multiple = 2.3
             subway = f"{dong} 인근 지하철역"
+            bus_stop_count = 52
+            gov_count, edu_count, fin_count = 12, 22, 28
+            residential_ratio, workplace_ratio = 82.0, 18.0
         elif any(k in full_addr or k in sigungu for k in ['고양', '덕양', '일산', '용인', '수지', '수원', '영통', '광교', '마포', '영등포', '대전', '광주', '광산구', '신창', '부산', '대구']):
             monthly_avg = 20500000
             top_20_sales = 48500000
@@ -44,6 +47,9 @@ class CommercialEngine:
             nat_avg = 0.3
             multiple = 2.0
             subway = f"{sigungu} 간선 교통망 완비"
+            bus_stop_count = 40
+            gov_count, edu_count, fin_count = 9, 16, 18
+            residential_ratio, workplace_ratio = 90.5, 9.5
         elif any(k in full_addr or k in sigungu for k in ['목포', '여수', '순천', '군산', '익산', '원주', '춘천', '포항', '구미', '청주', '천안']):
             monthly_avg = 14800000
             top_20_sales = 32000000
@@ -57,6 +63,9 @@ class CommercialEngine:
             nat_avg = 0.3
             multiple = 1.7
             subway = "시내 주요 버스 노선망"
+            bus_stop_count = 26
+            gov_count, edu_count, fin_count = 6, 11, 10
+            residential_ratio, workplace_ratio = 94.0, 6.0
         else: # 군/소도시 (추정치 모델 적용)
             is_estimated_comm = True
             monthly_avg = 9800000
@@ -71,6 +80,9 @@ class CommercialEngine:
             nat_avg = 0.3
             multiple = 1.3
             subway = "지역 주요 도로망 인접"
+            bus_stop_count = 15
+            gov_count, edu_count, fin_count = 4, 7, 6
+            residential_ratio, workplace_ratio = 96.5, 3.5
 
         months = ['25.07', '25.08', '25.09', '25.10', '25.11', '25.12', '26.01', '26.02', '26.03', '26.04', '26.05', '26.06', '26.07']
         multipliers = [0.96, 0.98, 1.02, 1.08, 1.05, 1.12, 1.15, 1.06, 1.04, 1.02, 1.05, 0.98, 1.00]
@@ -105,10 +117,10 @@ class CommercialEngine:
         }
 
         infra = {
-            '관공서': 8,
-            '교육기관': 14,
-            '금융기관': 16,
-            '버스정류장': 38,
+            '관공서': gov_count,
+            '교육기관': edu_count,
+            '금융기관': fin_count,
+            '버스정류장': bus_stop_count,
             '지하철': subway
         }
 
@@ -124,8 +136,8 @@ class CommercialEngine:
             'monthly_trend': monthly_trend,
             'day_distribution': day_dist,
             'time_distribution': time_dist,
-            'residential_pop_ratio': 93.4,
-            'workplace_pop_ratio': 6.6,
+            'residential_pop_ratio': residential_ratio,
+            'workplace_pop_ratio': workplace_ratio,
             'top_growth_industries': top_growth_industries,
             'golf_industry_density': golf_industry_density,
             'infra': infra,
@@ -133,7 +145,7 @@ class CommercialEngine:
             'competitor_count': comp_res['count'],
             'competitor_summary': comp_res['summary'],
             'is_blue_ocean': comp_res['is_blue_ocean'],
-            'base_source': '소상공인시장진흥공단 상권정보 & BASA 빅데이터',
+            'base_source': 'MYPARK 지역등급 추정 모델 (Tier 1~4)',
             'is_estimated': is_estimated_comm
         }
 

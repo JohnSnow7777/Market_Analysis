@@ -22,7 +22,7 @@ class ScoringEngine:
         senior_pop = demographics.get('senior_50_plus', 72400)
         monthly_sales = commercial_data.get('monthly_avg_sales', 20500000)
         
-        # 1. 골든 시니어 집적도 (25점 만점)
+        # 1. 시니어 인구 밀집도 (25점 만점)
         if senior_pop >= 70000:
             score_senior = 25.0
         elif senior_pop >= 50000:
@@ -38,7 +38,7 @@ class ScoringEngine:
         infra = commercial_data.get('infra', {})
         bus_count = infra.get('버스정류장', 30)
         subway_info = infra.get('지하철', '')
-        has_subway = '역' in subway_info or '지하철' in subway_info or '역' in site_info.get('full_address', '')
+        has_subway = '지하철' in subway_info or '역세권' in subway_info or subway_info.endswith('역')
         
         if has_subway or bus_count >= 35:
             score_parking = 23.0
@@ -63,7 +63,7 @@ class ScoringEngine:
         else:                         # 8평 미만 (초협소)
             score_space = 8.0
         
-        # 4. 수요공급 갭 (15점 만점)
+        # 4. 경쟁 매장 여유도 (15점 만점)
         competitors = commercial_data.get('competitors', [])
         comp_count = len(competitors)
         if comp_count <= 1:

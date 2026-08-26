@@ -145,10 +145,10 @@ class Visualizer:
     def generate_radar_score_chart(scores_data, output_path):
         """맥킨지 스타일 레이더 다이아몬드 차트 (글자 겹침 0%)"""
         labels = [
-            '골든 시니어\n집적도 (25)',
+            '시니어 인구\n밀집도 (25)',
             '접근성 &\n주차 인프라 (25)',
             '공간 적합성\n& 층고 (15)',
-            '수요공급 갭\n블루오션 (15)',
+            '경쟁 매장\n여유도 (15)',
             '지역 소비력\n& 매출 (20)'
         ]
         s = scores_data['scores']

@@ -7,22 +7,22 @@
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
     <style>
         :root {
-            --primary-dark: #002B49;
-            --primary: #002B49;
-            --royal-blue: #008080;
-            --accent-blue: #0D9488;
-            --gold: #10B981;
-            --gold-light: #D1FAE5;
-            --emerald: #008080;
-            --emerald-light: #E6F4F1;
-            --red: #DC2626;
-            --bg: #F8FAFC;
+            --primary-dark: #12211C;
+            --primary: #12211C;
+            --royal-blue: #0F7A5C;
+            --accent-blue: #0F7A5C;
+            --gold: #0F7A5C;
+            --gold-light: #E4F3EC;
+            --emerald: #0F7A5C;
+            --emerald-light: #E4F3EC;
+            --red: #B0473C;
+            --bg: #F7F8F5;
             --card-bg: #FFFFFF;
-            --text-main: #002B49;
-            --text-muted: #64748B;
-            --border: #CBD5E1;
-            --shadow-md: 0 2px 4px -1px rgba(0, 43, 73, 0.06), 0 1px 2px -1px rgba(0, 43, 73, 0.04);
-            --shadow-lg: 0 8px 20px -4px rgba(0, 43, 73, 0.08), 0 4px 6px -2px rgba(0, 43, 73, 0.04);
+            --text-main: #12211C;
+            --text-muted: #657A70;
+            --border: #E4E4DC;
+            --shadow-md: 0 2px 4px -1px rgba(18, 33, 28, 0.06), 0 1px 2px -1px rgba(18, 33, 28, 0.04);
+            --shadow-lg: 0 8px 20px -4px rgba(18, 33, 28, 0.08), 0 4px 6px -2px rgba(18, 33, 28, 0.04);
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -206,20 +206,60 @@
         .result-content { display: none; }
 
         .grade-banner {
-            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
-            color: white;
+            background: var(--emerald-light);
+            color: var(--emerald);
             padding: 22px 24px;
-            border-radius: 14px;
+            border-radius: 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 22px;
             box-shadow: var(--shadow-md);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(15, 122, 92, 0.2);
         }
-        .grade-title { font-size: 13.5px; color: #94A3B8; font-weight: 600; margin-bottom: 2px; }
-        .grade-desc { font-size: 16px; font-weight: 800; color: #FFFFFF; }
-        .grade-badge { font-size: 28px; font-weight: 900; color: var(--gold); }
+        .grade-title { font-size: 13.5px; color: var(--text-muted); font-weight: 600; margin-bottom: 2px; }
+        .grade-desc { font-size: 17px; font-weight: 800; color: var(--primary); }
+        .grade-badge { font-size: 26px; font-weight: 900; color: var(--emerald); }
+
+        /* 신규 B-3: 입지 적합성 5대 지표 패널 */
+        .dims-panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px 26px;
+            margin-bottom: 18px;
+        }
+        .dims-title {
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .dim-row {
+            display: grid;
+            grid-template-columns: 150px 1fr 60px;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .dim-row:last-child { margin-bottom: 0; }
+        .dim-label { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+        .dim-track { height: 8px; background: var(--emerald-light); border-radius: 5px; overflow: hidden; }
+        .dim-fill { height: 100%; background: var(--emerald); border-radius: 5px; width: 0%; transition: width 0.6s ease; }
+        .dim-val { font-size: 13px; font-weight: 700; text-align: right; color: var(--text-main); }
+
+        /* C: 모바일 반응형 규칙 */
+        @media (max-width: 560px) {
+            .metrics-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+            .metric-value { font-size: 17px; }
+            .specs-tag-bar { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .dim-row { grid-template-columns: 105px 1fr 45px; gap: 8px; }
+            .dim-label { font-size: 11.5px; }
+            .download-group { grid-template-columns: 1fr; }
+        }
 
         .specs-tag-bar {
             background: #F1F5F9;
@@ -258,7 +298,9 @@
         .value-title { font-size: 14px; font-weight: 800; color: #92400E; margin-bottom: 8px; }
         .value-text { font-size: 13.5px; color: #78350F; line-height: 1.65; }
 
-        .download-group { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 12px; margin-top: 24px; }
+        .download-group { display: grid; grid-template-columns: 1.2fr 1fr; gap: 12px; margin-top: 24px; }
+        .btn-share { width: 100%; margin-top: 12px; padding: 12px; border-radius: 10px; border: 1.5px dashed var(--border); background: var(--emerald-light); color: var(--primary); font-size: 13.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .btn-share:hover { background: var(--border); }
         .btn-download {
             display: flex;
             align-items: center;
@@ -503,7 +545,7 @@
                 <div id="loadingBox" class="loading-box">
                     <div class="spinner"></div>
                     <p style="font-weight:800; color:var(--primary); font-size:15px; margin-bottom:6px;">공공데이터 및 재무 시뮬레이션 분석 중...</p>
-                    <p style="font-size:13px; color:var(--text-muted);">16:9 와이드 고품질 프레젠테이션 및 DOCX 기획서를 실시간 렌더링하고 있습니다.</p>
+                    <p style="font-size:13px; color:var(--text-muted);">16:9 와이드 고품질 프레젠테이션과 상세 분석 보고서를 실시간 렌더링하고 있습니다.</p>
                 </div>
 
                 <div id="resultContent" class="result-content">
@@ -524,7 +566,7 @@
 
                     <div class="metrics-grid">
                         <div class="metric-card">
-                            <div class="metric-label">배후 50대이상 시니어 인구 (3km)</div>
+                            <div class="metric-label">반경 3km 내 50대 이상 시니어 인구</div>
                             <div class="metric-value" id="valSenior">-</div>
                             <div class="metric-sub" id="valSeniorSub">KOSIS 실측 인구 집계</div>
                         </div>
@@ -542,6 +584,37 @@
                             <div class="metric-label">초기 투자금 전액 회수 기간</div>
                             <div class="metric-value" id="valPayback" style="color:var(--royal-blue); font-size:17px;">-</div>
                             <div class="metric-sub" id="valPaybackSub">★ 직접운영: 12.3개월 (1년1개월) | 직원채용: 15.3개월</div>
+                        </div>
+                    </div>
+
+                    
+                    <!-- 신규 B-3: 입지 적합성 5대 지표 패널 -->
+                    <div class="dims-panel" id="dimsPanel">
+                        <div class="dims-title">📊 입지 적합성 5대 지표</div>
+                        <div class="dim-row">
+                            <span class="dim-label">생활권 시니어 인구</span>
+                            <div class="dim-track"><div class="dim-fill" id="dimSenior"></div></div>
+                            <span class="dim-val" id="dimSeniorVal">-</span>
+                        </div>
+                        <div class="dim-row">
+                            <span class="dim-label">접근성·주차 인프라</span>
+                            <div class="dim-track"><div class="dim-fill" id="dimParking"></div></div>
+                            <span class="dim-val" id="dimParkingVal">-</span>
+                        </div>
+                        <div class="dim-row">
+                            <span class="dim-label">공간 적합성</span>
+                            <div class="dim-track"><div class="dim-fill" id="dimSpace"></div></div>
+                            <span class="dim-val" id="dimSpaceVal">-</span>
+                        </div>
+                        <div class="dim-row">
+                            <span class="dim-label" id="dimGapLabel">경쟁 매장 여유도</span>
+                            <div class="dim-track"><div class="dim-fill" id="dimGap"></div></div>
+                            <span class="dim-val" id="dimGapVal">-</span>
+                        </div>
+                        <div class="dim-row">
+                            <span class="dim-label">지역 소비력·매출</span>
+                            <div class="dim-track"><div class="dim-fill" id="dimSpending"></div></div>
+                            <span class="dim-val" id="dimSpendingVal">-</span>
                         </div>
                     </div>
 
@@ -563,10 +636,8 @@
                         <a id="btnPptx" class="btn-download" href="#" download>
                             <span>📥 PPTX 프레젠테이션</span>
                         </a>
-                        <a id="btnDocx" class="btn-download" href="#" download>
-                            <span>📝 DOCX 출점기획서</span>
-                        </a>
                     </div>
+                    <button type="button" id="btnCopyShareLink" class="btn-share">🔗 이 결과 링크 복사</button>
                 </div>
             </div>
         </div>
@@ -725,7 +796,6 @@
             tbody.innerHTML = list.map((item, idx) => {
                 const dlPdf = item.pdfBase64 ? '<a class="btn-table-dl" href="data:application/pdf;base64,' + item.pdfBase64 + '" download="마이파크_' + (item.name || '상권분석') + '_' + item.dateSuffix + '.pdf">📄 PDF</a>' : '';
                 const dlPptx = item.pptxBase64 ? '<a class="btn-table-dl" href="data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,' + item.pptxBase64 + '" download="마이파크_' + (item.name || '상권분석') + '_' + item.dateSuffix + '.pptx">📥 PPT</a>' : '';
-                const dlDocx = item.docxBase64 ? '<a class="btn-table-dl" href="data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,' + item.docxBase64 + '" download="마이파크_' + (item.name || '출점보고서') + '_' + item.dateSuffix + '.docx">📝 DOC</a>' : '';
                 const badgeCls = item.grade === 'S' ? 'badge-s' : 'badge-a';
                 const profitStr = (Math.floor(item.profit / 10000)).toLocaleString() + "만원";
 
@@ -737,7 +807,7 @@
                     '<td><span class="' + badgeCls + '">' + item.grade + ' (' + item.score + '점)</span></td>' +
                     '<td style="font-weight:700; color:var(--emerald);">' + profitStr + '</td>' +
                     '<td>약 ' + item.payback + '개월</td>' +
-                    '<td>' + dlPdf + dlPptx + dlDocx + '</td>' +
+                    '<td>' + dlPdf + dlPptx + '</td>' +
                     '<td>' +
                         '<button onclick="loadFromHistory(' + idx + ')" class="btn-table-dl" style="background:#EFF6FF; color:#1E40AF; border-color:#BFDBFE; cursor:pointer;">불러오기</button>' +
                         '<button onclick="deleteHistoryItem(' + idx + ')" style="background:none; border:none; color:#DC2626; cursor:pointer; font-size:13px; margin-left:4px;">✕</button>' +
@@ -776,10 +846,6 @@
             if (item.pptxBase64) {
                 document.getElementById('btnPptx').href = 'data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,' + item.pptxBase64;
                 document.getElementById('btnPptx').setAttribute('download', '마이파크_' + (item.name || '상권분석') + '_' + item.dateSuffix + '.pptx');
-            }
-            if (item.docxBase64) {
-                document.getElementById('btnDocx').href = 'data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,' + item.docxBase64;
-                document.getElementById('btnDocx').setAttribute('download', '마이파크_' + (item.name || '출점보고서') + '_' + item.dateSuffix + '.docx');
             }
 
             document.getElementById('emptyState').style.display = 'none';
@@ -924,6 +990,21 @@
                 document.getElementById('valPayback').innerHTML = formatPaybackPeriod(res.payback_months) + ' <span style="font-size:12.5px; color:var(--royal-blue); font-weight:normal;">(' + res.payback_months + '개월)</span>';
                 document.getElementById('valPaybackSub').innerHTML = '★ <strong>직접운영</strong>: ' + res.payback_months + '개월 | 직원채용: ' + ownData.staff3_payback_months + '개월 (3.19억 회수)';
                 
+                // 5대 지표 시각화 바인딩
+                const dims = (res.bundle && res.bundle.scores && res.bundle.scores.scores) ? res.bundle.scores.scores : (res.bundle && res.bundle.score && res.bundle.score.scores ? res.bundle.score.scores : {});
+                const setDim = (fillId, valId, score, max) => {
+                    const sc = score || 0;
+                    const elFill = document.getElementById(fillId);
+                    const elVal = document.getElementById(valId);
+                    if (elFill) elFill.style.width = Math.min(100, Math.max(0, (sc / max * 100))) + '%';
+                    if (elVal) elVal.innerText = sc.toFixed(1) + '점';
+                };
+                setDim('dimSenior', 'dimSeniorVal', dims.senior_population, 25);
+                setDim('dimParking', 'dimParkingVal', dims.accessibility_parking, 25);
+                setDim('dimSpace', 'dimSpaceVal', dims.space_efficiency, 15);
+                setDim('dimGap', 'dimGapVal', dims.supply_gap, 15);
+                setDim('dimSpending', 'dimSpendingVal', dims.commercial_spending, 20);
+
                 document.getElementById('valueFranchisee').innerText = res.bundle.scores.value_franchisee || res.bundle.scores.pitch_franchisee;
                 document.getElementById('valueLandlord').innerText = res.bundle.scores.value_landlord || res.bundle.scores.pitch_landlord;
                 document.getElementById('resDate').innerText = '분석 기준: ' + res.bundle.created_at;
@@ -943,11 +1024,6 @@
                     document.getElementById('btnPptx').href = 'data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,' + res.pptx_base64;
                     document.getElementById('btnPptx').setAttribute('download', fileBase + '.pptx');
                 }
-                if (res.docx_base64) {
-                    document.getElementById('btnDocx').href = 'data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,' + res.docx_base64;
-                    document.getElementById('btnDocx').setAttribute('download', '마이파크_' + (payload.name || site.sigungu || '상권분석') + '_출점타당성보고서_' + dateSuffix + '.docx');
-                }
-
                 // 히스토리에 자동 추가
                 const historyList = getHistory();
                 const newRecord = {
@@ -969,8 +1045,7 @@
                     seniorPop: res.bundle.demographics.senior_50_plus,
                     seniorRatio: res.bundle.demographics.senior_ratio,
                     pdfBase64: res.pdf_base64,
-                    pptxBase64: res.pptx_base64,
-                    docxBase64: res.docx_base64
+                    pptxBase64: res.pptx_base64
                 };
                 historyList.unshift(newRecord);
                 saveHistory(historyList);
@@ -999,6 +1074,51 @@
             } finally {
                 btn.disabled = false;
             }
+        });
+
+        // 공유 링크 생성 및 복사
+        function buildShareUrl() {
+            const params = new URLSearchParams();
+            params.set('address', document.getElementById('address').value);
+            const name = document.getElementById('name').value;
+            if (name) params.set('name', name);
+            const notes = document.getElementById('special_notes').value;
+            if (notes) params.set('special_notes', notes);
+            const rooms = document.getElementById('rooms').value;
+            if (rooms) params.set('rooms', rooms);
+            const rent = document.getElementById('rent').value;
+            if (rent) params.set('rent', rent);
+            const area = document.getElementById('area').value;
+            if (area) params.set('area', area);
+            const staff = document.getElementById('staff').value;
+            if (staff) params.set('staff', staff);
+            return window.location.origin + window.location.pathname + '?' + params.toString();
+        }
+
+        document.getElementById('btnCopyShareLink').addEventListener('click', () => {
+            const url = buildShareUrl();
+            navigator.clipboard.writeText(url).then(() => {
+                alert('공유 링크가 복사되었습니다. 어디든 붙여넣어 전달하세요.');
+            }).catch(() => {
+                prompt('아래 링크를 직접 복사해주세요:', url);
+            });
+        });
+
+        // 링크로 접속 시 주소를 자동으로 채우고 분석을 자동 실행
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const addr = urlParams.get('address');
+            if (!addr) return;
+
+            document.getElementById('address').value = addr;
+            if (urlParams.get('name')) document.getElementById('name').value = urlParams.get('name');
+            if (urlParams.get('special_notes')) document.getElementById('special_notes').value = urlParams.get('special_notes');
+            if (urlParams.get('rooms')) document.getElementById('rooms').value = urlParams.get('rooms');
+            if (urlParams.get('rent')) document.getElementById('rent').value = urlParams.get('rent');
+            if (urlParams.get('area')) document.getElementById('area').value = urlParams.get('area');
+            if (urlParams.get('staff')) document.getElementById('staff').value = urlParams.get('staff');
+
+            document.getElementById('analyzeForm').dispatchEvent(new Event('submit', { cancelable: true }));
         });
 
         // 초기 히스토리 렌더링

@@ -44,7 +44,6 @@ class handler(BaseHTTPRequestHandler):
             )
             
             pptx_b64 = None
-            docx_b64 = None
             pdf_b64 = None
             if 'pdf_path' in result and os.path.exists(result['pdf_path']):
                 with open(result['pdf_path'], 'rb') as f:
@@ -52,13 +51,9 @@ class handler(BaseHTTPRequestHandler):
             if 'pptx_path' in result and os.path.exists(result['pptx_path']):
                 with open(result['pptx_path'], 'rb') as f:
                     pptx_b64 = base64.b64encode(f.read()).decode('utf-8')
-            if 'docx_path' in result and os.path.exists(result['docx_path']):
-                with open(result['docx_path'], 'rb') as f:
-                    docx_b64 = base64.b64encode(f.read()).decode('utf-8')
-                    
+
             result['pdf_base64'] = pdf_b64
             result['pptx_base64'] = pptx_b64
-            result['docx_base64'] = docx_b64
             
             self.send_response(200)
             self.send_header('Content-Type', 'application/json; charset=utf-8')
