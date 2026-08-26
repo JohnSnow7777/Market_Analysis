@@ -115,6 +115,7 @@ class PPTXGenerator:
         inv = fin['investment']
         scenarios = fin['monthly_scenarios']
         target_dong = site['dong']
+        pop_source_tag = "MYPARK 추정 모델" if demo.get('is_estimated') else "KOSIS 실측"
 
         # ---------------------------------------------------------------------
         # Slide 1: 표지
@@ -198,7 +199,7 @@ class PPTXGenerator:
         comp_name_str = f"'{comm['competitors'][0]['name']}' 등 {comp_cnt}곳" if comp_cnt > 0 else "전문 시설 전무"
         
         indicators = [
-            ("1) 시니어 인구 밀집도", score['scores']['senior_population'], 25, f"KOSIS 실측: 반경 3km 내 50대 이상 시니어 {demo['senior_50_plus']:,}명 (비중 {demo['senior_ratio']}%) 밀집"),
+            ("1) 시니어 인구 밀집도", score['scores']['senior_population'], 25, f"{pop_source_tag}: 반경 3km 내 50대 이상 시니어 {demo['senior_50_plus']:,}명 (비중 {demo['senior_ratio']}%) 밀집"),
             ("2) 접근성 및 주차 인프라", score['scores']['accessibility_parking'], 25, f"간선도로 접면 및 대중교통 우수({score['scores']['accessibility_parking']:.1f}점) / 10타석 권장 주차면은 '현장 실측' 요망"),
             ("3) 공간 적합성 및 층고", score['scores']['space_efficiency'], 15, f"{site['area_pyeong']}평 10타석 배치 최적({score['scores']['space_efficiency']:.1f}점) / 권장 유효 층고 2.8m 이상 여부는 '인테리어 실측' 필수"),
             ("4) 경쟁 매장 여유도", score['scores']['supply_gap'], 15, f"전문 스크린 파크골프 {comp_name_str} 수준으로, {demo['total_pop']/10000:.1f}만 인구 대비 10타석 플래그십 공급 절대 부족"),
@@ -671,7 +672,7 @@ class PPTXGenerator:
             "• 비교 모델 (직원 3인 채용): 인건비 월 750만원 (회수기간 15.3개월)",
             f"• 게임비 요금: 1인 18홀 7,000원 (4인 1팀 28,000원)",
             f"• 3대 매출원: 게임비 회전 + 용품 판매(150만) + 식음료(180만)",
-            f"• 월 임대료 기준: 실측 {site['monthly_rent']//10000:,}만원/월 반영"
+            f"• 월 임대료 기준: {'지역 시세 추정' if site.get('rent_is_estimated') else '입력하신 실측'} {site['monthly_rent']//10000:,}만원/월 반영"
         ]
         for it in items8_a:
             p_it = tf8_ab.add_paragraph()

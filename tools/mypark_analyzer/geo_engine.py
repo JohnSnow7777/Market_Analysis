@@ -41,7 +41,8 @@ class GeoEngine:
             'monthly_rent': auto_rent,
             'staff_count': auto_staff,
             'rent_per_pyeong': rent_per_pyeong,
-            'is_auto_estimated': (rooms is None or monthly_rent is None or area_pyeong is None or staff_count is None)
+            'is_auto_estimated': (rooms is None or monthly_rent is None or area_pyeong is None or staff_count is None),
+            'rent_is_estimated': not (monthly_rent and int(monthly_rent) > 0)
         }
 
     @staticmethod
@@ -63,6 +64,7 @@ class GeoEngine:
             'staff_count': smart['staff_count'],
             'rent_per_pyeong': smart['rent_per_pyeong'],
             'is_auto_estimated': smart['is_auto_estimated'],
+            'rent_is_estimated': smart['rent_is_estimated'],
             
             # 단정적 표현 완전 제거 -> 출점 기준 및 현장 실측 체크리스트로 객관화
             'floor_recommendation': '지상 2~3층 권장 (또는 쾌적한 지하 1층 상가)',
