@@ -461,6 +461,81 @@
             overflow-x: auto;
             margin: 12px 0;
         }
+
+        /* ===== 전체 상세 보고서 (Full Report) ===== */
+        .full-report { margin-bottom: 35px; }
+        .full-report-toggle {
+            width: 100%;
+            padding: 16px 24px;
+            border-radius: 16px;
+            border: 1.5px solid var(--border);
+            background: var(--card-bg);
+            color: var(--primary);
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow-md);
+        }
+        .full-report-toggle .arrow { transition: transform 0.2s ease; color: var(--emerald); }
+        .full-report-toggle.open .arrow { transform: rotate(180deg); }
+        .full-report-body { display: none; margin-top: 18px; display: flex; flex-direction: column; gap: 20px; }
+        .full-report-body.open { display: flex; }
+        .report-section {
+            background: var(--card-bg);
+            border-radius: 18px;
+            padding: 26px 28px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+        }
+        .report-section-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            border-radius: 8px;
+            background: var(--emerald-light);
+            color: var(--emerald);
+            font-size: 13px;
+            font-weight: 800;
+            margin-right: 10px;
+        }
+        .report-section-title { font-size: 16px; font-weight: 800; color: var(--primary); display: flex; align-items: center; margin-bottom: 6px; }
+        .report-section-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; padding-left: 36px; }
+        .report-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+        @media (max-width: 860px) { .report-grid-2, .report-grid-4 { grid-template-columns: 1fr; } }
+        .report-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+        .report-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .report-table th {
+            background: #F1F5F9;
+            color: var(--primary);
+            font-weight: 700;
+            text-align: left;
+            padding: 10px 12px;
+            border-bottom: 2px solid var(--border);
+            white-space: nowrap;
+        }
+        .report-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text-main); }
+        .report-table tr.hl td { color: var(--emerald); font-weight: 700; }
+        .req-card { background: #FAFBFA; border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+        .req-card-title { font-size: 13.5px; font-weight: 800; color: var(--primary); margin-bottom: 10px; }
+        .req-card ul { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+        .req-card li { font-size: 12.5px; color: var(--text-main); line-height: 1.5; padding-left: 14px; position: relative; }
+        .req-card li::before { content: '•'; position: absolute; left: 0; color: var(--emerald); }
+        .comp-card { background: #FAFBFA; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+        .comp-card-head { background: var(--primary); color: #fff; padding: 10px 14px; font-size: 13px; font-weight: 700; text-align: center; }
+        .comp-card-body { padding: 14px; font-size: 12px; }
+        .comp-card-rooms { text-align: center; font-weight: 800; color: var(--primary); font-size: 14px; margin-bottom: 2px; }
+        .comp-card-status { text-align: center; color: var(--text-muted); font-size: 11px; margin-bottom: 12px; }
+        .comp-card-row { margin-bottom: 8px; }
+        .comp-card-row b { display: block; color: var(--text-muted); font-size: 11px; margin-bottom: 2px; }
+        .report-note { background: var(--emerald-light); border-radius: 10px; padding: 12px 16px; font-size: 12.5px; color: var(--primary); margin-top: 14px; }
+        .report-caveat { background: #FEF2F2; border: 1px solid #FECACA; border-radius: 10px; padding: 14px 16px; margin-top: 16px; }
+        .report-caveat b { color: #991B1B; font-size: 13px; }
+        .report-caveat p { font-size: 12px; color: #7F1D1D; margin-top: 4px; }
     </style>
 </head>
 <body>
@@ -653,6 +728,125 @@
             </div>
         </div>
 
+        <!-- 📖 전체 상세 보고서 (12개 섹션 전체) -->
+        <div class="full-report" id="fullReport" style="display:none;">
+            <button type="button" class="full-report-toggle" id="btnToggleFullReport">
+                <span>📖 전체 상세 보고서 펼쳐보기 (인구·상권·경쟁·현장·재무 전 항목)</span>
+                <span class="arrow">▼</span>
+            </button>
+            <div class="full-report-body" id="fullReportBody">
+
+                <div class="report-section">
+                    <div class="report-section-title"><span class="report-section-num">1</span>3km 생활권 인구 및 타겟 연령 분석</div>
+                    <div class="report-section-sub" id="repPopSub">-</div>
+                    <div class="report-grid-2">
+                        <div>
+                            <table class="report-table">
+                                <thead><tr><th>행정동명</th><th>총 인구</th><th>50대 이상</th><th>시니어 비중</th></tr></thead>
+                                <tbody id="repDongTable"></tbody>
+                            </table>
+                        </div>
+                        <div>
+                            <table class="report-table">
+                                <thead><tr><th>연령 구간</th><th>인구수</th><th>전체 비중</th></tr></thead>
+                                <tbody id="repAgeTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="report-note" id="repPopSource">-</div>
+                </div>
+
+                <div class="report-section">
+                    <div class="report-section-title"><span class="report-section-num">2</span>상권 소비력 및 유동 패턴 분석</div>
+                    <div class="report-section-sub" id="repCommSub">-</div>
+                    <div class="report-grid-2">
+                        <div class="req-card">
+                            <div class="req-card-title">유사 골프업종 수익구조 격차</div>
+                            <ul id="repCommList"></ul>
+                        </div>
+                        <div class="req-card">
+                            <div class="req-card-title">요일별·시간대별 매출 비중</div>
+                            <ul id="repTimeList"></ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <div class="report-section-title"><span class="report-section-num">3</span>업종 성장률 및 골프 특화도</div>
+                    <div class="report-section-sub" id="repGrowthSub">-</div>
+                    <table class="report-table">
+                        <thead><tr><th>순위</th><th>업종명</th><th>매출 성장률</th><th>업종 상태</th></tr></thead>
+                        <tbody id="repGrowthTable"></tbody>
+                    </table>
+                </div>
+
+                <div class="report-section">
+                    <div class="report-section-title"><span class="report-section-num">4</span>경쟁 환경 및 시설 공급 갭 분석</div>
+                    <div class="report-section-sub" id="repCompSub">-</div>
+                    <div class="report-grid-4" id="repCompCards"></div>
+                </div>
+
+                <div class="report-section">
+                    <div class="report-section-title"><span class="report-section-num">5</span>사업지 개요 및 현장 출점 요건</div>
+                    <div class="report-section-sub">10타석 표준 모델 출점을 위한 4대 건축·인프라 현장 실측 기준</div>
+                    <div class="report-grid-2" id="repReqCards"></div>
+                </div>
+
+                <div class="report-section">
+                    <div class="report-section-title"><span class="report-section-num">6</span>표준 투자 조건 및 사업 추진 유의사항</div>
+                    <div class="report-grid-2">
+                        <div class="req-card">
+                            <div class="req-card-title">초기 투자금 상세 내역</div>
+                            <ul id="repCapexList"></ul>
+                        </div>
+                        <div class="req-card">
+                            <div class="req-card-title">표준 운영 방식 및 인건비 모델</div>
+                            <ul id="repOpModelList"></ul>
+                        </div>
+                    </div>
+                    <div class="report-caveat">
+                        <b>⚠ 투자 결정 전 반드시 확인하십시오</b>
+                        <p id="repCaveatText">-</p>
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <div class="report-section-title"><span class="report-section-num">7</span>매출 추정 (3대 시나리오)</div>
+                    <div class="report-section-sub" id="repRevSub">-</div>
+                    <table class="report-table">
+                        <thead><tr><th>구분/시나리오</th><th>일 가동률</th><th>월 게임비</th><th>용품 판매</th><th>식음료</th><th>월 총매출</th><th>연간 총매출</th></tr></thead>
+                        <tbody id="repRevTable"></tbody>
+                    </table>
+                </div>
+
+                <div class="report-section">
+                    <div class="report-section-title"><span class="report-section-num">8</span>비용 구조 및 순영업이익</div>
+                    <div class="report-section-sub" id="repCostSub">-</div>
+                    <div class="req-card">
+                        <ul id="repCostList"></ul>
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <div class="report-section-title"><span class="report-section-num">9</span>손익분기점(BEP) 및 투자금 회수기간</div>
+                    <div class="report-section-sub" id="repBepSub">-</div>
+                    <div class="req-card">
+                        <ul id="repBepList"></ul>
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <div class="report-section-title"><span class="report-section-num">10</span>5개년 중장기 손익 전망</div>
+                    <div class="report-section-sub" id="rep5ySub">-</div>
+                    <table class="report-table">
+                        <thead><tr><th>연차</th><th>1차년도</th><th>2차년도</th><th>3차년도</th><th>4차년도</th><th>5차년도</th><th>5개년 누적</th></tr></thead>
+                        <tbody id="rep5yTable"></tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+
         <!-- 📋 발행 이력 & 구글 스프레드시트 연동 섹션 -->
         <div class="history-section">
             <div class="history-header">
@@ -764,6 +958,154 @@
             }
         });
 
+        function manWon(v) { return Math.floor(v / 10000).toLocaleString() + '만원'; }
+        function eokWon(v) { return (v / 100000000).toFixed(2) + '억원'; }
+
+        function renderFullReport(bundle) {
+            const demo = bundle.demographics, comm = bundle.commercial, site = bundle.site, fin = bundle.financials;
+
+            // 1) 인구 및 타겟 연령 분석
+            document.getElementById('repPopSub').innerText = `반경 3km 내 50대 이상 시니어 ${demo.senior_50_plus.toLocaleString()}명(${demo.senior_ratio}%)의 핵심 소비 수요 확보`;
+            document.getElementById('repDongTable').innerHTML = demo.dongs.slice(0, 6).map(d => {
+                const sVal = d.senior_50 !== undefined ? d.senior_50 : Math.round(d.total * demo.senior_ratio / 100);
+                const sRatio = d.senior_ratio !== undefined ? d.senior_ratio : demo.senior_ratio;
+                return `<tr><td>${d.dong}</td><td>${d.total.toLocaleString()}명</td><td>${sVal.toLocaleString()}명</td><td>${sRatio}%</td></tr>`;
+            }).join('');
+            document.getElementById('repAgeTable').innerHTML = `
+                <tr><td>50대 (액티브)</td><td>${demo.pop_50s.toLocaleString()}명</td><td>${demo.ratio_50s}%</td></tr>
+                <tr><td>60대 (은퇴 시니어)</td><td>${demo.pop_60s.toLocaleString()}명</td><td>${demo.ratio_60s}%</td></tr>
+                <tr><td>70대 이상 (실버)</td><td>${demo.pop_70_plus.toLocaleString()}명</td><td>${demo.ratio_70_plus}%</td></tr>
+                <tr class="hl"><td>50대+ 합계</td><td>${demo.senior_50_plus.toLocaleString()}명</td><td>${demo.senior_ratio}%</td></tr>`;
+            document.getElementById('repPopSource').innerText = `📍 데이터 출처: ${demo.data_source}` + (demo.is_estimated ? ' (실측 DB 미등록 지역 — 시군구 통계 기반 추정치)' : '');
+
+            // 2) 상권 소비력
+            document.getElementById('repCommSub').innerText = `${site.sigungu || ''} 상권 소비력 등급: ${comm.spending_grade}`;
+            document.getElementById('repCommList').innerHTML = `
+                <li>상위 20% 매장 월매출: 약 ${manWon(comm.top_20_sales)} (대형 최신 매장)</li>
+                <li>매출 성장률: 골프·레저용품 +${comm.growth_rate}% (전 업종 1위)</li>
+                <li>골프 인프라 밀집도: 전국 평균 대비 ${comm.golf_industry_density ? comm.golf_industry_density.multiple : '-'}배</li>
+                <li>데이터 출처: ${comm.base_source || 'MYPARK 지역등급 추정 모델'}${comm.is_estimated ? ' (추정치)' : ''}</li>`;
+            document.getElementById('repTimeList').innerHTML = `
+                <li>요일별 매출 비중: 주중 ${(100 - comm.day_distribution['주말평균비중'] * 2).toFixed(1)}% / 주말 ${(comm.day_distribution['주말평균비중'] * 2).toFixed(1)}%</li>
+                <li>시간대별 비중: 주간(10~17시) ${comm.time_distribution['주간_10_17시_비중']}% 집중 가동</li>
+                <li>4인 1팀 단체 이용 중심으로 식음료·용품 부가 매출 발생</li>`;
+
+            // 3) 업종 성장률
+            document.getElementById('repGrowthSub').innerText = `골프용품 매출성장률 1위(+${comm.growth_rate}%) 업종`;
+            document.getElementById('repGrowthTable').innerHTML = comm.top_growth_industries.map(it =>
+                `<tr><td>${it.rank}</td><td>${it.name}</td><td style="color:var(--emerald); font-weight:700;">${it.growth}</td><td>${it.status}</td></tr>`
+            ).join('');
+
+            // 4) 경쟁 환경
+            document.getElementById('repCompSub').innerText = comm.competitor_summary;
+            document.getElementById('repCompCards').innerHTML = (comm.competitors || []).slice(0, 4).map(c => `
+                <div class="comp-card">
+                    <div class="comp-card-head">${c.name}</div>
+                    <div class="comp-card-body">
+                        <div class="comp-card-rooms">${c.rooms > 0 ? c.rooms + '타석 규모' : '1호점 선점 대상'}</div>
+                        <div class="comp-card-status">[${c.status || '실측완료'}] ${c.system || '스크린 시스템'}</div>
+                        <div class="comp-card-row"><b>주소</b>${c.address}</div>
+                        <div class="comp-card-row"><b>규모</b>${c.rooms > 0 ? c.rooms + '타석 운영' : '상업용 매장 미등록'}</div>
+                        <div class="comp-card-row"><b>특징</b>${c.features || '-'}</div>
+                    </div>
+                </div>`).join('');
+
+            // 5) 현장 출점 요건
+            document.getElementById('repReqCards').innerHTML = `
+                <div class="req-card">
+                    <div class="req-card-title">공간 및 유효 층고 요건</div>
+                    <ul>
+                        <li>대상 주소: ${site.full_address}</li>
+                        ${site.special_notes ? `<li>고객 특이사항: ${site.special_notes}</li>` : ''}
+                        <li>권장 면적: 전용 ${site.area_pyeong}평 (10타석 + 카페/락커룸 최적 배치)</li>
+                        <li>층고 기준: ${site.clear_height_spec}</li>
+                        <li>권장 층수: 고객 접근성 높은 지상 2~3층 권장 (쾌적한 지하 1층 가능)</li>
+                    </ul>
+                </div>
+                <div class="req-card">
+                    <div class="req-card-title">주차 및 차량 접근성 기준</div>
+                    <ul>
+                        <li>주차 요건: ${site.parking_spec}</li>
+                        <li>고객 특성: 자차 이용 시니어 비중 80% 이상으로 편리한 진출입 필수</li>
+                        <li>도로 접면: 주요 간선도로 및 대단지 아파트 진입로 인접 우수</li>
+                    </ul>
+                </div>
+                <div class="req-card">
+                    <div class="req-card-title">건물 편의 및 승강기 설비</div>
+                    <ul>
+                        <li>고객 편의: ${site.accessibility_spec}</li>
+                        <li>냉난방/환기: 개별 공조 및 고성능 환기 덕트 설치 공간 확인</li>
+                        <li>쾌적성: 남녀 분리 청결 화장실 및 쾌적한 로비 라운지 구축</li>
+                    </ul>
+                </div>
+                <div class="req-card">
+                    <div class="req-card-title">인허가 및 건축물 용도</div>
+                    <ul>
+                        <li>적합 용도: ${site.zoning_spec}</li>
+                        <li>전기 용량: 10타석 시뮬레이터 동시 가동 대비 30kW 이상 인입</li>
+                        <li>행정 절차: 관할 구청 건축과 및 체육진흥과 용도 사전 협의</li>
+                    </ul>
+                </div>`;
+
+            // 6) 표준 투자 조건
+            const inv = fin.investment;
+            document.getElementById('repCapexList').innerHTML = `
+                <li>시뮬레이터 장비: ${site.rooms}대 × 대당 1,500만원 = ${manWon(inv.simulator_cost)}</li>
+                <li>인테리어 공사비: ${site.area_pyeong}평 × 평당 120만원 = ${manWon(inv.interior_cost)}</li>
+                <li>부대설비 (냉난방/간판/가구/초도용품): ${manWon(inv.other_facilities)}</li>
+                <li style="color:var(--emerald); font-weight:800; font-size:13.5px;">★ 총 초기 투자금: ${eokWon(inv.total_capex)}</li>`;
+            const rentTag = site.rent_is_estimated ? '지역 시세 추정' : '입력하신 실측';
+            document.getElementById('repOpModelList').innerHTML = `
+                <li>표준 모델 (점주 1인 상주 운영): 인건비 월 250만원</li>
+                <li>비교 모델 (직원 3인 채용 운영): 인건비 월 750만원</li>
+                <li>게임비 요금: 1인 18홀 7,000원 (4인 1팀 28,000원)</li>
+                <li>월 임대료 기준: ${rentTag} ${manWon(site.monthly_rent)}/월 반영</li>`;
+            document.getElementById('repCaveatText').innerText = `본 보고서는 KOSIS 인구통계와 MYPARK 지역등급 추정 모델, 표준 재무 모델에 기반한 추정 분석 자료이며, 실제 미래 사업 성과나 특정 수익률을 보장하지 않습니다. 최종 창업 결정 전 세무·법률·현장 실측 전문가와의 상담을 권장합니다.`;
+
+            // 7) 매출 추정
+            const sc = fin.monthly_scenarios;
+            document.getElementById('repRevSub').innerText = `보수적(일 ${sc.conservative.daily_turns_per_room}회전) ~ 긍정적(일 ${sc.optimistic.daily_turns_per_room}회전) 3대 시나리오`;
+            const scRow = (label, s, hl) => `<tr${hl ? ' class="hl"' : ''}><td>${label}</td><td>1일 ${s.daily_turns_per_room}회전 (${s.daily_users}명)</td><td>${manWon(s.room_revenue)}</td><td>${manWon(s.goods_revenue)}</td><td>${manWon(s.beverage_revenue)}</td><td>${manWon(s.total_revenue)}</td><td>${(s.annual_revenue/100000000).toFixed(1)}억원</td></tr>`;
+            document.getElementById('repRevTable').innerHTML =
+                scRow('보수적 (초기/비수기)', sc.conservative, false) +
+                scRow('보편적 (정기예약 정착)', sc.moderate, true) +
+                scRow('긍정적 (주간/주말 풀가동)', sc.optimistic, false);
+
+            // 8) 비용 구조
+            const mod = sc.moderate;
+            document.getElementById('repCostSub').innerText = `보편 시나리오 기준 월 순영업이익 ${manWon(mod.operating_profit)} (영업이익률 ${mod.profit_margin}%)`;
+            document.getElementById('repCostList').innerHTML = `
+                <li>월 임대료: ${manWon(site.monthly_rent)} (${rentTag})</li>
+                <li>인건비 (점주 직접운영): 250만원 (1인 상주 운영)</li>
+                <li>매장 운영비/소모품/통신/마케팅: ${manWon(mod.store_ops_cost + mod.marketing_cost)}</li>
+                <li>변동비 (매출연동 원가 + 카드수수료): ${manWon(mod.cost_goods + mod.cost_beverage + mod.card_fee)}</li>
+                <li style="color:var(--emerald); font-weight:800; font-size:13.5px;">★ 월 순영업이익: ${manWon(mod.operating_profit)} (영업이익률 ${mod.profit_margin}%)</li>`;
+
+            // 9) BEP
+            document.getElementById('repBepSub').innerText = `손익분기 매출 월 ${manWon(inv.bep_monthly_sales)} (타석당 일 ${inv.bep_turns_per_room}회전)`;
+            document.getElementById('repBepList').innerHTML = `
+                <li>보수적 시나리오: 월 순익 ${manWon(sc.conservative.operating_profit)} → 회수기간 약 ${inv.payback_months_conservative.toFixed(1)}개월</li>
+                <li>보편적 시나리오: 월 순익 ${manWon(sc.moderate.operating_profit)} → 회수기간 약 ${inv.payback_months_moderate.toFixed(1)}개월</li>
+                <li>긍정적 시나리오: 월 순익 ${manWon(sc.optimistic.operating_profit)} → 회수기간 약 ${inv.payback_months_optimistic.toFixed(1)}개월</li>
+                <li style="color:#B0473C; font-weight:800;">★ BEP 달성 요건: 기기 1대당 하루 ${inv.bep_turns_per_room}회전 (1일 ${inv.bep_daily_users}명 이용)</li>`;
+
+            // 10) 5개년 전망
+            const fy = fin.five_year;
+            document.getElementById('rep5ySub').innerText = `5개년 누적 매출 ${(fy.total_5yr_revenue/100000000).toFixed(1)}억원, 누적 순영업이익 ${(fy.total_5yr_profit/100000000).toFixed(1)}억원 전망`;
+            const yCells = (key) => fy.years.map(y => `<td>${(y[key]/100000000).toFixed(2)}억원</td>`).join('');
+            document.getElementById('rep5yTable').innerHTML = `
+                <tr><td>연간 총매출액</td>${yCells('revenue')}<td>${(fy.total_5yr_revenue/100000000).toFixed(1)}억원</td></tr>
+                <tr><td>연간 총비용</td>${yCells('cost')}<td>${(fy.total_5yr_cost/100000000).toFixed(1)}억원</td></tr>
+                <tr class="hl"><td>연간 순영업익</td>${yCells('profit')}<td>${(fy.total_5yr_profit/100000000).toFixed(1)}억원</td></tr>`;
+
+            document.getElementById('fullReport').style.display = 'block';
+        }
+
+        document.getElementById('btnToggleFullReport').addEventListener('click', () => {
+            document.getElementById('btnToggleFullReport').classList.toggle('open');
+            document.getElementById('fullReportBody').classList.toggle('open');
+        });
+
         function formatPaybackPeriod(months) {
             const m = parseFloat(months);
             if (m < 12) {
@@ -857,6 +1199,12 @@
             if (item.pptxBase64) {
                 document.getElementById('btnPptx').href = 'data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,' + item.pptxBase64;
                 document.getElementById('btnPptx').setAttribute('download', '마이파크_' + (item.name || '상권분석') + '_' + item.dateSuffix + '.pptx');
+            }
+
+            if (item.bundle) {
+                renderFullReport(item.bundle);
+            } else {
+                document.getElementById('fullReport').style.display = 'none';
             }
 
             document.getElementById('emptyState').style.display = 'none';
@@ -1056,7 +1404,8 @@
                     seniorPop: res.bundle.demographics.senior_50_plus,
                     seniorRatio: res.bundle.demographics.senior_ratio,
                     pdfBase64: res.pdf_base64,
-                    pptxBase64: res.pptx_base64
+                    pptxBase64: res.pptx_base64,
+                    bundle: res.bundle
                 };
                 historyList.unshift(newRecord);
                 saveHistory(historyList);
@@ -1076,6 +1425,7 @@
                     }
                 }
 
+                renderFullReport(res.bundle);
                 loading.style.display = 'none';
                 result.style.display = 'block';
             } catch (err) {
