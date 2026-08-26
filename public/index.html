@@ -667,7 +667,7 @@
     <script>
         const STORAGE_KEY = 'mypark_analysis_history';
         const WEBHOOK_KEY = 'mypark_sheet_webhook_url';
-        const DEFAULT_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbxTLo4zeJWcVx8nGnSWcyoV-2Cbhguy_ufDLTEr_ywgPX8o5G3B2n32bq2pQ5Awv4hVWQ/exec';
+        const DEFAULT_WEBHOOK_URL = ''; // 보안 및 동의 원칙: 사용자가 모달에서 직접 저장한 경우에만 전송
 
         const toggleBtn = document.getElementById('btnToggleAdvanced');
         const advancedFields = document.getElementById('advancedFields');
@@ -976,7 +976,7 @@
                 saveHistory(historyList);
 
                 // 구글 시트 Webhook 자동 전송 (설정되어 있을 때)
-                const webhookUrl = localStorage.getItem(WEBHOOK_KEY) || DEFAULT_WEBHOOK_URL;
+                const webhookUrl = localStorage.getItem(WEBHOOK_KEY);
                 if (webhookUrl) {
                     try {
                         fetch(webhookUrl, {

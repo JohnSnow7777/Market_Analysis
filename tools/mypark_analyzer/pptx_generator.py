@@ -753,11 +753,11 @@ class PPTXGenerator:
         # Slide 10: 6. 사업 타당성 분석 - 비용 구조 (3.19억원 CAPEX 명세 완비)
         # ---------------------------------------------------------------------
         s10 = self.prs.slides.add_slide(self.blank_layout)
-        self._add_mckinsey_header(s10, "6. 사업 타당성 분석 - 비용 구조", "초기 순투자금 3.19억원(장비 1.5억+인테리어 1.56억+초도 0.3억) 및 월비용 2,246만원")
+        self._add_mckinsey_header(s10, "6. 사업 타당성 분석 - 비용 구조", "초기 순투자금 3.19억원(장비 1.5억+인테리어 1.44억+부대 2,500만) 및 월 고정비 약 940만원")
         
         # 1. 상단 3대 비용 지표
         s10_metrics = [
-            (Inches(0.6), "초기 순투자금 (총 3.19억원)", "3억 3,600만원", "장비 1.5억(10대) + 인테리어 1.56억(120평) + 초도 0.3억"),
+            (Inches(0.6), "초기 순투자금 (CAPEX)", "3억 1,900만원", "장비 1.5억 + 인테리어 1.44억 + 부대 2,500만"),
             (Inches(4.68), "월 고정비 (인건비+임대료)", f"{fin['monthly_rent']//10000 + 750:,}만원 /월", f"인력 3명(750만) + 120평 임대료({fin['monthly_rent']//10000:,}만)"),
             (Inches(8.76), "월 변동비 & 매장운영비", "956만원 /월", "원가 3종 + 카드수수료 + 매장운영비")
         ]
@@ -839,7 +839,7 @@ class PPTXGenerator:
             p_cd.font.size = Pt(8.8)
             p_cd.font.color.rgb = self.c_charcoal
             
-        self._add_source_footer(s10, "MYPARK Standard Operating Cost Model (CAPEX 3.36 Billion KRW)")
+        self._add_source_footer(s10, "MYPARK Standard Operating Cost Model (CAPEX 3.19 Billion KRW)")
 
         # ---------------------------------------------------------------------
         # Slide 11: 6. 손익 예측 및 BEP 분석
