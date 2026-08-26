@@ -301,6 +301,12 @@
         .download-group { display: grid; grid-template-columns: 1.2fr 1fr; gap: 12px; margin-top: 24px; }
         .btn-share { width: 100%; margin-top: 12px; padding: 12px; border-radius: 10px; border: 1.5px dashed var(--border); background: var(--emerald-light); color: var(--primary); font-size: 13.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
         .btn-share:hover { background: var(--border); }
+        .share-link-box { display: none; margin-top: 8px; gap: 6px; }
+        .share-link-box.visible { display: flex; }
+        .share-link-box input { flex: 1; min-width: 0; padding: 10px 12px; border-radius: 8px; border: 1.5px solid var(--border); font-size: 12.5px; color: var(--text-muted); background: #fff; }
+        .share-link-box button { flex-shrink: 0; padding: 10px 14px; border-radius: 8px; border: none; background: var(--primary); color: #fff; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+        .share-link-hint { display: none; margin-top: 6px; font-size: 11.5px; color: var(--text-muted); }
+        .share-link-hint.visible { display: block; }
         .btn-download {
             display: flex;
             align-items: center;
@@ -638,6 +644,11 @@
                         </a>
                     </div>
                     <button type="button" id="btnCopyShareLink" class="btn-share">🔗 이 결과 링크 복사</button>
+                    <div class="share-link-box" id="shareLinkBox">
+                        <input type="text" id="shareLinkInput" readonly onclick="this.select()">
+                        <button type="button" id="btnCopyShareLinkInner">복사</button>
+                    </div>
+                    <div class="share-link-hint" id="shareLinkHint">✅ 링크가 복사되었습니다. 복사가 안 됐다면 위 입력창을 눌러 직접 선택 후 복사하세요.</div>
                 </div>
             </div>
         </div>
@@ -1095,12 +1106,31 @@
             return window.location.origin + window.location.pathname + '?' + params.toString();
         }
 
-        document.getElementById('btnCopyShareLink').addEventListener('click', () => {
-            const url = buildShareUrl();
+        function showShareLink(url) {
+            const box = document.getElementById('shareLinkBox');
+            const input = document.getElementById('shareLinkInput');
+            const hint = document.getElementById('shareLinkHint');
+            input.value = url;
+            box.classList.add('visible');
+            hint.classList.remove('visible');
+            input.focus();
+            input.select();
             navigator.clipboard.writeText(url).then(() => {
-                alert('공유 링크가 복사되었습니다. 어디든 붙여넣어 전달하세요.');
+                hint.classList.add('visible');
+            }).catch(() => {});
+        }
+
+        document.getElementById('btnCopyShareLink').addEventListener('click', () => {
+            showShareLink(buildShareUrl());
+        });
+
+        document.getElementById('btnCopyShareLinkInner').addEventListener('click', () => {
+            const input = document.getElementById('shareLinkInput');
+            input.select();
+            navigator.clipboard.writeText(input.value).then(() => {
+                document.getElementById('shareLinkHint').classList.add('visible');
             }).catch(() => {
-                prompt('아래 링크를 직접 복사해주세요:', url);
+                document.execCommand('copy');
             });
         });
 
