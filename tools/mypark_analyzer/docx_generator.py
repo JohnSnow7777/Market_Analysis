@@ -43,7 +43,7 @@ class DOCXGenerator:
             ("대상 사업지 주소", site['full_address']),
             ("분석 공간 규모", f"전용면적 {site['area_pyeong']}평 / {site['rooms']}타석 플래그십 기준"),
             ("입지 최적성 등급", f"{score['grade']}등급 ({score['total_score']}점 / 100점 만점 - {score['grade_desc']})"),
-            ("예상 월 영업이익 (보편)", f"오토: 약 {fin['monthly_scenarios']['moderate']['operating_profit']//10000:,}만원 / 직접운영: 약 {(fin['monthly_scenarios']['moderate']['operating_profit']+5000000)//10000:,}만원")
+            ("예상 월 영업이익 (보편)", f"직원채용: 약 {fin['monthly_scenarios']['moderate']['operating_profit']//10000:,}만원 / 직접운영: 약 {(fin['monthly_scenarios']['moderate']['operating_profit']+5000000)//10000:,}만원")
         ]
         for r_idx, (k, v) in enumerate(meta_data):
             c1 = meta_table.cell(r_idx, 0)
@@ -96,7 +96,7 @@ class DOCXGenerator:
         
         p.add_run("■ 운영 방식에 따른 손익분기점(BEP) 및 회수 기간 비교:\\n")
         p.add_run(f"1) 오토/위탁 운영 모델 (상주 직원 3명 고용):\\n")
-        p.add_run(f"   • 월 고정비 1,640만원, 손익분기점 기기당 1일 0.9회전(월 240명 돌파 시 흑자)\\n")
+        p.add_run(f"   • 월 고정비 1,640만원, 손익분기점 기기당 1일 0.9회전(월 240명 달성 시 월 고정비 전액 커버)\\n")
         p.add_run(f"   • 보편 가동 시 월 순영업이익 약 {m_sc['operating_profit']//10000:,}만원, 회수 기간 약 15.8개월\\n\\n")
         p.add_run(f"2) 창업주 직접 운영 모델 (점주 1명 상주 + 파트타임 1명):\\n")
         p.add_run(f"   • 월 인건비 250만원 (월 500만원 인건비 절감), 월 고정비 1,140만원으로 급감\\n")

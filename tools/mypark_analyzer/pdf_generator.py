@@ -168,7 +168,7 @@ class PDFGenerator:
         kpis = [
             ("배후 시니어 인구 (3km)", f"{demo['senior_50_plus']:,}명", f"전체 인구의 {demo['senior_ratio']}%", self.c_mck_navy),
             ("예상 월 영업이익 (보편)", f"{scenarios['moderate']['operating_profit']//10000:,}만원", f"영업이익률 {scenarios['moderate']['profit_margin']}%", self.c_mck_teal),
-            ("손익분기점 (BEP 회전율)", f"일 {inv['bep_turns_per_room']}회전", f"1일 약 {inv['bep_daily_users']}명 돌파 시 흑자", self.c_mck_navy),
+            ("손익분기점 (BEP 회전율)", f"일 {inv['bep_turns_per_room']}회전", f"1일 약 {inv['bep_daily_users']}명 달성 시 월 고정비 전액 커버", self.c_mck_navy),
             ("순투자금 3.19억 회수기간", f"약 {inv['payback_months_moderate']:.1f}개월", f"연환산 수익률 약 {scenarios['moderate']['operating_profit']*12/inv['total_capex']*100:.1f}%", self.c_red),
         ]
         for idx, (title, val, sub, col) in enumerate(kpis):
@@ -570,7 +570,7 @@ class PDFGenerator:
                 f"• 1일 이용객: 약 {scenarios['conservative']['daily_users']}명 (월 {scenarios['conservative']['monthly_users']:,}명)",
                 "• 상권 초기 진입 단계 안정적 가동",
                 f"• BEP(월 {inv['bep_monthly_sales']//10000:,}만)를 안정적으로 초과",
-                f"• 월 순영업이익 {scenarios['conservative']['operating_profit']//10000:,}만원 흑자 확보"
+                f"• 월 순영업이익 {scenarios['conservative']['operating_profit']//10000:,}만원 순영업이익 확보"
             ]),
             (342, 48, 275, 220, "■ 보편적 시나리오 (4회전)", [
                 f"• 월 총매출: {scenarios['moderate']['total_revenue']//10000:,}만원 (연 {scenarios['moderate']['total_revenue']*12//100000000:.1f}억원)",

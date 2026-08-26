@@ -131,7 +131,7 @@ class FinanceEngine:
         
         # 월 고정비 (점주 1인 상주 250만 + 임대료 + 운영비 180만 + 마케팅 50만)
         fixed_cost = (staff_count * 2500000) + monthly_rent + 1800000 + 500000
-        # 팀당 공헌이익: 게임비(28,000*0.98) + 음료마진(1,500*0.98) = 약 28,910원
+        # 팀당 손익분기 마진: 게임비(28,000*0.98) + 음료마진(1,500*0.98) = 약 28,910원
         margin_per_team = 28000 * 0.98 + (3000 * 0.50 * 0.98)
         bep_monthly_teams = int(fixed_cost / margin_per_team)
         bep_daily_teams = round(bep_monthly_teams / 30.0, 1)
