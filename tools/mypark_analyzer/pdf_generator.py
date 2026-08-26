@@ -480,14 +480,19 @@ class PDFGenerator:
                 c.drawCentredString(cur_x + card_w/2, 443, c_name)
                 
             c.setFillColor(self.c_tint_blue)
-            c.rect(cur_x + 8, 362, card_w - 16, 44, fill=1, stroke=0)
+            c.rect(cur_x + 8, 352, card_w - 16, 54, fill=1, stroke=0)
             c.setFillColor(self.c_mck_navy)
             c.setFont(FONT_BOLD, 10.5)
             r_str = f"{comp.get('rooms', 0)}타석 규모" if comp.get('rooms', 0) > 0 else "1호점 선점 대상"
             c.drawCentredString(cur_x + card_w/2, 388, r_str)
             c.setFont(FONT_REGULAR, 7.5)
             c.setFillColor(self.c_slate)
-            c.drawCentredString(cur_x + card_w/2, 372, f"[{comp.get('status', '실측완료')}] {comp.get('system', '스크린 시스템')}")
+            status_txt = f"[{comp.get('status', '실측완료')}] {comp.get('system', '스크린 시스템')}"
+            status_lines = self._wrap_text_to_width(c, status_txt, FONT_REGULAR, 7.5, card_w - 22, max_lines=2)
+            sty = 372
+            for stl in status_lines:
+                c.drawCentredString(cur_x + card_w/2, sty, stl)
+                sty -= 10
             
             c.setFont(FONT_BOLD, 8)
             c.setFillColor(self.c_charcoal)

@@ -5,12 +5,13 @@
 - 2차: 전국 시/군/구 전수 실측 스크린 파크골프 DB 매칭
 - 3차: 행정구역 기반 공공복지시설 및 주변 체육시설 자동 탐색
 """
-import re
 import os
 import json
 import urllib.request
 import urllib.parse
 from .address_resolver import AddressResolver
+
+KAKAO_API_KEY_ENV = 'KAKAO_REST_API_KEY'
 
 # 전국 주요 권역 실제 실측 스크린 파크골프장 DB (실제 운영 매장 전수 리스트)
 VERIFIED_NATIONAL_PARK_GOLF_DB = [
@@ -252,28 +253,62 @@ class CompetitorEngine:
     """실측 기반 경쟁 매장 분석 및 실시간 지도 POI 검색기"""
 
     @staticmethod
-    def search_live_kakao_poi(query, sigungu=""):
-        """카카오/다음 오픈 웹 실시간 장소 검색"""
+    def _kakao_geocode(address, api_key):
+        """카카오 로컬 API 주소 검색으로 위경도 좌표 획득"""
         try:
-            enc_query = urllib.parse.quote(f"{sigungu} {query}")
-            url = f"https://search.daum.net/search?w=tot&q={enc_query}"
-            req = urllib.request.Request(url, headers={
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept-Language': 'ko-KR,ko;q=0.9'
-            })
-            with urllib.request.urlopen(req, timeout=3) as resp:
-                html = resp.read().decode('utf-8')
-                
-            # HTML 내에서 매장명 패턴 추출
-            found_names = set()
-            matches = re.findall(r'([가-힣A-Za-z0-9\s]{2,20}(?:파크골프|스크린파크|스크린골프)[가-힣A-Za-z0-9\s]*)', html)
-            for m in matches[:6]:
-                name = m.strip()
-                if len(name) >= 4 and not any(skip in name for skip in ['뉴스', '블로그', '카페', '동영상', '사이트', '검색결과', '위키']):
-                    found_names.add(name)
-            return list(found_names)
+            url = "https://dapi.kakao.com/v2/local/search/address.json?query=" + urllib.parse.quote(address)
+            req = urllib.request.Request(url, headers={'Authorization': f'KakaoAK {api_key}'})
+            with urllib.request.urlopen(req, timeout=4) as resp:
+                data = json.loads(resp.read().decode('utf-8'))
+            docs = data.get('documents', [])
+            if docs:
+                return float(docs[0]['x']), float(docs[0]['y'])
+        except Exception:
+            pass
+        return None, None
+
+    @staticmethod
+    def _kakao_keyword_search(query, x, y, radius, api_key):
+        """카카오 로컬 API 키워드 장소 검색 (좌표 중심 반경 검색)"""
+        try:
+            params = {'query': query, 'size': 10}
+            if x is not None and y is not None:
+                params.update({'x': x, 'y': y, 'radius': radius, 'sort': 'distance'})
+            url = "https://dapi.kakao.com/v2/local/search/keyword.json?" + urllib.parse.urlencode(params)
+            req = urllib.request.Request(url, headers={'Authorization': f'KakaoAK {api_key}'})
+            with urllib.request.urlopen(req, timeout=4) as resp:
+                data = json.loads(resp.read().decode('utf-8'))
+            return data.get('documents', [])
         except Exception:
             return []
+
+    @staticmethod
+    def search_live_kakao_competitors(address, radius=3000):
+        """카카오 로컬 API로 실제 경쟁 매장을 실시간 검색 (KAKAO_REST_API_KEY 환경변수 필요)"""
+        api_key = os.environ.get(KAKAO_API_KEY_ENV)
+        if not api_key:
+            return None
+        x, y = CompetitorEngine._kakao_geocode(address, api_key)
+        if x is None:
+            return None
+        docs = CompetitorEngine._kakao_keyword_search('스크린파크골프', x, y, radius, api_key)
+        if not docs:
+            docs = CompetitorEngine._kakao_keyword_search('파크골프 스크린', x, y, radius, api_key)
+        if not docs:
+            return []
+        stores = []
+        for d in docs[:4]:
+            dist_m = d.get('distance')
+            dist_txt = f"{float(dist_m)/1000:.1f}km" if dist_m else '거리 미확인'
+            stores.append({
+                'name': d.get('place_name', '이름 미상'),
+                'address': d.get('road_address_name') or d.get('address_name', ''),
+                'system': '카카오맵 실시간 검색 (시스템 사양 미확인)',
+                'rooms': 0,
+                'features': f"카카오맵 실시간 검색 매칭 (사업지 기준 {dist_txt} · 전화: {d.get('phone') or '미등록'})",
+                'status': '실시간 검색 확인'
+            })
+        return stores
 
     @staticmethod
     def search_competitors(address, sigungu=None, dong=None):
@@ -314,44 +349,59 @@ class CompetitorEngine:
                 'summary': summary_txt
             }
 
-        # 3. 실측 DB에 미등록된 전국 신규 지역인 경우: 실시간 지도 POI 탐색 및 지역 맞춤 분석
-        live_names = CompetitorEngine.search_live_kakao_poi("스크린파크골프", s_sigungu)
-        store1_name = live_names[0] if live_names else f"{s_sigungu} 스크린 파크골프 1호점 (선점 기회)"
-        store1_system = '마이파크 최신 플래그십 표준 권장'
-        store1_feat = f"{s_sigungu} 핵심 상권 내 대형 플래그십 전문 매장 미등록 (블루오션 1호점 독점 선점 최적지)"
+        # 2-1. 실측 DB에 없으면 카카오 로컬 API로 실시간 검색 시도 (KAKAO_REST_API_KEY 설정 시)
+        live_stores = CompetitorEngine.search_live_kakao_competitors(resolved['full_address'])
+        if live_stores is not None:
+            if live_stores:
+                return {
+                    'region_key': s_sigungu,
+                    'stores': live_stores,
+                    'count': len(live_stores),
+                    'is_blue_ocean': False,
+                    'summary': f"카카오맵 실시간 검색 결과 반경 3km 내 {len(live_stores)}곳 매칭 (실시간 API 연동 결과)"
+                }
+            return {
+                'region_key': 'blue_ocean',
+                'stores': [],
+                'count': 0,
+                'is_blue_ocean': True,
+                'summary': "카카오맵 실시간 검색 결과 반경 3km 내 상업용 전문 스크린 파크골프장 미등록 확인 (마이파크 1호점 선점 최적지)"
+            }
 
+        # 3. 실측 DB 미등록 + 실시간 API 미설정(KAKAO_REST_API_KEY 없음)인 경우:
+        #    실제 업체가 아닌 "가상 시나리오"임을 명확히 표시하여 예시로만 제공
         fallback_stores = [
             {
-                'name': store1_name,
+                'name': f"({s_sigungu} 예시) 스크린 파크골프 매장",
                 'address': f"{resolved['full_address']} 반경 1.5km 중심 권역",
-                'system': store1_system,
+                'system': '마이파크 최신 플래그십 표준 권장',
                 'rooms': 10,
-                'features': store1_feat,
-                'status': '블루오션'
+                'features': f"실제 업체 정보 아님 — {s_sigungu} 핵심 상권 내 대형 플래그십 매장이 있을 경우를 가정한 예시 시나리오입니다.",
+                'status': '가상 시나리오 (미확인)'
             },
             {
-                'name': f"{s_sigungu} 시니어 체육복지타운 실내스크린",
+                'name': f"({s_sigungu} 예시) 지자체 복지관 실내스크린",
                 'address': f"{s_sido} {s_sigungu} 행정복지센터 인근",
-                'system': '지자체 공공 복지 실내 타석',
+                'system': '지자체 공공 복지 실내 타석 (가정)',
                 'rooms': 2,
-                'features': '지자체 복지관 무료/저가 시설로 대기 수요 포화 상태 (민간 유료 전환 수요 흡수)',
-                'status': '공공시설'
+                'features': '실제 업체 정보 아님 — 지자체 복지관에 저가 실내 타석이 있을 경우를 가정한 예시 시나리오입니다.',
+                'status': '가상 시나리오 (미확인)'
             },
             {
-                'name': f"{s_sigungu} 일반 스크린골프장 A",
+                'name': f"({s_sigungu} 예시) 일반 스크린골프장 A",
                 'address': f"{resolved['full_address']} 인근 상업지구",
-                'system': '일반 20~40대 골프존 투비전',
+                'system': '일반 20~40대 골프존 투비전 (가정)',
                 'rooms': 7,
-                'features': '일반 스크린골프 매장으로 50~70대 시니어 파크골프 전용 타석 및 클럽 부재',
-                'status': '타업종'
+                'features': '실제 업체 정보 아님 — 시니어 전용 타석이 없는 일반 스크린골프장이 있을 경우를 가정한 예시 시나리오입니다.',
+                'status': '가상 시나리오 (미확인)'
             },
             {
-                'name': f"{s_sigungu} 일반 스크린골프장 B",
+                'name': f"({s_sigungu} 예시) 일반 스크린골프장 B",
                 'address': f"{resolved['full_address']} 인근 중심상가",
-                'system': '일반 카카오VX 프렌즈스크린',
+                'system': '일반 카카오VX 프렌즈스크린 (가정)',
                 'rooms': 8,
-                'features': '야간 직장인 위주 가동으로 주간 시니어 모임 유치 불가 (상호 보완 상권)',
-                'status': '타업종'
+                'features': '실제 업체 정보 아님 — 야간 직장인 위주로 운영되는 일반 매장이 있을 경우를 가정한 예시 시나리오입니다.',
+                'status': '가상 시나리오 (미확인)'
             }
         ]
         return {
@@ -359,5 +409,5 @@ class CompetitorEngine:
             'stores': fallback_stores,
             'count': 1,
             'is_blue_ocean': True,
-            'summary': f"반경 3km 내 상업용 전문 스크린 파크골프장 미등록 (마이파크 1호점 선점 최적지)"
+            'summary': f"반경 3km 내 실측/실시간 검색 결과 없음 — 아래 4곳은 참고용 가상 시나리오입니다 (실시간 API 미설정)"
         }
