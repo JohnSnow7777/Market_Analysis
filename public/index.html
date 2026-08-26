@@ -964,7 +964,15 @@
             }
         });
 
-        function manWon(v) { return Math.floor(v / 10000).toLocaleString() + '만원'; }
+        function manWon(v) {
+            const man = Math.floor(v / 10000);
+            if (man >= 10000) {
+                const eok = Math.floor(man / 10000);
+                const rest = man % 10000;
+                return eok + '억' + (rest > 0 ? ' ' + rest.toLocaleString() + '만원' : '원');
+            }
+            return man.toLocaleString() + '만원';
+        }
         function eokWon(v) { return (v / 100000000).toFixed(2) + '억원'; }
 
         function renderFullReport(bundle) {
