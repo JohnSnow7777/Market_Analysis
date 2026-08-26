@@ -991,10 +991,10 @@ class PPTXGenerator:
             
         fy = fin['five_year']
         rows_5y = [
-            ("연간 총매출", [f"{y['revenue']//100000000:.2f}억" for y in fy['years']], f"{fy['total_5yr_revenue']//100000000:.1f}억원"),
-            ("연간 총비용", [f"{y['cost']//100000000:.2f}억" for y in fy['years']], f"{fy['total_5yr_cost']//100000000:.1f}억원"),
-            ("연간 순영업익", [f"{y['profit']//100000000:.2f}억" for y in fy['years']], f"{fy['total_5yr_profit']//100000000:.1f}억원"),
-            ("투자금 누적회수", ["3.19억 회수" if i > 0 else f"{fy['years'][0]['cumulative_profit']//100000000:.2f}억" for i in range(5)], "회수율 486%")
+            ("연간 총매출", [f"{y['revenue']/100000000:.2f}억" for y in fy['years']], f"{fy['total_5yr_revenue']//100000000:.1f}억원"),
+            ("연간 총비용", [f"{y['cost']/100000000:.2f}억" for y in fy['years']], f"{fy['total_5yr_cost']//100000000:.1f}억원"),
+            ("연간 순영업익", [f"{y['profit']/100000000:.2f}억" for y in fy['years']], f"{fy['total_5yr_profit']//100000000:.1f}억원"),
+            ("투자금 누적회수", ["3.19억 회수" if i > 0 else f"{fy['years'][0]['cumulative_profit']/100000000:.2f}억" for i in range(5)], "회수율 486%")
         ]
         for r_idx, (rname, yvals, totval) in enumerate(rows_5y):
             r = r_idx + 1

@@ -865,10 +865,10 @@ class PDFGenerator:
         
         y_5 = 405
         rows_5y = [
-            ("연간 총매출액", [f"{y['revenue']//100000000:.2f}억원" for y in fin['five_year']['years']], f"{fin['five_year']['total_5yr_revenue']//100000000:.1f}억원"),
-            ("연간 총비용", [f"{y['cost']//100000000:.2f}억원" for y in fin['five_year']['years']], f"{fin['five_year']['total_5yr_cost']//100000000:.1f}억원"),
-            ("연간 순영업익", [f"{y['profit']//100000000:.2f}억원" for y in fin['five_year']['years']], f"{fin['five_year']['total_5yr_profit']//100000000:.1f}억원"),
-            ("투자금 누적회수", ["3.19억 회수완료" if i > 0 else f"{fin['five_year']['years'][0]['cumulative_profit']//100000000:.2f}억원" for i in range(5)], "회수율 486%")
+            ("연간 총매출액", [f"{y['revenue']/100000000:.2f}억원" for y in fin['five_year']['years']], f"{fin['five_year']['total_5yr_revenue']//100000000:.1f}억원"),
+            ("연간 총비용", [f"{y['cost']/100000000:.2f}억원" for y in fin['five_year']['years']], f"{fin['five_year']['total_5yr_cost']//100000000:.1f}억원"),
+            ("연간 순영업익", [f"{y['profit']/100000000:.2f}억원" for y in fin['five_year']['years']], f"{fin['five_year']['total_5yr_profit']//100000000:.1f}억원"),
+            ("투자금 누적회수", ["3.19억 회수완료" if i > 0 else f"{fin['five_year']['years'][0]['cumulative_profit']/100000000:.2f}억원" for i in range(5)], "회수율 486%")
         ]
         for rname, yvals, totval in rows_5y:
             is_prof = "순영업익" in rname
