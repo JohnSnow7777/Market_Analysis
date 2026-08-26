@@ -130,5 +130,5 @@ class AddressResolver:
             'sigungu': f'{road_name} 권역',
             'dong': road_name,
             'full_address': clean,
-            'is_resolved': False
+            'is_resolved': False, 'fallback_warning': '상세 행정동 매핑 미확인 (시군구 기준 추정 모델 적용)'
         }

@@ -397,7 +397,7 @@ class PDFGenerator:
             c.setFillColor(self.c_white)
             c_name = str(comp['name'])
             if len(c_name) > 13:
-                c.drawCentredString(cur_x + card_w/2, 451, c_name[:13])
+                c.drawCentredString(cur_x + card_w/2, 451, (c_name[:12] + '…' if len(c_name) > 13 else c_name))
                 c.drawCentredString(cur_x + card_w/2, 435, c_name[13:])
             else:
                 c.drawCentredString(cur_x + card_w/2, 443, c_name)

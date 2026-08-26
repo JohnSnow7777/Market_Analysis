@@ -747,7 +747,7 @@ class PPTXGenerator:
             p_cd.font.size = Pt(8.5)
             p_cd.font.color.rgb = self.c_charcoal
             
-        self._add_source_footer(s9, "Base Assumptions: 18 Holes 8,000 KRW, Secondary Sales 18%, 30 Operating Days/Month")
+        self._add_source_footer(s9, "Base Assumptions: 18 Holes 7,000 KRW (4-Player Team 28,000 KRW), Secondary Sales 18%, 30 Operating Days/Month")
 
         # ---------------------------------------------------------------------
         # Slide 10: 6. 사업 타당성 분석 - 비용 구조 (3.19억원 CAPEX 명세 완비)

@@ -63,7 +63,7 @@ class FinanceEngine:
         total_revenue = game_revenue + goods_revenue + beverage_revenue
         
         # 비용 구조 (점주 1인 상주 기준: 인건비 250만)
-        labor_cost = staff_count * 2500000
+        labor_cost = staff_count * DEFAULT_SETTINGS.get('LABOR_COST_PER_PERSON', 2500000)
         rent_cost = monthly_rent
         cost_goods = int(goods_revenue * 0.50)
         cost_beverage = int(beverage_revenue * 0.50)
