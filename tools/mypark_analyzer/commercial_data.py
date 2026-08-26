@@ -2,6 +2,7 @@
 """MYPARK 지역등급 추정 모델 엔진 (전국 지역을 4단계 등급으로 분류한 소비력·업종 특화도 추정)"""
 from .address_resolver import AddressResolver
 from .competitor_engine import CompetitorEngine
+from .config import classify_region_tier, TIER_PRIME, TIER_METRO, TIER_MID_CITY
 
 class CommercialEngine:
     """지역별 실측 상권 소비력 및 매출 분석기"""
@@ -18,7 +19,8 @@ class CommercialEngine:
 
         # 지역별 실측 상권 매출 및 소비력 지수 차등화
         is_estimated_comm = False
-        if any(k in full_addr or k in sigungu for k in ['강남', '서초', '송파', '분당', '판교', '송도', '해운대', '수성구']):
+        tier = classify_region_tier(full_addr, sigungu)
+        if tier == TIER_PRIME:
             monthly_avg = 24500000
             top_20_sales = 62510000
             dong_avg = 21500000
@@ -34,7 +36,7 @@ class CommercialEngine:
             bus_stop_count = 52
             gov_count, edu_count, fin_count = 12, 22, 28
             residential_ratio, workplace_ratio = 82.0, 18.0
-        elif any(k in full_addr or k in sigungu for k in ['고양', '덕양', '일산', '용인', '수지', '수원', '영통', '광교', '마포', '영등포', '대전', '광주', '광산구', '신창', '부산', '대구']):
+        elif tier == TIER_METRO:
             monthly_avg = 20500000
             top_20_sales = 48500000
             dong_avg = 18500000
@@ -50,7 +52,7 @@ class CommercialEngine:
             bus_stop_count = 40
             gov_count, edu_count, fin_count = 9, 16, 18
             residential_ratio, workplace_ratio = 90.5, 9.5
-        elif any(k in full_addr or k in sigungu for k in ['목포', '여수', '순천', '군산', '익산', '원주', '춘천', '포항', '구미', '청주', '천안']):
+        elif tier == TIER_MID_CITY:
             monthly_avg = 14800000
             top_20_sales = 32000000
             dong_avg = 13200000

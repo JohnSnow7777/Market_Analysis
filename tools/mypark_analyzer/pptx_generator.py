@@ -6,6 +6,7 @@ from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.enum.shapes import MSO_SHAPE
+from .config import DEFAULT_SETTINGS, fmt_eok, fmt_won_full, fmt_months
 
 
 class PPTXGenerator:
@@ -144,7 +145,7 @@ class PPTXGenerator:
 
         p2 = tf1.add_paragraph()
         p2.space_before = Pt(12)
-        p2.text = "10타석 120평 플래그십 표준 모델  |  상권 분석 및 투자 타당성 평가"
+        p2.text = f"{site['rooms']}타석 {site['area_pyeong']}평 표준 모델  |  상권 분석 및 투자 타당성 평가"
         p2.font.name = 'Malgun Gothic'
         p2.font.size = Pt(17)
         p2.font.bold = True
@@ -631,7 +632,7 @@ class PPTXGenerator:
         # [PART 2 신설: 이 보고서에서 재무 금액이 최초로 등장하는 지점 & Caveat 명시]
         # ---------------------------------------------------------------------
         s8 = self.prs.slides.add_slide(self.blank_layout)
-        self._add_mckinsey_header(s8, "7. 표준 투자 조건 및 사업 추진 유의사항", "10타석 120평 플래그십 표준 모델 기준 및 투자 결정 전 필수 점검사항")
+        self._add_mckinsey_header(s8, "7. 표준 투자 조건 및 사업 추진 유의사항", f"{site['rooms']}타석 {site['area_pyeong']}평 표준 모델 기준 및 투자 결정 전 필수 점검사항")
         
         # 블록 A (좌측): 표준 투자 조건
         box8_a = s8.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.6), Inches(1.45), Inches(5.9), Inches(5.5))
@@ -645,7 +646,7 @@ class PPTXGenerator:
         top8_a.line.fill.background()
         tf8_at = top8_a.text_frame
         p8_at = tf8_at.paragraphs[0]
-        p8_at.text = " ■ 10타석 120평 플래그십 표준 모델 투자 조건 (SSOT)"
+        p8_at.text = f" ■ {site['rooms']}타석 {site['area_pyeong']}평 표준 모델 투자 조건 (SSOT)"
         p8_at.font.bold = True
         p8_at.font.size = Pt(11)
         p8_at.font.color.rgb = self.c_white
@@ -665,11 +666,11 @@ class PPTXGenerator:
             f"• 인테리어 공사비: 120평 × 평당 120만원 = 1억 4,400만원",
             f"• 부대설비 (냉난방/간판/가구/초도용품): 2,500만원",
             f"  - 냉난방기(1,200만) / 간판(500만) / 가구(300만) / 초도용품(500만)",
-            f"★ 총 초기 투자금: 3억 1,900만원 (3.19억원)",
+            f"★ 총 초기 투자금: {fmt_won_full(inv['total_capex'])} ({fmt_eok(inv['total_capex'])})",
             "",
             "● 표준 운영 방식 및 인건비 모델",
-            "• 표준 모델 (점주 1인 상주): 인건비 월 250만원 (수익률 극대화)",
-            "• 비교 모델 (직원 3인 채용): 인건비 월 750만원 (회수기간 15.3개월)",
+            f"• 표준 모델 (점주 {site['staff_count']}인 상주): 인건비 월 {site['staff_count']*DEFAULT_SETTINGS['labor_cost_manager']//10000:,}만원 (수익률 극대화)",
+            f"• 비교 모델 (직원 3인 채용): 인건비 월 {3*DEFAULT_SETTINGS['labor_cost_manager']//10000:,}만원 (회수기간 {fin['owner_operated']['staff3_payback_months']:.1f}개월)",
             f"• 게임비 요금: 1인 18홀 7,000원 (4인 1팀 28,000원)",
             f"• 3대 매출원: 게임비 회전 + 용품 판매(150만) + 식음료(180만)",
             f"• 월 임대료 기준: {'지역 시세 추정' if site.get('rent_is_estimated') else '입력하신 실측'} {site['monthly_rent']//10000:,}만원/월 반영"
@@ -756,7 +757,7 @@ class PPTXGenerator:
         tf_s9 = top_s9.text_frame
         tf_s9.word_wrap = True
         p_s9 = tf_s9.paragraphs[0]
-        p_s9.text = "■ 10타석 120평 플래그십 기준 3대 시나리오별 월간/연간 매출 추정 (1인 18홀 7,000원 / 4인 1팀 28,000원)"
+        p_s9.text = f"■ {site['rooms']}타석 {site['area_pyeong']}평 기준 3대 시나리오별 월간/연간 매출 추정 (1인 18홀 {DEFAULT_SETTINGS['game_price_18hole']:,}원 / 4인 1팀 {DEFAULT_SETTINGS['game_price_18hole']*4:,}원)"
         p_s9.font.size = Pt(11)
         p_s9.font.bold = True
         p_s9.font.color.rgb = self.c_mck_navy
@@ -803,7 +804,7 @@ class PPTXGenerator:
             (Inches(4.68), f"■ 보편적 시나리오 (월 {m_sc['total_revenue']//10000:,}만원)",
              f"• 평일 주간 10~17시 동호회 정기 예약 중심 일 {m_sc['daily_turns_per_room']}회전 가동\n"
              f"• 월 순영업이익 {m_sc['operating_profit']//10000:,}만원(이익률 {m_sc['profit_margin']}%) 달성\n"
-             f"• 단 {fin['investment']['payback_months_moderate']:.1f}개월(약 1년 1개월) 만에 3.19억 전액 회수"),
+             f"• 단 {fin['investment']['payback_months_moderate']:.1f}개월(약 {fmt_months(fin['investment']['payback_months_moderate'])}) 만에 {fmt_eok(inv['total_capex'])} 전액 회수"),
             (Inches(8.76), f"■ 긍정적 시나리오 (월 {o_sc['total_revenue']//10000:,}만원)",
              f"• 주말 단체 예약 및 주간 풀가동 일 {o_sc['daily_turns_per_room']}회전({o_sc['daily_users']}명) 달성\n"
              f"• 월 순영업이익 {o_sc['operating_profit']//10000:,}만원(이익률 {o_sc['profit_margin']}%) 극대화\n"
@@ -856,9 +857,9 @@ class PPTXGenerator:
         
         cost_details = [
             f"• 월 임대료: {site['monthly_rent']//10000:,}만원 (실제 사업지 임대료 반영)",
-            "• 인건비 (점주 직접운영): 250만원 (1인 상주 운영 체제)",
-            "• 매장 운영비/소모품: 100만원  |  통신/POS: 30만원  |  마케팅비: 50만원",
-            f"• 변동비: 원가 180만원 + 카드수수료(1.3%) {m_scen['moderate']['card_fee']//10000:,}만원",
+            f"• 인건비 (점주 직접운영): {m_scen['moderate']['labor_cost']//10000:,}만원 ({site['staff_count']}인 상주 운영 체제)",
+            f"• 매장 운영비/소모품: {DEFAULT_SETTINGS['store_ops_monthly']//10000:,}만원  |  통신/POS: {DEFAULT_SETTINGS['pos_telecom_monthly']//10000:,}만원  |  마케팅비: {DEFAULT_SETTINGS['marketing_monthly']//10000:,}만원",
+            f"• 변동비: 원가 {(m_scen['moderate']['cost_goods']+m_scen['moderate']['cost_beverage'])//10000:,}만원 + 카드수수료({DEFAULT_SETTINGS['card_fee_rate']*100:.1f}%) {m_scen['moderate']['card_fee']//10000:,}만원",
             f"★ 월 총지출 합계: {m_scen['moderate']['total_cost']//10000:,}만원",
             f"★ 월 순영업이익: {m_scen['moderate']['operating_profit']//10000:,}만원 (이익률 {m_scen['moderate']['profit_margin']}%)"
         ]
@@ -906,7 +907,7 @@ class PPTXGenerator:
         # Slide 11: 10. 손익분기점(BEP) 및 투자금 회수기간
         # ---------------------------------------------------------------------
         s11 = self.prs.slides.add_slide(self.blank_layout)
-        self._add_mckinsey_header(s11, "10. 손익분기점(BEP) 및 투자금 회수기간", f"손익분기 매출 월 {inv['bep_monthly_sales']//10000:,}만원 (타석당 일 {inv['bep_turns_per_room']}회전) 및 투자금 3.19억 회수기간 약 {inv['payback_months_moderate']:.1f}개월")
+        self._add_mckinsey_header(s11, "10. 손익분기점(BEP) 및 투자금 회수기간", f"손익분기 매출 월 {inv['bep_monthly_sales']//10000:,}만원 (타석당 일 {inv['bep_turns_per_room']}회전) 및 투자금 {fmt_eok(inv['total_capex'])} 회수기간 약 {inv['payback_months_moderate']:.1f}개월")
         
         if 'bep_chart' in charts and os.path.exists(charts['bep_chart']):
             s11.shapes.add_picture(charts['bep_chart'], Inches(0.6), Inches(1.45), width=Inches(5.9))
@@ -919,14 +920,14 @@ class PPTXGenerator:
         tf11_1.word_wrap = True
         
         p = tf11_1.paragraphs[0]
-        p.text = "■ 투자금 3.19억 회수 시뮬레이션"
+        p.text = f"■ 투자금 {fmt_eok(inv['total_capex'])} 회수 시뮬레이션"
         p.font.size = Pt(11)
         p.font.bold = True
         p.font.color.rgb = self.c_mck_navy
         
         bep_sim = [
             f"• 보수적 시나리오: 월 순익 {m_scen['conservative']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_conservative']:.1f}개월",
-            f"• 보편적 시나리오: 월 순익 {m_scen['moderate']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_moderate']:.1f}개월 (약 1년 1개월)",
+            f"• 보편적 시나리오: 월 순익 {m_scen['moderate']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_moderate']:.1f}개월 (약 {fmt_months(inv['payback_months_moderate'])})",
             f"• 긍정적 시나리오: 월 순익 {m_scen['optimistic']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_optimistic']:.1f}개월",
             f"★ BEP 달성 요건: 기기 1대당 하루 {inv['bep_turns_per_room']}회전 (1일 {inv['bep_daily_users']}명 이용)",
             f"★ 일 평균 {inv['bep_daily_users']}명만 방문해도 월 고정비 전액 커버 (적자 리스크 전무)"
@@ -958,7 +959,7 @@ class PPTXGenerator:
         
         risks = [
             "• 초저위험 구조: 타석당 1일 1회전(4명)만 가동되어도 손익분기점을 초과하여 적자 발생 확률이 극히 희박",
-            f"• 빠른 자본 회수: 보편 가동 기준 약 {inv['payback_months_moderate']:.1f}개월(1년 1개월) 만에 초기 투자금 3.19억원 전액 회수",
+            f"• 빠른 자본 회수: 보편 가동 기준 약 {inv['payback_months_moderate']:.1f}개월({fmt_months(inv['payback_months_moderate'])}) 만에 초기 투자금 {fmt_eok(inv['total_capex'])} 전액 회수",
             "• 자산 가치 보존: 시뮬레이터 장비 및 쾌적한 인테리어 시설은 향후 지속적인 현금 흐름을 창출하는 핵심 실물 자산",
             "• 안정적 단골 락인: 지역 시니어 동호회 정기 예약 시스템 구축으로 경기 변동에 영향을 받지 않는 방어적 사업 모델"
         ]
@@ -994,7 +995,7 @@ class PPTXGenerator:
             ("연간 총매출", [f"{y['revenue']/100000000:.2f}억" for y in fy['years']], f"{fy['total_5yr_revenue']//100000000:.1f}억원"),
             ("연간 총비용", [f"{y['cost']/100000000:.2f}억" for y in fy['years']], f"{fy['total_5yr_cost']//100000000:.1f}억원"),
             ("연간 순영업익", [f"{y['profit']/100000000:.2f}억" for y in fy['years']], f"{fy['total_5yr_profit']//100000000:.1f}억원"),
-            ("투자금 누적회수", ["3.19억 회수" if i > 0 else f"{fy['years'][0]['cumulative_profit']/100000000:.2f}억" for i in range(5)], "회수율 486%")
+            ("투자금 누적회수", [f"{fmt_eok(inv['total_capex'])} 회수" if fy['years'][i]['cumulative_profit'] >= inv['total_capex'] else f"{fy['years'][i]['cumulative_profit']/100000000:.2f}억" for i in range(5)], f"회수율 {fy['total_5yr_profit']/inv['total_capex']*100:.0f}%")
         ]
         for r_idx, (rname, yvals, totval) in enumerate(rows_5y):
             r = r_idx + 1
@@ -1041,7 +1042,7 @@ class PPTXGenerator:
              f"• 카페형 휴게 라운지 및 파크골프 용품 샵 결합으로 객단가 및 체류시간 극대화"),
             ("3. 빠른 원금 회수 및 압도적 고수익성",
              f"• 직원 위탁 운영: 월 순영업익 약 {fin['monthly_scenarios']['moderate']['operating_profit']//10000:,}만원 (이익률 48.6%) / 회수 15.8개월\n"
-             f"★ 창업주 직접 운영 시: 월 순영업익 {fin['monthly_scenarios']['moderate']['operating_profit']//10000:,}만원 / 단 {inv['payback_months_moderate']:.1f}개월(1년 1개월) 회수\n"
+             f"★ 창업주 직접 운영 시: 월 순영업익 {fin['monthly_scenarios']['moderate']['operating_profit']//10000:,}만원 / 단 {inv['payback_months_moderate']:.1f}개월({fmt_months(inv['payback_months_moderate'])}) 회수\n"
              f"• 손익분기점(BEP)이 기기당 하루 {inv['bep_turns_per_room']}회전에 불과하여 적자 리스크 전무")
         ]
         for idx, (title, desc) in enumerate(f_points):
@@ -1100,7 +1101,7 @@ class PPTXGenerator:
              "• 4인 1팀 단체 이용 특성상 1층 카페, 음식점, 병의원 등 연계 소비 유발\n"
              "• 평일 낮 10~17시 상가 전체의 주간 공실 및 유휴 분위기를 완전히 반전"),
             ("2. 장기 안정적 우량 임차인 락인 (공실 리스크 영구 해소)",
-             f"• 초기 설비 투자금 3.19억원이 투입되는 실물 시설형 매장으로 5년 이상 장기 계약 유지\n"
+             f"• 초기 설비 투자금 {fmt_eok(inv['total_capex'])}이 투입되는 실물 시설형 매장으로 5년 이상 장기 계약 유지\n"
              f"• 월 임대료 {site['monthly_rent']//10000:,}만원의 체납 없는 안정적 수취 구조 완비\n"
              f"• 상가 공실률 해소 및 앵커 테넌트 유치에 따른 건물 전체의 자산 가치(Cap Rate) 동반 상승"),
             ("3. 쾌적한 무소음·무진동·비음주 청정 친환경 체육시설",

@@ -64,14 +64,22 @@ class ScoringEngine:
             score_space = 8.0
         
         # 4. 경쟁 매장 여유도 (15점 만점)
-        competitors = commercial_data.get('competitors', [])
-        comp_count = len(competitors)
-        if comp_count <= 1:
-            score_gap = 15.0
-        elif comp_count <= 3:
-            score_gap = 13.0
+        # 실측 DB 매칭 또는 실시간 API 검색으로 '확인된' 경쟁사 수만 채점에 사용한다.
+        # 확인 자체가 불가능한 지역(실측 DB 미등록 + API 미설정)은 블루오션으로도,
+        # 포화 상권으로도 단정할 수 없으므로 중립 점수를 부여하고 '미검증'으로 표기한다.
+        comp_verified = commercial_data.get('competitor_is_verified', False)
+        comp_count = commercial_data.get('competitor_verified_count')
+        if not comp_verified or comp_count is None:
+            score_gap = 12.0
+            gap_is_verified = False
         else:
-            score_gap = 10.0
+            gap_is_verified = True
+            if comp_count <= 1:
+                score_gap = 15.0
+            elif comp_count <= 3:
+                score_gap = 13.0
+            else:
+                score_gap = 10.0
             
         # 5. 지역 소비력 및 매출 (20점 만점)
         if monthly_sales >= 22000000:
@@ -104,9 +112,9 @@ class ScoringEngine:
         value_franchisee = (
             f"1. 평일 주간 높은 가동률 확보: 반경 3km 내 50대 이상 시니어 {senior_pop:,}명({senior_ratio}%) 및 "
             f"주부 동호회를 타겟팅하여 평일 낮 10~17시 정기 모임 중심의 안정적 가동률을 확보합니다.\n"
-            f"2. 10타석 대규모 플래그십 시설 경쟁력: 기존 소규모 매장 대비 10타석 쾌적한 시설과 단체 모임 수용력으로 고객 선호도를 극대화합니다.\n"
+            f"2. {rooms_cnt}타석 시설 경쟁력: 기존 소규모 매장 대비 {rooms_cnt}타석 쾌적한 시설과 단체 모임 수용력으로 고객 선호도를 극대화합니다.\n"
             f"3. 안정적 수익성 및 빠른 원금 회수: 보편적 가동 기준 월 순영업이익 약 {sc['operating_profit']//10000:,}만원(영업이익률 {sc['profit_margin']}%)을 달성하여 "
-            f"약 {inv['payback_months_moderate']:.1f}개월 만에 초기 순투자금 3.19억원을 전액 회수할 수 있습니다."
+            f"약 {inv['payback_months_moderate']:.1f}개월 만에 초기 순투자금 {inv['total_capex']/100000000:.2f}억원을 전액 회수할 수 있습니다."
         )
         
         value_landlord = (
@@ -127,6 +135,7 @@ class ScoringEngine:
             'total_score': total_score,
             'grade': grade,
             'grade_desc': grade_desc,
+            'gap_is_verified': gap_is_verified,
             'payback_text': format_payback_text(inv['payback_months_moderate'], inv['total_capex']),
             'value_franchisee': value_franchisee,
             'value_landlord': value_landlord

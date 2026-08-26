@@ -1063,21 +1063,21 @@
 
             // 6) 표준 투자 조건
             const inv = fin.investment;
+            const sc = fin.monthly_scenarios;
             document.getElementById('repCapexList').innerHTML = `
-                <li>시뮬레이터 장비: ${site.rooms}대 × 대당 1,500만원 = ${manWon(inv.simulator_cost)}</li>
-                <li>인테리어 공사비: ${site.area_pyeong}평 × 평당 120만원 = ${manWon(inv.interior_cost)}</li>
+                <li>시뮬레이터 장비: ${site.rooms}대 × 대당 ${manWon(inv.simulator_unit_price)} = ${manWon(inv.simulator_cost)}</li>
+                <li>인테리어 공사비: ${site.area_pyeong}평 × 평당 ${manWon(inv.interior_cost_per_pyeong)} = ${manWon(inv.interior_cost)}</li>
                 <li>부대설비 (냉난방/간판/가구/초도용품): ${manWon(inv.other_facilities)}</li>
                 <li style="color:var(--emerald); font-weight:800; font-size:13.5px;">★ 총 초기 투자금: ${eokWon(inv.total_capex)}</li>`;
             const rentTag = site.rent_is_estimated ? '지역 시세 추정' : '입력하신 실측';
             document.getElementById('repOpModelList').innerHTML = `
-                <li>표준 모델 (점주 1인 상주 운영): 인건비 월 250만원</li>
-                <li>비교 모델 (직원 3인 채용 운영): 인건비 월 750만원</li>
+                <li>표준 모델 (점주 ${site.staff_count}인 상주 운영): 인건비 월 ${manWon(sc.moderate.labor_cost)}</li>
+                <li>비교 모델 (직원 3인 채용 운영): 인건비 월 750만원 (회수기간 ${fin.owner_operated.staff3_payback_months.toFixed(1)}개월)</li>
                 <li>게임비 요금: 1인 18홀 7,000원 (4인 1팀 28,000원)</li>
                 <li>월 임대료 기준: ${rentTag} ${manWon(site.monthly_rent)}/월 반영</li>`;
             document.getElementById('repCaveatText').innerText = `본 보고서는 KOSIS 인구통계와 MYPARK 지역등급 추정 모델, 표준 재무 모델에 기반한 추정 분석 자료이며, 실제 미래 사업 성과나 특정 수익률을 보장하지 않습니다. 최종 창업 결정 전 세무·법률·현장 실측 전문가와의 상담을 권장합니다.`;
 
             // 7) 매출 추정
-            const sc = fin.monthly_scenarios;
             document.getElementById('repRevSub').innerText = `보수적(일 ${sc.conservative.daily_turns_per_room}회전) ~ 긍정적(일 ${sc.optimistic.daily_turns_per_room}회전) 3대 시나리오`;
             const scRow = (label, s, hl) => `<tr${hl ? ' class="hl"' : ''}><td>${label}</td><td>1일 ${s.daily_turns_per_room}회전 (${s.daily_users}명)</td><td>${manWon(s.room_revenue)}</td><td>${manWon(s.goods_revenue)}</td><td>${manWon(s.beverage_revenue)}</td><td>${manWon(s.total_revenue)}</td><td>${(s.annual_revenue/100000000).toFixed(1)}억원</td></tr>`;
             document.getElementById('repRevTable').innerHTML =
@@ -1090,7 +1090,7 @@
             document.getElementById('repCostSub').innerText = `보편 시나리오 기준 월 순영업이익 ${manWon(mod.operating_profit)} (영업이익률 ${mod.profit_margin}%)`;
             document.getElementById('repCostList').innerHTML = `
                 <li>월 임대료: ${manWon(site.monthly_rent)} (${rentTag})</li>
-                <li>인건비 (점주 직접운영): 250만원 (1인 상주 운영)</li>
+                <li>인건비 (점주 직접운영): ${manWon(mod.labor_cost)} (${site.staff_count}인 상주 운영)</li>
                 <li>매장 운영비/소모품/통신/마케팅: ${manWon(mod.store_ops_cost + mod.marketing_cost)}</li>
                 <li>변동비 (매출연동 원가 + 카드수수료): ${manWon(mod.cost_goods + mod.cost_beverage + mod.card_fee)}</li>
                 <li style="color:var(--emerald); font-weight:800; font-size:13.5px;">★ 월 순영업이익: ${manWon(mod.operating_profit)} (영업이익률 ${mod.profit_margin}%)</li>`;

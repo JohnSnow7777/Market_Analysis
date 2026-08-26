@@ -269,7 +269,11 @@ class CompetitorEngine:
 
     @staticmethod
     def _kakao_keyword_search(query, x, y, radius, api_key):
-        """카카오 로컬 API 키워드 장소 검색 (좌표 중심 반경 검색)"""
+        """카카오 로컬 API 키워드 장소 검색 (좌표 중심 반경 검색).
+
+        반환: (성공여부, 결과리스트). 호출 실패와 '검색결과 0건'을 반드시 구분한다.
+        (실패를 0건으로 처리하면 '경쟁사 없음(블루오션)'으로 잘못 단정하게 됨)
+        """
         try:
             params = {'query': query, 'size': 10}
             if x is not None and y is not None:
@@ -278,22 +282,32 @@ class CompetitorEngine:
             req = urllib.request.Request(url, headers={'Authorization': f'KakaoAK {api_key}'})
             with urllib.request.urlopen(req, timeout=4) as resp:
                 data = json.loads(resp.read().decode('utf-8'))
-            return data.get('documents', [])
-        except Exception:
-            return []
+            return True, data.get('documents', [])
+        except Exception as e:
+            print(f"[KAKAO API FAIL] keyword search '{query}': {e}")
+            return False, []
 
     @staticmethod
     def search_live_kakao_competitors(address, radius=3000):
-        """카카오 로컬 API로 실제 경쟁 매장을 실시간 검색 (KAKAO_REST_API_KEY 환경변수 필요)"""
+        """카카오 로컬 API로 실제 경쟁 매장을 실시간 검색 (KAKAO_REST_API_KEY 환경변수 필요).
+
+        반환:
+          None -> API 미설정 또는 호출 실패 (판정 불가, 추정 모델로 폴백)
+          []   -> API 호출 성공 + 실제로 반경 내 0건 (블루오션 확인)
+          [..] -> 실제 검색된 매장 목록
+        """
         api_key = os.environ.get(KAKAO_API_KEY_ENV)
         if not api_key:
             return None
         x, y = CompetitorEngine._kakao_geocode(address, api_key)
         if x is None:
             return None
-        docs = CompetitorEngine._kakao_keyword_search('스크린파크골프', x, y, radius, api_key)
+        ok1, docs = CompetitorEngine._kakao_keyword_search('스크린파크골프', x, y, radius, api_key)
         if not docs:
-            docs = CompetitorEngine._kakao_keyword_search('파크골프 스크린', x, y, radius, api_key)
+            ok2, docs = CompetitorEngine._kakao_keyword_search('파크골프 스크린', x, y, radius, api_key)
+            # 두 번의 호출이 모두 실패했다면 '0건'이 아니라 '판정 불가'로 처리
+            if not (ok1 or ok2):
+                return None
         if not docs:
             return []
         stores = []
@@ -345,6 +359,8 @@ class CompetitorEngine:
                 'region_key': s_sigungu,
                 'stores': final_stores,
                 'count': len(final_stores),
+                'verified_count': len(final_stores),
+                'is_verified': True,
                 'is_blue_ocean': False,
                 'summary': summary_txt
             }
@@ -357,6 +373,8 @@ class CompetitorEngine:
                     'region_key': s_sigungu,
                     'stores': live_stores,
                     'count': len(live_stores),
+                    'verified_count': len(live_stores),
+                    'is_verified': True,
                     'is_blue_ocean': False,
                     'summary': f"카카오맵 실시간 검색 결과 반경 3km 내 {len(live_stores)}곳 매칭 (실시간 API 연동 결과)"
                 }
@@ -364,6 +382,8 @@ class CompetitorEngine:
                 'region_key': 'blue_ocean',
                 'stores': [],
                 'count': 0,
+                'verified_count': 0,
+                'is_verified': True,
                 'is_blue_ocean': True,
                 'summary': "카카오맵 실시간 검색 결과 반경 3km 내 상업용 전문 스크린 파크골프장 미등록 확인 (마이파크 1호점 선점 최적지)"
             }
@@ -408,6 +428,8 @@ class CompetitorEngine:
             'region_key': 'blue_ocean',
             'stores': fallback_stores,
             'count': 1,
-            'is_blue_ocean': True,
+            'verified_count': None,
+            'is_verified': False,
+            'is_blue_ocean': False,
             'summary': f"반경 3km 내 실측/실시간 검색 결과 없음 — 아래 4곳은 참고용 가상 시나리오입니다 (실시간 API 미설정)"
         }

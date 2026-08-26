@@ -7,6 +7,7 @@ from reportlab.lib.colors import HexColor
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from .config import DEFAULT_SETTINGS, fmt_eok, fmt_won_full, fmt_months
 
 # -----------------------------------------------------------------------------
 # TTF 폰트 등록
@@ -174,7 +175,7 @@ class PDFGenerator:
 
         c.setFillColor(self.c_mck_teal)
         c.setFont(FONT_BOLD, 15)
-        c.drawString(60, self.height - 175, "10타석 120평 플래그십 표준 모델  |  상권 분석 및 투자 타당성 평가")
+        c.drawString(60, self.height - 175, f"{site['rooms']}타석 {site['area_pyeong']}평 표준 모델  |  상권 분석 및 투자 타당성 평가")
 
         c.setStrokeColor(self.c_mck_teal)
         c.setLineWidth(2)
@@ -587,7 +588,7 @@ class PDFGenerator:
         # Page 8: [신규] 7. 표준 투자 조건 및 사업 추진 유의사항
         # [PART 2 신설: 이 보고서에서 재무 금액이 최초로 등장하는 지점 & Caveat 명시]
         # ---------------------------------------------------------------------
-        self._draw_mckinsey_header(c, "7. 표준 투자 조건 및 사업 추진 유의사항", "10타석 120평 플래그십 표준 모델 기준 및 투자 결정 전 필수 점검사항")
+        self._draw_mckinsey_header(c, "7. 표준 투자 조건 및 사업 추진 유의사항", f"{site['rooms']}타석 {site['area_pyeong']}평 표준 모델 기준 및 투자 결정 전 필수 점검사항")
         
         # 블록 A (좌측): 표준 투자 조건 (전제조건 명시)
         c.setFillColor(self.c_box_bg)
@@ -598,7 +599,7 @@ class PDFGenerator:
         c.rect(40, 418, 425, 42, fill=1, stroke=0)
         c.setFillColor(self.c_white)
         c.setFont(FONT_BOLD, 11)
-        c.drawString(56, 436, "■ 10타석 120평 플래그십 표준 모델 투자 조건 (SSOT)")
+        c.drawString(56, 436, f"■ {site['rooms']}타석 {site['area_pyeong']}평 표준 모델 투자 조건 (SSOT)")
         
         c.setFont(FONT_BOLD, 10)
         c.setFillColor(self.c_mck_navy)
@@ -606,26 +607,26 @@ class PDFGenerator:
         
         c.setFont(FONT_REGULAR, 9)
         c.setFillColor(self.c_charcoal)
-        c.drawString(56, 374, f"• 시뮬레이터 장비: 10대 × 대당 1,500만원 = 1억 5,000만원")
-        c.drawString(56, 354, f"• 인테리어 공사비: 120평 × 평당 120만원 = 1억 4,400만원")
-        c.drawString(56, 334, f"• 부대설비 (냉난방/간판/가구/초도용품): 2,500만원")
+        c.drawString(56, 374, f"• 시뮬레이터 장비: {site['rooms']}대 × 대당 {DEFAULT_SETTINGS['simulator_unit_price']//10000:,}만원 = {fmt_won_full(inv['simulator_cost'])}")
+        c.drawString(56, 354, f"• 인테리어 공사비: {site['area_pyeong']}평 × 평당 {DEFAULT_SETTINGS['interior_cost_per_pyeong']//10000:,}만원 = {fmt_won_full(inv['interior_cost'])}")
+        c.drawString(56, 334, f"• 부대설비 (냉난방/간판/가구/초도용품): {fmt_won_full(inv['other_facilities'])}")
         c.drawString(70, 316, "- 냉난방기(4대 1,200만) / 간판(500만) / 가구(300만) / 초도용품(500만)")
         
         c.setFillColor(self.c_tint_blue)
         c.rect(56, 260, 393, 40, fill=1, stroke=0)
         c.setFillColor(self.c_mck_navy)
         c.setFont(FONT_BOLD, 12)
-        c.drawString(70, 276, "★ 총 초기 투자금: 3억 1,900만원 (3.19억원)")
+        c.drawString(70, 276, f"★ 총 초기 투자금: {fmt_won_full(inv['total_capex'])} ({fmt_eok(inv['total_capex'])})")
         
         c.setFont(FONT_BOLD, 10)
         c.setFillColor(self.c_mck_navy)
         c.drawString(56, 236, "● 표준 운영 방식 및 인건비 모델")
         c.setFont(FONT_REGULAR, 9)
         c.setFillColor(self.c_charcoal)
-        c.drawString(56, 214, "• 표준 모델 (점주 1인 상주 운영): 인건비 월 250만원 (수익률 극대화)")
-        c.drawString(56, 194, "• 비교 모델 (직원 3인 채용 운영): 인건비 월 750만원 (회수기간 15.3개월)")
+        c.drawString(56, 214, f"• 표준 모델 (점주 {site['staff_count']}인 상주 운영): 인건비 월 {site['staff_count']*DEFAULT_SETTINGS['labor_cost_manager']//10000:,}만원 (수익률 극대화)")
+        c.drawString(56, 194, f"• 비교 모델 (직원 3인 채용 운영): 인건비 월 {3*DEFAULT_SETTINGS['labor_cost_manager']//10000:,}만원 (회수기간 {fin['owner_operated']['staff3_payback_months']:.1f}개월)")
         c.drawString(56, 174, f"• 게임비 요금: 1인 18홀 7,000원 (4인 1팀 28,000원)")
-        c.drawString(56, 154, f"• 3대 매출원: 게임비 회전 + 용품 판매(월 150만) + 식음료(월 180만)")
+        c.drawString(56, 154, f"• 3대 매출원: 게임비 회전 + 용품 판매(월 {scenarios['moderate']['goods_revenue']//10000:,}만) + 식음료(월 {scenarios['moderate']['beverage_revenue']//10000:,}만)")
         rent_tag = "지역 시세 추정" if site.get('rent_is_estimated') else "입력하신 실측"
         c.drawString(56, 134, f"• 월 임대료 기준: {rent_tag} {site['monthly_rent']//10000:,}만원/월 반영")
         
@@ -704,7 +705,7 @@ class PDFGenerator:
             c.drawString(525, ay, al)
             ay -= 12
         c.setFont(FONT_REGULAR, 7.5)
-        c.drawString(525, ay - 4, "(기준: 10타석 120평 / 총투자금 3.19억원 / 점주 1인 상주 운영 모델)")
+        c.drawString(525, ay - 4, f"(기준: {site['rooms']}타석 {site['area_pyeong']}평 / 총투자금 {fmt_eok(inv['total_capex'])} / 점주 {site['staff_count']}인 상주 운영 모델)")
 
         self._draw_footer(c, "MYPARK Standard Investment Criteria & Regulatory Caveat")
         c.showPage()
@@ -756,8 +757,8 @@ class PDFGenerator:
         c.setFont(FONT_REGULAR, 9)
         c.setFillColor(self.c_charcoal)
         c.drawString(56, 194, "• 게임비 단가: 1인 18홀 7,000원 (4인 1팀 1게임당 28,000원)")
-        c.drawString(56, 168, f"• 10타석 회전 기준: 타석당 1일 {scenarios['moderate']['daily_turns_per_room']}게임 가동 시 1일 {scenarios['moderate']['daily_users']}명 이용 (보편 시나리오 월 게임비 {scenarios['moderate']['room_revenue']//10000:,}만원)")
-        c.drawString(56, 142, "• 부가 매출 2종: 파크골프 클럽/공/장갑 등 용품 판매(월 150만원) + 음료/간식(월 180만원)")
+        c.drawString(56, 168, f"• {site['rooms']}타석 회전 기준: 타석당 1일 {scenarios['moderate']['daily_turns_per_room']}게임 가동 시 1일 {scenarios['moderate']['daily_users']}명 이용 (보편 시나리오 월 게임비 {scenarios['moderate']['room_revenue']//10000:,}만원)")
+        c.drawString(56, 142, f"• 부가 매출 2종: 파크골프 클럽/공/장갑 등 용품 판매(월 {scenarios['moderate']['goods_revenue']//10000:,}만원) + 음료/간식(월 {scenarios['moderate']['beverage_revenue']//10000:,}만원)")
         c.drawString(56, 116, "• 투명성 원칙: 레슨비, 락커룸 렌탈료 등 근거 없는 부가 항목을 일체 배제한 보수적이고 정직한 추정치")
 
         self._draw_footer(c, "MYPARK Standard Financial Model (120 Pyeong, 10 Rooms)")
@@ -782,9 +783,9 @@ class PDFGenerator:
         c.setFillColor(self.c_charcoal)
         rent_basis = "입력하신 임대료" if not site.get('rent_is_estimated') else "지역 시세 추정 임대료"
         c.drawString(511, 412, f"• 월 임대료: {site['monthly_rent']//10000:,}만원 ({rent_basis})")
-        c.drawString(511, 392, "• 인건비 (점주 직접운영): 250만원 (1인 상주 운영)")
-        c.drawString(511, 372, "• 매장 운영비/소모품: 100만원  |  통신/POS: 30만원  |  마케팅비: 50만원")
-        c.drawString(511, 352, f"• 변동비 (매출연동): 매출원가 180만원 + 카드수수료(1.3%) {scenarios['moderate']['card_fee']//10000:,}만원")
+        c.drawString(511, 392, f"• 인건비 (점주 직접운영): {scenarios['moderate']['labor_cost']//10000:,}만원 ({site['staff_count']}인 상주 운영)")
+        c.drawString(511, 372, f"• 매장 운영비/소모품: {DEFAULT_SETTINGS['store_ops_monthly']//10000:,}만원  |  통신/POS: {DEFAULT_SETTINGS['pos_telecom_monthly']//10000:,}만원  |  마케팅비: {DEFAULT_SETTINGS['marketing_monthly']//10000:,}만원")
+        c.drawString(511, 352, f"• 변동비 (매출연동): 매출원가 {(scenarios['moderate']['cost_goods']+scenarios['moderate']['cost_beverage'])//10000:,}만원 + 카드수수료({DEFAULT_SETTINGS['card_fee_rate']*100:.1f}%) {scenarios['moderate']['card_fee']//10000:,}만원")
         c.drawString(511, 332, f"★ 월 총지출 합계: {scenarios['moderate']['total_cost']//10000:,}만원")
         
         c.setFont(FONT_BOLD, 10)
@@ -811,7 +812,7 @@ class PDFGenerator:
         # ---------------------------------------------------------------------
         # Page 11: 10. 손익분기점(BEP) 및 투자금 회수기간
         # ---------------------------------------------------------------------
-        self._draw_mckinsey_header(c, "10. 손익분기점(BEP) 및 투자금 회수기간", f"손익분기 매출 월 {inv['bep_monthly_sales']//10000:,}만원 (타석당 일 {inv['bep_turns_per_room']}회전) 및 투자금 3.19억 회수기간 약 {inv['payback_months_moderate']:.1f}개월")
+        self._draw_mckinsey_header(c, "10. 손익분기점(BEP) 및 투자금 회수기간", f"손익분기 매출 월 {inv['bep_monthly_sales']//10000:,}만원 (타석당 일 {inv['bep_turns_per_room']}회전) 및 투자금 {fmt_eok(inv['total_capex'])} 회수기간 약 {inv['payback_months_moderate']:.1f}개월")
         
         if 'bep_chart' in charts and os.path.exists(charts['bep_chart']):
             c.drawImage(charts['bep_chart'], 40, 260, width=440, height=200, preserveAspectRatio=True)
@@ -821,7 +822,7 @@ class PDFGenerator:
         c.rect(495, 260, right_col_w, 200, fill=1, stroke=1)
         c.setFont(FONT_BOLD, 10.5)
         c.setFillColor(self.c_mck_navy)
-        c.drawString(511, 438, "■ 투자금 3.19억 회수 시뮬레이션")
+        c.drawString(511, 438, f"■ 투자금 {fmt_eok(inv['total_capex'])} 회수 시뮬레이션")
         
         c.setFont(FONT_REGULAR, 8.5)
         c.setFillColor(self.c_charcoal)
@@ -844,7 +845,7 @@ class PDFGenerator:
         c.setFont(FONT_REGULAR, 9)
         c.setFillColor(self.c_charcoal)
         c.drawString(56, 194, "• 초저위험 구조: 타석당 1일 1회전(4명)만 가동되어도 손익분기점을 초과하여 적자 발생 확률이 극히 희박")
-        c.drawString(56, 168, f"• 빠른 자본 회수: 보편 가동 기준 약 {inv['payback_months_moderate']:.1f}개월(1년 1개월) 만에 초기 투자금 3.19억원 전액 회수")
+        c.drawString(56, 168, f"• 빠른 자본 회수: 보편 가동 기준 약 {inv['payback_months_moderate']:.1f}개월({fmt_months(inv['payback_months_moderate'])}) 만에 초기 투자금 {fmt_eok(inv['total_capex'])} 전액 회수")
         c.drawString(56, 142, "• 자산 가치 보존: 시뮬레이터 장비 및 쾌적한 인테리어 시설은 향후 지속적인 현금 흐름을 창출하는 핵심 실물 자산")
         c.drawString(56, 116, "• 안정적 단골 락인: 지역 시니어 동호회 정기 예약 시스템 구축으로 경기 변동에 영향을 받지 않는 방어적 사업 모델")
 
@@ -873,7 +874,7 @@ class PDFGenerator:
             ("연간 총매출액", [f"{y['revenue']/100000000:.2f}억원" for y in fin['five_year']['years']], f"{fin['five_year']['total_5yr_revenue']//100000000:.1f}억원"),
             ("연간 총비용", [f"{y['cost']/100000000:.2f}억원" for y in fin['five_year']['years']], f"{fin['five_year']['total_5yr_cost']//100000000:.1f}억원"),
             ("연간 순영업익", [f"{y['profit']/100000000:.2f}억원" for y in fin['five_year']['years']], f"{fin['five_year']['total_5yr_profit']//100000000:.1f}억원"),
-            ("투자금 누적회수", ["3.19억 회수완료" if i > 0 else f"{fin['five_year']['years'][0]['cumulative_profit']/100000000:.2f}억원" for i in range(5)], "회수율 486%")
+            ("투자금 누적회수", [f"{fmt_eok(inv['total_capex'])} 회수완료" if fin['five_year']['years'][i]['cumulative_profit'] >= inv['total_capex'] else f"{fin['five_year']['years'][i]['cumulative_profit']/100000000:.2f}억원" for i in range(5)], f"회수율 {fin['five_year']['total_5yr_profit']/inv['total_capex']*100:.0f}%")
         ]
         for rname, yvals, totval in rows_5y:
             is_prof = "순영업익" in rname

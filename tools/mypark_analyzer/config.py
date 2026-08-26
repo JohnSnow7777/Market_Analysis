@@ -36,6 +36,78 @@ DEFAULT_SETTINGS = {
     'marketing_monthly': 500000,        # 마케팅비 50만원
 }
 
+# -----------------------------------------------------------------------------
+# 지역 등급 분류 (demographics / commercial_data 공용 SSOT)
+#
+# 과거에는 두 모듈이 각각 다른 키워드 목록을 들고 있어서 같은 주소가 모듈마다
+# 다른 등급으로 분류되는 문제가 있었다. (예: 서울 노원구 -> 인구는 '대도시',
+# 상권은 '군 단위'로 분류되어 월매출이 지방 군 수준으로 산정됨)
+# 이제 아래 단일 함수만 사용한다.
+# -----------------------------------------------------------------------------
+def fmt_eok(won):
+    """원 단위 금액을 'N.NN억원'으로 표기."""
+    return f"{won / 100000000:.2f}억원"
+
+
+def fmt_won_full(won):
+    """원 단위 금액을 'N억 N,NNN만원'으로 표기 (1억 미만이면 'N,NNN만원')."""
+    man = int(won) // 10000
+    if man >= 10000:
+        eok, rest = divmod(man, 10000)
+        return f"{eok}억 {rest:,}만원" if rest else f"{eok}억원"
+    return f"{man:,}만원"
+
+
+def fmt_months(months):
+    """개월 수를 'N년 N개월' 형태로 표기."""
+    m = float(months)
+    if m < 12:
+        return f"{m:.1f}개월"
+    years = int(m // 12)
+    rem = int(round(m % 12))
+    if rem == 0:
+        return f"{years}년"
+    if rem == 12:
+        return f"{years + 1}년"
+    return f"{years}년 {rem}개월"
+
+
+TIER_PRIME = 1        # 최상위 소비 상권
+TIER_METRO = 2        # 서울/광역시/수도권 주요시
+TIER_MID_CITY = 3     # 지방 중소도시 (시 단위)
+TIER_RURAL = 4        # 군 단위 / 외곽
+
+_PRIME_KEYWORDS = ['강남', '서초', '송파', '분당', '판교', '송도', '해운대', '수성구', '용산', '과천']
+_METRO_SIDO = ['서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종']
+_METRO_GYEONGGI = [
+    '고양', '덕양', '일산', '용인', '수지', '기흥', '수원', '영통', '광교', '성남', '중원', '수정',
+    '안양', '평촌', '동안', '만안', '부천', '광명', '하남', '동탄', '화성', '시흥', '김포', '남양주',
+    '의정부', '구리', '안산', '군포', '의왕', '오산', '파주', '평택',
+]
+
+
+def classify_region_tier(address, sigungu=''):
+    """주소를 4단계 지역 등급으로 분류한다 (1=최상위 ~ 4=군 단위)."""
+    text = f"{address} {sigungu}"
+
+    if any(k in text for k in _PRIME_KEYWORDS):
+        return TIER_PRIME
+    if any(k in text for k in _METRO_SIDO):
+        return TIER_METRO
+    if any(k in text for k in _METRO_GYEONGGI):
+        return TIER_METRO
+
+    # 시/군 접미사로 판정 (키워드 목록에 없는 전국 모든 지역 대응)
+    for token in text.split():
+        if token.endswith('군'):
+            return TIER_RURAL
+    for token in text.split():
+        if token.endswith('시'):
+            return TIER_MID_CITY
+
+    return TIER_MID_CITY
+
+
 SCENARIO_CONFIG = {
     'conservative': {
         'name': '보수적 시나리오 (3회전)',

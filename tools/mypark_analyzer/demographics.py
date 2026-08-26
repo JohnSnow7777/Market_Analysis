@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """인구 통계 수집 및 분석 모듈 (전국 모든 시/구/동 반경 3km 생활권 정밀 지오펜싱)"""
 from .address_resolver import AddressResolver
+from .config import classify_region_tier, TIER_PRIME, TIER_METRO, TIER_MID_CITY
 
 # 전국 주요 거점 행정동 실측 KOSIS 인구 통계 데이터 (2026년 기준)
 DONG_POPULATION_DB = {
@@ -108,10 +109,11 @@ class DemographicsEngine:
                 center_dong = k
                 break
 
-        # 2. 지역 체급별(대도시 vs 중소도시 vs 군) 디폴트 인구 계수 산정
-        is_metro = any(k in full_addr or k in sigungu for k in ['서울', '강남', '서초', '송파', '분당', '판교', '성남', '일산', '고양', '용인', '수원', '송도', '인천'])
-        is_city = any(k in full_addr or k in sigungu for k in ['광역시', '부산', '대구', '대전', '광주', '울산', '창원', '청주', '천안', '전주', '포항'])
-        is_mid_small = any(k in full_addr or k in sigungu for k in ['목포', '여수', '순천', '군산', '익산', '원주', '춘천', '강릉', '충주', '제천', '안동', '구미', '경주', '통영', '거제'])
+        # 2. 지역 체급별 디폴트 인구 계수 산정 (config.classify_region_tier 공용 SSOT)
+        tier = classify_region_tier(full_addr, sigungu)
+        is_metro = tier in (TIER_PRIME, TIER_METRO)
+        is_city = tier == TIER_METRO
+        is_mid_small = tier == TIER_MID_CITY
 
         if not target_dongs:
             target_dongs_is_fallback = True

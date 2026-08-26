@@ -27,6 +27,10 @@ class MyParkReportGenerator:
         commercial['competitors'] = competitors['stores']
         commercial['competitor_summary'] = competitors['summary']
         commercial['is_blue_ocean'] = competitors['is_blue_ocean']
+        # 채점은 '실제로 확인된 경쟁사 수'만 사용한다.
+        # (미확인 지역의 참고용 가상 시나리오 4곳을 실제 경쟁사로 세면 안 됨)
+        commercial['competitor_verified_count'] = competitors.get('verified_count')
+        commercial['competitor_is_verified'] = competitors.get('is_verified', False)
         
         financials = FinanceEngine.get_full_financial_analysis(
             rooms=site_info['rooms'],
