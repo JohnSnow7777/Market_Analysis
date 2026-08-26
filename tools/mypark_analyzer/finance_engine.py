@@ -35,7 +35,7 @@ class FinanceEngine:
 
     @staticmethod
     def calculate_monthly_scenario(rooms=10, monthly_rent=4600000, staff_count=1, scenario_type='moderate', regional_demand_multiplier=1.0):
-        game_fee = 7000
+        game_fee = DEFAULT_SETTINGS['game_price_18hole']
         team_fee = game_fee * 4 # 28,000원
         
         if scenario_type == 'conservative':
@@ -62,15 +62,15 @@ class FinanceEngine:
         
         total_revenue = game_revenue + goods_revenue + beverage_revenue
         
-        # 비용 구조 (점주 1인 상주 기준: 인건비 250만)
-        labor_cost = staff_count * DEFAULT_SETTINGS.get('LABOR_COST_PER_PERSON', 2500000)
+        # 비용 구조 (SSOT config DEFAULT_SETTINGS 대괄호 참조)
+        labor_cost = staff_count * DEFAULT_SETTINGS['labor_cost_manager']
         rent_cost = monthly_rent
-        cost_goods = int(goods_revenue * 0.50)
-        cost_beverage = int(beverage_revenue * 0.50)
-        card_fee = int(total_revenue * 0.02)
-        store_ops_cost = 1500000 # 수도광열비 및 매장 유지비
-        pos_telecom = 300000     # 통신/POS
-        marketing_cost = 500000  # 마케팅비
+        cost_goods = int(goods_revenue * DEFAULT_SETTINGS['cost_rate_goods'])
+        cost_beverage = int(beverage_revenue * DEFAULT_SETTINGS['cost_rate_beverage'])
+        card_fee = int(total_revenue * DEFAULT_SETTINGS['card_fee_rate'])
+        store_ops_cost = DEFAULT_SETTINGS['store_ops_monthly']
+        pos_telecom = DEFAULT_SETTINGS['pos_telecom_monthly']
+        marketing_cost = DEFAULT_SETTINGS['marketing_monthly']
         
         total_cost = (labor_cost + rent_cost + cost_goods + cost_beverage + 
                       card_fee + store_ops_cost + pos_telecom + marketing_cost)
@@ -130,7 +130,7 @@ class FinanceEngine:
         }
         
         # 월 고정비 (점주 1인 상주 250만 + 임대료 + 운영비 180만 + 마케팅 50만)
-        fixed_cost = (staff_count * 2500000) + monthly_rent + 1800000 + 500000
+        fixed_cost = (staff_count * DEFAULT_SETTINGS['labor_cost_manager']) + monthly_rent + DEFAULT_SETTINGS['store_ops_monthly'] + DEFAULT_SETTINGS['pos_telecom_monthly'] + DEFAULT_SETTINGS['marketing_monthly']
         # 팀당 손익분기 마진: 게임비(28,000*0.98) + 음료마진(1,500*0.98) = 약 28,910원
         margin_per_team = 28000 * 0.98 + (3000 * 0.50 * 0.98)
         bep_monthly_teams = int(fixed_cost / margin_per_team)

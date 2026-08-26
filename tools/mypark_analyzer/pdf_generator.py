@@ -13,13 +13,13 @@ WIDTH, HEIGHT = 960, 540
 FONT_REGULAR = "Helvetica"
 FONT_BOLD = "Helvetica-Bold"
 
-def init_fonts():
+def init_fonts(custom_candidates=None):
     global FONT_REGULAR, FONT_BOLD
     base_dir = os.path.dirname(os.path.abspath(__file__))
     bundled_reg = os.path.join(base_dir, "fonts", "MalgunGothic.ttf")
     bundled_bold = os.path.join(base_dir, "fonts", "MalgunGothicBold.ttf")
     
-    font_candidates = [
+    font_candidates = custom_candidates if custom_candidates is not None else [
         (bundled_reg, bundled_bold),
         ("C:/Windows/Fonts/malgun.ttf", "C:/Windows/Fonts/malgunbd.ttf"),
         ("C:/Windows/Fonts/NanumGothic.ttf", "C:/Windows/Fonts/NanumGothicBold.ttf"),
@@ -41,6 +41,7 @@ def init_fonts():
                 
     FONT_REGULAR = "Helvetica"
     FONT_BOLD = "Helvetica-Bold"
+    print("[FONT WARNING] 한글 폰트를 찾지 못해 Helvetica로 대체합니다 — 생성되는 PDF의 한글이 깨질 수 있습니다.")
     return False
 
 init_fonts()
@@ -286,7 +287,7 @@ class PDFGenerator:
         c.drawString(56, 140, "• 70대 실버 헬스케어 수요 21%: 관절 부담이 없는 파크골프 특성상 부부 동반 및 시니어 커뮤니티 공간으로 정착")
         c.drawString(56, 112, "• 일반 스크린골프 대비 회전율 우위: 야간 직장인 편중 매장과 달리 주간 7시간 집중 가동으로 일일 높은 회전수 확보")
         
-        self._draw_footer(c, "KOSIS National Statistics Portal & Ministry of the Interior and Safety Data")
+        self._draw_footer(c, "KOSIS National Statistics Portal" + (" (※ 행정동 추정 모델 적용)" if demo.get("is_estimated") else " (실측 DB 매핑)"))
         c.showPage()
 
         # ---------------------------------------------------------------------

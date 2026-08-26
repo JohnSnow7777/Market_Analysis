@@ -17,6 +17,7 @@ class CommercialEngine:
         comp_res = CompetitorEngine.search_competitors(address, sigungu, dong)
 
         # 지역별 실측 상권 매출 및 소비력 지수 차등화
+        is_estimated_comm = False
         if any(k in full_addr or k in sigungu for k in ['강남', '서초', '송파', '분당', '판교', '송도', '해운대', '수성구']):
             monthly_avg = 24500000
             top_20_sales = 62510000
@@ -56,7 +57,8 @@ class CommercialEngine:
             nat_avg = 0.3
             multiple = 1.7
             subway = "시내 주요 버스 노선망"
-        else: # 군/소도시
+        else: # 군/소도시 (추정치 모델 적용)
+            is_estimated_comm = True
             monthly_avg = 9800000
             top_20_sales = 21000000
             dong_avg = 8900000
@@ -131,7 +133,8 @@ class CommercialEngine:
             'competitor_count': comp_res['count'],
             'competitor_summary': comp_res['summary'],
             'is_blue_ocean': comp_res['is_blue_ocean'],
-            'base_source': '소상공인시장진흥공단 상권정보 & BASA 빅데이터'
+            'base_source': '소상공인시장진흥공단 상권정보 & BASA 빅데이터',
+            'is_estimated': is_estimated_comm
         }
 
 CommercialEngine.get_commercial_trends = CommercialEngine.get_commercial_analysis

@@ -99,6 +99,7 @@ class DemographicsEngine:
 
         # 1. 대상 행정동 중심 반경 3km 인접동 리스트 탐색
         target_dongs = None
+        target_dongs_is_fallback = False
         center_dong = dong if dong else '해당지'
         
         for k, dlist in RADIUS_3KM_DONG_MAP.items():
@@ -113,6 +114,7 @@ class DemographicsEngine:
         is_mid_small = any(k in full_addr or k in sigungu for k in ['목포', '여수', '순천', '군산', '익산', '원주', '춘천', '강릉', '충주', '제천', '안동', '구미', '경주', '통영', '거제'])
 
         if not target_dongs:
+            target_dongs_is_fallback = True
             clean_dong = dong.replace('동', '') if dong else '사업권역'
             center_dong = f"{clean_dong}동"
             target_dongs = [
@@ -182,6 +184,9 @@ class DemographicsEngine:
         age_dist[0]['total'] += diff
         age_dist[0]['female'] += diff
 
+        is_estimated_flag = (target_dongs_is_fallback or any(d.get('is_estimated', False) for d in dong_list))
+        data_source_text = 'KOSIS 국가통계포털 (실측 DB 매핑)' if not is_estimated_flag else 'KOSIS 시군구 통계 기반 3km 추정 모델'
+        
         return {
             'center_dong': center_dong,
             'region_name': f"{sido} {sigungu} {center_dong} 일원 (반경 3km 생활권)",
@@ -193,5 +198,7 @@ class DemographicsEngine:
             'senior_ratio': senior_ratio,
             'dongs': dong_list,
             'age_distribution': age_dist,
-            'base_date': '2026년 07월 KOSIS 국가통계포털 기준'
+            'base_date': '2026년 07월 KOSIS 국가통계포털 기준',
+            'data_source': data_source_text,
+            'is_estimated': is_estimated_flag
         }

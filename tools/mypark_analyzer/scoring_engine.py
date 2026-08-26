@@ -34,11 +34,34 @@ class ScoringEngine:
         else:
             score_senior = 8.0
             
-        # 2. 접근성 및 주차 인프라 (25점 만점)
-        score_parking = 20.0
+        # 2. 접근성 및 주차 인프라 (25점 만점 - 대중교통 및 도로망 동적 평가)
+        infra = commercial_data.get('infra', {})
+        bus_count = infra.get('버스정류장', 30)
+        subway_info = infra.get('지하철', '')
+        has_subway = '역' in subway_info or '지하철' in subway_info or '역' in site_info.get('full_address', '')
         
-        # 3. 공간 적합성 및 층고 (15점 만점)
-        score_space = 13.0
+        if has_subway or bus_count >= 35:
+            score_parking = 23.0
+        elif bus_count >= 20:
+            score_parking = 20.0
+        elif bus_count >= 10:
+            score_parking = 17.5
+        else:
+            score_parking = 15.0
+            
+        # 3. 공간 적합성 및 층고 (15점 만점 - 타석당 전용면적 여유도 동적 평가)
+        rooms_cnt = max(1, site_info.get('rooms', 10))
+        area_cnt = site_info.get('area_pyeong', 120)
+        pyeong_per_room = area_cnt / float(rooms_cnt)
+        
+        if pyeong_per_room >= 12.0:   # 타석당 12평 이상 (쾌적한 플래그십)
+            score_space = 14.5
+        elif pyeong_per_room >= 10.0: # 타석당 10~11.9평 (표준)
+            score_space = 13.0
+        elif pyeong_per_room >= 8.0:  # 타석당 8~9.9평 (다소 협소)
+            score_space = 10.5
+        else:                         # 8평 미만 (초협소)
+            score_space = 8.0
         
         # 4. 수요공급 갭 (15점 만점)
         competitors = commercial_data.get('competitors', [])

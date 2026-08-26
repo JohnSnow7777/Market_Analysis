@@ -124,7 +124,8 @@ class PPTXGenerator:
         
         p3 = tf1.add_paragraph()
         p3.space_before = Pt(14)
-        p3.text = f"대상 주소: {site['full_address']}  |  표준 모델: {site['rooms']}타석 ({site['area_pyeong']}평)"
+        notes_txt = f"  |  특이사항: {site['special_notes']}" if site.get('special_notes') else ""
+        p3.text = f"대상 주소: {site['full_address']}{notes_txt}  |  표준 모델: {site['rooms']}타석 ({site['area_pyeong']}평)"
         p3.font.name = 'Malgun Gothic'
         p3.font.size = Pt(14)
         p3.font.color.rgb = RGBColor(226, 232, 240)
@@ -607,7 +608,8 @@ class PPTXGenerator:
         cards_s8 = [
             (Inches(0.6), Inches(1.45), Inches(5.9), Inches(2.72), "■ 공간 및 유효 층고 요건", [
                 f"• 대상 주소: {site['full_address']}",
-                f"• 권장 면적: 전용 {site['area_pyeong']}평 (10타석 + 카페/락커룸 최적 배치)",
+                f"• 고객 특이사항: {site['special_notes']}" if site.get('special_notes') else f"• 권장 면적: 전용 {site['area_pyeong']}평 (10타석 + 카페/락커룸 최적 배치)",
+                f"• 권장 면적: 전용 {site['area_pyeong']}평 (10타석 + 카페/락커룸 최적 배치)" if site.get('special_notes') else f"• 층고 기준: {site['clear_height_spec']}",
                 f"• 층고 기준: {site['clear_height_spec']}",
                 f"• 보/배관 간섭: 센서 투사 영역 및 스윙 궤적 내 장애물 사전 실측 필수",
                 f"• 권장 층수: 고객 접근성 높은 지상 2~3층 권장 (쾌적한 지하 1층 가능)",
@@ -715,16 +717,23 @@ class PPTXGenerator:
             self._format_cell(table_s9.cell(r, 5), f"1일 {sc['daily_users']}명 (월 {sc['monthly_users']:,}명)", font_size=9.5, color=self.c_slate, bg_color=bg_c)
             
         # 3. 하단 시나리오별 시사점 콜아웃 카드
+        c_sc = m_scen['conservative']
+        m_sc = m_scen['moderate']
+        o_sc = m_scen['optimistic']
+        
         callouts = [
-            (Inches(0.6), "■ 보수적 시나리오 (월 3,540만원)",
-             "• 상권 초기 진입 단계로 타석당 1일 12.5명 이용 시에도 손익분기점(BEP 1,940만) 여유 초과\n"
-             "• 기본 고정 단골층 125명 확보만으로도 월 순영업이익 약 1,300만원 이상 순영업이익 확보"),
-            (Inches(4.68), "■ 보편적 시나리오 (월 4,366만원)",
-             "• 평일 주간 10~17시 동호회 정기 예약 정착 및 타석당 1일 15명 이용 기준 연매출 5.2억원\n"
-             f"• 월 순영업이익 2,120만원 달성으로 약 1년 4개월({fin['investment']['payback_months_moderate']:.1f}개월) 만에 투자금 100% 회수"),
-            (Inches(8.76), "■ 긍정적 시나리오 (월 5,664만원)",
-             "• 주말 풀예약 및 야간 직장인/가족 유입 활성화로 타석당 1일 20명 이용 기준 연매출 6.8억원\n"
-             "• 10타석 풀가동 시 월 순영업이익 3,300만원 이상 창출되는 최상급 고수익 모델 달성")
+            (Inches(0.6), f"■ 보수적 시나리오 (월 {c_sc['total_revenue']//10000:,}만원)",
+             f"• 타석당 1일 {c_sc['daily_turns_per_room']}회전(1일 {c_sc['daily_users']}명) 가동 기준\n"
+             f"• 월 순영업이익 약 {c_sc['operating_profit']//10000:,}만원(이익률 {c_sc['profit_margin']}%) 확보\n"
+             f"• 손익분기 월매출(약 {fin['investment']['bep_monthly_sales']//10000:,}만원) 초과 안정 수익"),
+            (Inches(4.68), f"■ 보편적 시나리오 (월 {m_sc['total_revenue']//10000:,}만원)",
+             f"• 평일 주간 10~17시 동호회 정기 예약 중심 일 {m_sc['daily_turns_per_room']}회전 가동\n"
+             f"• 월 순영업이익 {m_sc['operating_profit']//10000:,}만원(이익률 {m_sc['profit_margin']}%) 달성\n"
+             f"• 단 {fin['investment']['payback_months_moderate']:.1f}개월(약 1년 1개월) 만에 3.19억 전액 회수"),
+            (Inches(8.76), f"■ 긍정적 시나리오 (월 {o_sc['total_revenue']//10000:,}만원)",
+             f"• 주말 단체 예약 및 주간 풀가동 일 {o_sc['daily_turns_per_room']}회전({o_sc['daily_users']}명) 달성\n"
+             f"• 월 순영업이익 {o_sc['operating_profit']//10000:,}만원(이익률 {o_sc['profit_margin']}%) 극대화\n"
+             f"• 연간 순영업익 약 {o_sc['operating_profit']*12//100000000:.1f}억원 창출 플래그십 모델")
         ]
         for bx, btitle, bdesc in callouts:
             c_box = s9.shapes.add_shape(MSO_SHAPE.RECTANGLE, bx, Inches(5.3), Inches(3.96), Inches(1.7))
