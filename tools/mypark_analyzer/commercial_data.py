@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """MYPARK 지역등급 추정 모델 엔진 (전국 지역을 4단계 등급으로 분류한 소비력·업종 특화도 추정)"""
+import os
 from .address_resolver import AddressResolver
 from .competitor_engine import CompetitorEngine
+from . import sbiz_client
 from .config import classify_region_tier, TIER_PRIME, TIER_METRO, TIER_MID_CITY
 
 class CommercialEngine:
@@ -126,6 +128,15 @@ class CommercialEngine:
             '지하철': subway
         }
 
+        # 반경 내 실제 업종 구성비 (공공데이터, DATA_GO_KR_API_KEY 없으면 None)
+        # top_growth_industries(위 성장률 추정표)를 대체하는 게 아니라, "지금 이 순간
+        # 반경 내에 실제로 어떤 업종이 몇 곳 있는지"를 보여주는 별개의 실측 스냅샷이다.
+        real_industry_mix = None
+        if os.environ.get(sbiz_client.SBIZ_API_KEY_ENV):
+            x, y = CompetitorEngine.geocode_address(full_addr)
+            if x is not None:
+                real_industry_mix = sbiz_client.industry_mix(x, y)
+
         return {
             'monthly_avg_sales': monthly_avg,
             'top_20_sales': top_20_sales,
@@ -148,7 +159,8 @@ class CommercialEngine:
             'competitor_summary': comp_res['summary'],
             'is_blue_ocean': comp_res['is_blue_ocean'],
             'base_source': 'MYPARK 지역등급 추정 모델 (Tier 1~4)',
-            'is_estimated': is_estimated_comm
+            'is_estimated': is_estimated_comm,
+            'real_industry_mix': real_industry_mix
         }
 
 CommercialEngine.get_commercial_trends = CommercialEngine.get_commercial_analysis

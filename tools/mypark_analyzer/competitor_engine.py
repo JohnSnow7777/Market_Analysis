@@ -10,6 +10,7 @@ import json
 import urllib.request
 import urllib.parse
 from .address_resolver import AddressResolver
+from . import sbiz_client
 
 KAKAO_API_KEY_ENV = 'KAKAO_REST_API_KEY'
 
@@ -288,6 +289,30 @@ class CompetitorEngine:
             return False, []
 
     @staticmethod
+    def geocode_address(address):
+        """카카오 키가 있으면 주소를 좌표로 변환. 다른 API(소상공인 등)의 좌표
+        입력으로도 공유해서 쓴다. 키 없음/실패 시 (None, None)."""
+        api_key = os.environ.get(KAKAO_API_KEY_ENV)
+        if not api_key:
+            return None, None
+        return CompetitorEngine._kakao_geocode(address, api_key)
+
+    @staticmethod
+    def search_sbiz_competitors(address, radius=3000):
+        """소상공인시장진흥공단 상가정보 공공데이터로 경쟁사 검색
+        (DATA_GO_KR_API_KEY 필요, 좌표 변환은 카카오 키 공유).
+
+        반환: None(키 없음/좌표변환 실패/API실패) 또는 리스트(0건 포함, 확정된 값).
+        """
+        if not os.environ.get(sbiz_client.SBIZ_API_KEY_ENV):
+            return None
+        x, y = CompetitorEngine.geocode_address(address)
+        if x is None:
+            print("[SBIZ] 좌표 변환 실패 (KAKAO_REST_API_KEY 미설정 또는 지오코딩 실패)")
+            return None
+        return sbiz_client.find_golf_competitors(x, y, radius=radius)
+
+    @staticmethod
     def search_live_kakao_competitors(address, radius=3000):
         """카카오 로컬 API로 실제 경쟁 매장을 실시간 검색 (KAKAO_REST_API_KEY 환경변수 필요).
 
@@ -299,7 +324,7 @@ class CompetitorEngine:
         api_key = os.environ.get(KAKAO_API_KEY_ENV)
         if not api_key:
             return None
-        x, y = CompetitorEngine._kakao_geocode(address, api_key)
+        x, y = CompetitorEngine.geocode_address(address)
         if x is None:
             return None
         ok1, docs = CompetitorEngine._kakao_keyword_search('스크린파크골프', x, y, radius, api_key)
@@ -365,8 +390,39 @@ class CompetitorEngine:
                 'summary': summary_txt
             }
 
-        # 2-1. 실측 DB에 없으면 카카오 로컬 API로 실시간 검색 시도 (KAKAO_REST_API_KEY 설정 시)
+        # 1-1. 실측 DB에 없으면 소상공인시장진흥공단 공공데이터로 우선 검색
+        # (공공데이터라 카카오와 달리 대량조회·저장이 자유롭고, 39개 필드의 업종코드가
+        #  포함돼 있어 4번 항목인 '창업 영향 업종 분석'에도 같은 호출을 재사용한다.)
+        sbiz_stores = CompetitorEngine.search_sbiz_competitors(resolved['full_address'])
+        if sbiz_stores is not None:
+            if sbiz_stores:
+                return {
+                    'region_key': s_sigungu,
+                    'stores': sbiz_stores[:4],
+                    'count': len(sbiz_stores),
+                    'verified_count': len(sbiz_stores),
+                    'is_verified': True,
+                    'is_blue_ocean': False,
+                    'summary': f"공공데이터(소상공인시장진흥공단) 기준 반경 3km 내 골프/스크린골프 관련 업소 {len(sbiz_stores)}곳 확인"
+                }
+            # 소상공인 DB에서 0건이어도 곧바로 블루오션 확정하지 않고 카카오로 한 번 더 교차확인한다
+            # (공공데이터 갱신 주기가 있어 최근 개업 매장이 아직 안 잡혔을 수 있음)
+        sbiz_confirmed_zero = (sbiz_stores == [])
+
+        # 2-1. 소상공인 DB 미설정/0건이면 카카오 로컬 API로 실시간 검색 시도 (KAKAO_REST_API_KEY 설정 시)
         live_stores = CompetitorEngine.search_live_kakao_competitors(resolved['full_address'])
+        if live_stores is None and sbiz_confirmed_zero:
+            # 카카오는 미설정/실패했지만 소상공인 공공데이터가 이미 0건을 확정했으므로
+            # 이 확정치를 그대로 채택한다 (가상 시나리오로 대체하지 않음)
+            return {
+                'region_key': 'blue_ocean',
+                'stores': [],
+                'count': 0,
+                'verified_count': 0,
+                'is_verified': True,
+                'is_blue_ocean': True,
+                'summary': "공공데이터(소상공인시장진흥공단) 기준 반경 3km 내 골프/스크린골프 관련 업소 미등록 확인 (마이파크 1호점 선점 최적지)"
+            }
         if live_stores is not None:
             if live_stores:
                 return {
