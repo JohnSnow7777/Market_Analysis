@@ -2,6 +2,7 @@
 """인구 통계 수집 및 분석 모듈 (전국 모든 시/구/동 반경 3km 생활권 정밀 지오펜싱)"""
 from .address_resolver import AddressResolver
 from .config import classify_region_tier, TIER_PRIME, TIER_METRO, TIER_MID_CITY
+from . import sgis_client
 
 # 전국 주요 거점 행정동 실측 KOSIS 인구 통계 데이터 (2026년 기준)
 DONG_POPULATION_DB = {
@@ -184,6 +185,17 @@ class DemographicsEngine:
 
         senior_ratio = round((tot_senior_50 / tot_pop * 100.0), 1) if tot_pop > 0 else 38.4
 
+        # 3-1. SGIS 실제 인구 통계로 보정 시도 (키 없음/실패 시 완전히 무시하고 기존 추정치 유지)
+        # 주의: SGIS에서 검증 확인된 건 '실제 총인구'뿐이라, 시니어 비중(%)은 기존 추정치를
+        # 그대로 곱해 적용한다 — 분모(총인구)만 실측으로 교체하는 정직한 절충.
+        sgis_used = False
+        sgis_pop = sgis_client.fetch_real_population(sido, sigungu, dong)
+        if sgis_pop and sgis_pop.get('total', 0) > 0:
+            real_total = sgis_pop['total']
+            tot_senior_50 = int(round(real_total * senior_ratio / 100.0))
+            tot_pop = real_total
+            sgis_used = True
+
         # 4. 연령별 매트릭스 비례 계산 (50대 이상 정밀 세분화)
         age_dist = [
             {'age_group': '50-54세', 'male': int(tot_senior_50 * 0.22 * 0.48), 'female': int(tot_senior_50 * 0.22 * 0.52), 'total': int(tot_senior_50 * 0.22)},
@@ -206,7 +218,12 @@ class DemographicsEngine:
         ratio_70_plus = round(pop_70_plus / tot_pop * 100.0, 1) if tot_pop > 0 else 8.1
 
         is_estimated_flag = (target_dongs_is_fallback or any(d.get('is_estimated', False) for d in dong_list))
-        data_source_text = 'KOSIS 국가통계포털 (실측 DB 매핑)' if not is_estimated_flag else 'KOSIS 시군구 통계 기반 3km 추정 모델'
+        if sgis_used:
+            data_source_text = 'SGIS 통계청 실제 인구 + MYPARK 연령비중 추정 모델'
+        elif not is_estimated_flag:
+            data_source_text = 'KOSIS 국가통계포털 (실측 DB 매핑)'
+        else:
+            data_source_text = 'KOSIS 시군구 통계 기반 3km 추정 모델'
         
         return {
             'center_dong': center_dong,
@@ -227,5 +244,6 @@ class DemographicsEngine:
             'age_distribution': age_dist,
             'base_date': '2026년 07월 KOSIS 국가통계포털 기준',
             'data_source': data_source_text,
+            'sgis_verified': sgis_used,
             'is_estimated': is_estimated_flag
         }
