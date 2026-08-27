@@ -9,8 +9,10 @@ import os
 import json
 import urllib.request
 import urllib.parse
+from concurrent.futures import ThreadPoolExecutor
 from .address_resolver import AddressResolver
 from . import sbiz_client
+from . import map_clients
 
 KAKAO_API_KEY_ENV = 'KAKAO_REST_API_KEY'
 
@@ -350,6 +352,58 @@ class CompetitorEngine:
         return stores
 
     @staticmethod
+    def search_live_multi_source_competitors(address, radius=3000):
+        """카카오+TMap+네이버 3개 지도 소스를 병렬 호출해 교차검증 (설정된 것만 사용).
+
+        한 지도 서비스에 없는 매장을 다른 서비스가 잡아낼 수 있어, 단일 소스보다
+        누락을 줄인다. 성공한 소스가 하나도 없으면 None(판정 불가), 성공한 소스가
+        하나라도 있고 전부 0건이면 []([블루오션 확인), 아니면 중복 제거한 병합 리스트.
+        """
+        kakao_key = os.environ.get(KAKAO_API_KEY_ENV)
+        x, y = CompetitorEngine.geocode_address(address) if kakao_key else (None, None)
+
+        def _run_kakao():
+            if not kakao_key or x is None:
+                return None
+            return CompetitorEngine.search_live_kakao_competitors(address, radius)
+
+        def _run_tmap():
+            if x is None:  # TMap도 좌표가 있어야 반경검색 가능 (카카오 지오코딩 공유)
+                return None
+            ok, docs = map_clients.tmap_poi_search('스크린파크골프', x, y, radius_km=max(1, radius // 1000))
+            return docs if ok else None
+
+        def _run_naver():
+            ok, docs = map_clients.naver_local_search('스크린파크골프', region_hint=address.split()[1] if len(address.split()) > 1 else '')
+            return docs if ok else None
+
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            f_kakao = executor.submit(_run_kakao)
+            f_tmap = executor.submit(_run_tmap)
+            f_naver = executor.submit(_run_naver)
+            kakao_res = f_kakao.result()
+            tmap_res = f_tmap.result()
+            naver_res = f_naver.result()
+
+        succeeded = [r for r in (kakao_res, tmap_res, naver_res) if r is not None]
+        if not succeeded:
+            return None
+        merged = map_clients.merge_dedup(*succeeded)
+        if not merged:
+            return []
+        stores = []
+        for m in merged[:4]:
+            stores.append({
+                'name': m['name'],
+                'address': m.get('address', ''),
+                'system': f"{m.get('source', '지도')} 실시간 검색 (시스템 사양 미확인)",
+                'rooms': 0,
+                'features': f"{m.get('source', '지도')} 실시간 검색 매칭 (다중 소스 교차검증)",
+                'status': '실시간 검색 확인'
+            })
+        return stores
+
+    @staticmethod
     def search_competitors(address, sigungu=None, dong=None):
         resolved = AddressResolver.resolve(address)
         s_dong = dong or resolved.get('dong', '')
@@ -410,7 +464,7 @@ class CompetitorEngine:
         sbiz_confirmed_zero = (sbiz_stores == [])
 
         # 2-1. 소상공인 DB 미설정/0건이면 카카오 로컬 API로 실시간 검색 시도 (KAKAO_REST_API_KEY 설정 시)
-        live_stores = CompetitorEngine.search_live_kakao_competitors(resolved['full_address'])
+        live_stores = CompetitorEngine.search_live_multi_source_competitors(resolved['full_address'])
         if live_stores is None and sbiz_confirmed_zero:
             # 카카오는 미설정/실패했지만 소상공인 공공데이터가 이미 0건을 확정했으므로
             # 이 확정치를 그대로 채택한다 (가상 시나리오로 대체하지 않음)
@@ -432,7 +486,7 @@ class CompetitorEngine:
                     'verified_count': len(live_stores),
                     'is_verified': True,
                     'is_blue_ocean': False,
-                    'summary': f"카카오맵 실시간 검색 결과 반경 3km 내 {len(live_stores)}곳 매칭 (실시간 API 연동 결과)"
+                    'summary': f"지도 API 실시간 검색 결과 반경 3km 내 {len(live_stores)}곳 매칭 (카카오/TMap/네이버 교차검증)"
                 }
             return {
                 'region_key': 'blue_ocean',
@@ -441,10 +495,10 @@ class CompetitorEngine:
                 'verified_count': 0,
                 'is_verified': True,
                 'is_blue_ocean': True,
-                'summary': "카카오맵 실시간 검색 결과 반경 3km 내 상업용 전문 스크린 파크골프장 미등록 확인 (마이파크 1호점 선점 최적지)"
+                'summary': "지도 API 실시간 검색 결과 반경 3km 내 상업용 전문 스크린 파크골프장 미등록 확인 (카카오/TMap/네이버 교차검증, 마이파크 1호점 선점 최적지)"
             }
 
-        # 3. 실측 DB 미등록 + 실시간 API 미설정(KAKAO_REST_API_KEY 없음)인 경우:
+        # 3. 실측 DB 미등록 + 실시간 API 전부 미설정인 경우:
         #    실제 업체가 아닌 "가상 시나리오"임을 명확히 표시하여 예시로만 제공
         fallback_stores = [
             {
