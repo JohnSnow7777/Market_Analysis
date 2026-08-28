@@ -104,7 +104,7 @@ class ScoringEngine:
             grade_desc = '출점 양호 (Standard Spot)'
         else:
             grade = 'C'
-            grade_desc = '출점 신중 검토 (Sub-Prime Spot)'
+            grade_desc = '출점 검토사안 (Sub-Prime Spot)'
             
         inv = financials['investment']
         sc = financials['monthly_scenarios']['moderate']
