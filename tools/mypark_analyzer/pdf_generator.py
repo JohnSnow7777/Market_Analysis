@@ -439,7 +439,7 @@ class PDFGenerator:
         c.rect(495, 260, box4_w, 200, fill=1, stroke=1)
         c.setFont(FONT_BOLD, 10.5)
         c.setFillColor(self.c_mck_navy)
-        c.drawString(511, 438, "■ TOP 5 매출 증가 업종 (소상공인시장진흥공단)")
+        c.drawString(511, 438, "■ TOP 5 매출 증가 업종 (MYPARK 지역등급 추정)")
 
         c.setFont(FONT_BOLD, 8)
         c.setFillColor(self.c_slate)
