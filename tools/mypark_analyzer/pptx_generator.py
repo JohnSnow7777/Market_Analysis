@@ -177,7 +177,7 @@ class PPTXGenerator:
 
         p_b2 = tf1_b.add_paragraph()
         p_b2.space_before = Pt(4)
-        p_b2.text = "CONFIDENTIAL — 본 문서는 사업성 검토 목적 외 무단 복제 및 배포를 엄격히 금합니다."
+        p_b2.text = "CONFIDENTIAL: 본 문서는 사업성 검토 목적 외 무단 복제 및 배포를 엄격히 금합니다."
         p_b2.font.name = 'Malgun Gothic'
         p_b2.font.size = Pt(9.5)
         p_b2.font.color.rgb = RGBColor(160, 178, 198)
@@ -317,7 +317,7 @@ class PPTXGenerator:
             r1.font.size = Pt(9.2)
             r1.font.color.rgb = self.c_mck_navy
             r2 = p_m.add_run()
-            r2.text = f"{cnt} ({rt}) — {beh}"
+            r2.text = f"{cnt} ({rt}), {beh}"
             r2.font.size = Pt(9.2)
             r2.font.color.rgb = self.c_charcoal
 
@@ -515,10 +515,10 @@ class PPTXGenerator:
             p_m1.alignment = PP_ALIGN.CENTER
             if c.get('rooms', 0) > 0:
                 p_m1.text = f"{c.get('rooms', 0)}타석 규모"
-            elif '가상 시나리오' in c.get('status', ''):
+            elif '예시 시나리오' in c.get('status', ''):
                 p_m1.text = "1호점 선점 대상"
             else:
-                p_m1.text = "타석수 미확인 (실존 업체)"
+                p_m1.text = "타석 규모 미확인"
             p_m1.font.bold = True
             p_m1.font.size = Pt(13)
             p_m1.font.color.rgb = self.c_mck_navy
@@ -554,7 +554,7 @@ class PPTXGenerator:
             p3.space_before = Pt(5)
             if c.get('rooms', 0) > 0:
                 p3.text = f"■ 보유 규모: {c['rooms']}타석 운영"
-            elif '가상 시나리오' in c.get('status', ''):
+            elif '예시 시나리오' in c.get('status', ''):
                 p3.text = "■ 상태: 상업용 매장 미등록"
             else:
                 p3.text = "■ 보유 규모: 타석수 미확인"
@@ -568,8 +568,8 @@ class PPTXGenerator:
             p4.font.color.rgb = self.c_slate
             
         _comp_summary = comm.get('competitor_summary', '')
-        if '가상 시나리오' in _comp_summary or '실측/실시간 검색 결과 없음' in _comp_summary:
-            _comp_source = "MYPARK Competitor Database Matching (Live POI Search Unavailable — Hypothetical Scenario)"
+        if '예시 시나리오' in _comp_summary:
+            _comp_source = "MYPARK Competitor Database Matching (Hypothetical Scenario, Live Search Unavailable)"
         elif '소상공인시장진흥공단' in _comp_summary:
             _comp_source = "SBIZ (Small Business Market Promotion Agency) Public Data"
         elif '지도 API 실시간 검색' in _comp_summary:
@@ -718,11 +718,11 @@ class PPTXGenerator:
         
         top8_b = s8.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(6.8), Inches(1.45), Inches(5.9), Inches(0.5))
         top8_b.fill.solid()
-        top8_b.fill.fore_color.rgb = RGBColor(176, 71, 60)
+        top8_b.fill.fore_color.rgb = self.c_mck_navy
         top8_b.line.fill.background()
         tf8_bt = top8_b.text_frame
         p8_bt = tf8_bt.paragraphs[0]
-        p8_bt.text = " ⚠️ 투자 결정 전 반드시 확인하십시오 (사업 추진 유의사항)"
+        p8_bt.text = " 참고사항 (사업 검토 시 확인해 주십시오)"
         p8_bt.font.bold = True
         p8_bt.font.size = Pt(11)
         p8_bt.font.color.rgb = self.c_white
@@ -731,6 +731,12 @@ class PPTXGenerator:
         tf8_bb = tb8_bb.text_frame
         tf8_bb.word_wrap = True
         
+        _comp_summary8 = comm.get('competitor_summary', '')
+        if '예시 시나리오' in _comp_summary8:
+            _methodology_txt8 = "본 보고서는 KOSIS 인구통계, MYPARK 지역등급 추정 모델, 표준 재무 모델에 기반한 추정 분석 자료입니다."
+        else:
+            _methodology_txt8 = "본 보고서는 인구통계, 실측 경쟁사 데이터, MYPARK 지역등급 추정 모델, 표준 재무 모델을 결합한 종합분석자료입니다."
+
         items8_b = [
             ("● 현장 실측 및 인허가 유의사항", [
                 "• 위 수치는 표준 모델 기준 추정치이며, 실제 임대료·공사비는 현장 견적에 따라 달라질 수 있습니다.",
@@ -740,9 +746,9 @@ class PPTXGenerator:
                 "• 매니저/직원을 채용해 위탁 운영할 경우 인건비 증가(월 500~750만)로 회수기간이 늘어납니다.",
                 "• 인테리어 및 시뮬레이터 단가는 본 계약 시점의 공식 견적을 확인하십시오."
             ]),
-            ("● 재무 타당성 분석의 법적 한계", [
-                "• 본 보고서는 공공 빅데이터와 표준 재무 모델에 기반한 추정 분석 자료이며, 실제 미래 사업 성과를 보장하지 않습니다.",
-                "• 최종 창업 결정 전 세무, 법률, 현장 실측 전문가와의 상담을 권장합니다."
+            ("● 분석 방법론 및 활용 안내", [
+                f"• {_methodology_txt8}",
+                "• 마이파크 사업부서 전문가와의 상담을 권장하며, 특정 수익률을 보장하지 않습니다."
             ])
         ]
         for idx, (btitle, blines) in enumerate(items8_b):
@@ -759,7 +765,7 @@ class PPTXGenerator:
                 p_l.font.size = Pt(8.8)
                 p_l.font.color.rgb = self.c_charcoal
 
-        self._add_source_footer(s8, "MYPARK Standard Investment Criteria & Regulatory Caveat")
+        self._add_source_footer(s8, "MYPARK Standard Investment Criteria & Reference Notes")
 
         # ---------------------------------------------------------------------
         # Slide 9: 8. 사업 타당성 분석 - 매출 추정 (3대 시나리오)
@@ -1040,7 +1046,7 @@ class PPTXGenerator:
         
         tf_tbl = top_bar_l.text_frame
         p_tbl = tf_tbl.paragraphs[0]
-        p_tbl.text = " 🌟【 가맹점 출점 기대효과 및 핵심 경쟁력 】"
+        p_tbl.text = " 【 가맹점 출점 기대효과 및 핵심 경쟁력 】"
         p_tbl.font.size = Pt(11)
         p_tbl.font.bold = True
         p_tbl.font.color.rgb = self.c_white
@@ -1104,7 +1110,7 @@ class PPTXGenerator:
         
         tf_tbr = top_bar_r.text_frame
         p_tbr = tf_tbr.paragraphs[0]
-        p_tbr.text = " 🏢【 건물주 및 상가 전체 상생 활성화 효과 】"
+        p_tbr.text = " 【 건물주 및 상가 전체 상생 활성화 효과 】"
         p_tbr.font.size = Pt(11)
         p_tbr.font.bold = True
         p_tbr.font.color.rgb = self.c_white

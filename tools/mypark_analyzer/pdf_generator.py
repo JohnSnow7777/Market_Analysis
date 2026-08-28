@@ -193,7 +193,7 @@ class PDFGenerator:
         c.drawString(60, 60, "마이파크(MYPARK) 가맹본부 데이터전략실")
         c.setFont(FONT_REGULAR, 9)
         c.setFillColor(HexColor('#A0B2C6'))
-        c.drawString(60, 44, "CONFIDENTIAL — 본 문서는 사업성 검토 목적 외 무단 복제 및 배포를 금합니다.")
+        c.drawString(60, 44, "CONFIDENTIAL: 본 문서는 사업성 검토 목적 외 무단 복제 및 배포를 금합니다.")
         c.showPage()
 
         # ---------------------------------------------------------------------
@@ -484,13 +484,13 @@ class PDFGenerator:
             c.rect(cur_x + 8, 352, card_w - 16, 54, fill=1, stroke=0)
             c.setFillColor(self.c_mck_navy)
             c.setFont(FONT_BOLD, 10.5)
-            is_hypothetical = '가상 시나리오' in comp.get('status', '')
+            is_hypothetical = '예시 시나리오' in comp.get('status', '')
             if comp.get('rooms', 0) > 0:
                 r_str = f"{comp.get('rooms', 0)}타석 규모"
             elif is_hypothetical:
                 r_str = "1호점 선점 대상"
             else:
-                r_str = "타석수 미확인 (실존 업체)"
+                r_str = "타석 규모 미확인"
             c.drawCentredString(cur_x + card_w/2, 388, r_str)
             c.setFont(FONT_REGULAR, 7.5)
             c.setFillColor(self.c_slate)
@@ -515,7 +515,7 @@ class PDFGenerator:
             c.setFillColor(self.c_charcoal)
             if comp.get('rooms', 0) > 0:
                 rooms_str = f"■ 규모: {comp['rooms']}타석 운영"
-            elif '가상 시나리오' in comp.get('status', ''):
+            elif '예시 시나리오' in comp.get('status', ''):
                 rooms_str = "■ 상태: 상업용 매장 미등록"
             else:
                 rooms_str = "■ 규모: 타석수 미확인"
@@ -528,8 +528,8 @@ class PDFGenerator:
             self._draw_multiline_text(c, feat_str, cur_x + 10, 166, max_chars=15, line_height=13, max_lines=6, font_name=FONT_REGULAR, font_size=7.5, color=self.c_charcoal)
             
         _comp_summary = comm.get('competitor_summary', '')
-        if '가상 시나리오' in _comp_summary or '실측/실시간 검색 결과 없음' in _comp_summary:
-            _comp_source = "MYPARK Competitor Database Matching (Live POI Search Unavailable — Hypothetical Scenario)"
+        if '예시 시나리오' in _comp_summary:
+            _comp_source = "MYPARK Competitor Database Matching (Hypothetical Scenario, Live Search Unavailable)"
         elif '소상공인시장진흥공단' in _comp_summary:
             _comp_source = "SBIZ (Small Business Market Promotion Agency) Public Data"
         elif '지도 API 실시간 검색' in _comp_summary:
@@ -661,11 +661,11 @@ class PDFGenerator:
         c.setStrokeColor(self.c_line)
         c.rect(495, 48, right_col_w, 412, fill=1, stroke=1)
 
-        c.setFillColor(HexColor('#B0473C'))
+        c.setFillColor(self.c_mck_navy)
         c.rect(495, 418, right_col_w, 42, fill=1, stroke=0)
         c.setFillColor(self.c_white)
         c.setFont(FONT_BOLD, 10.5)
-        hdr_lines = self._wrap_text_to_width(c, "투자 결정 전 반드시 확인하십시오 (사업 추진 유의사항)", FONT_BOLD, 10.5, rb_text_w, max_lines=2)
+        hdr_lines = self._wrap_text_to_width(c, "참고사항 (사업 검토 시 확인해 주십시오)", FONT_BOLD, 10.5, rb_text_w, max_lines=2)
         hy = 442 if len(hdr_lines) > 1 else 436
         for hl in hdr_lines:
             c.drawString(511, hy, hl)
@@ -674,11 +674,12 @@ class PDFGenerator:
         def draw_wrapped_bullets(start_y, bullets):
             yy = start_y
             for b in bullets:
-                lines_b = self._wrap_text_to_width(c, b, FONT_REGULAR, 8.5, rb_text_w, max_lines=2)
+                b_text, b_max_lines = b if isinstance(b, tuple) else (b, 2)
+                lines_b = self._wrap_text_to_width(c, b_text, FONT_REGULAR, 8.5, rb_text_w, max_lines=b_max_lines)
                 for bl in lines_b:
                     c.drawString(511, yy, bl)
-                    yy -= 15
-                yy -= 3
+                    yy -= 13
+                yy -= 2
             return yy
 
         c.setFont(FONT_BOLD, 9.5)
@@ -702,24 +703,29 @@ class PDFGenerator:
             "• 인테리어 및 시뮬레이터 단가는 본 계약 시점의 공식 견적을 확인하십시오.",
         ])
 
+        _comp_summary8 = comm.get('competitor_summary', '')
+        if '예시 시나리오' in _comp_summary8:
+            _methodology_txt = "본 보고서는 KOSIS 인구통계, MYPARK 지역등급 추정 모델, 표준 재무 모델에 기반한 추정 분석 자료입니다."
+        else:
+            _methodology_txt = "본 보고서는 인구통계, 실측 경쟁사 데이터, MYPARK 지역등급 추정 모델, 표준 재무 모델을 결합한 종합분석자료입니다."
+
         c.setFont(FONT_BOLD, 9.5)
         c.setFillColor(self.c_mck_navy)
-        c.drawString(511, y_after2 - 8, "● 재무 타당성 분석의 법적 한계")
+        c.drawString(511, y_after2 - 8, "● 분석 방법론 및 활용 안내")
         c.setFont(FONT_REGULAR, 8.5)
         c.setFillColor(self.c_slate)
         draw_wrapped_bullets(y_after2 - 30, [
-            "• 본 보고서는 KOSIS 인구통계와 MYPARK 지역등급 추정 모델, 표준 재무 모델에 기반한 추정 분석 자료입니다.",
-            "• 실제 미래 사업 성과나 특정 수익률을 보장하지 않습니다.",
-            "• 최종 창업 결정 전 세무, 법률, 현장 실측 전문가와의 상담을 권장합니다.",
+            f"• {_methodology_txt}",
+            "• 마이파크 사업부서 전문가와의 상담을 권장하며, 특정 수익률을 보장하지 않습니다.",
         ])
 
         alert_h = 54
-        c.setFillColor(HexColor('#FEF2F2'))
-        c.setStrokeColor(HexColor('#FECACA'))
+        c.setFillColor(self.c_tint_blue)
+        c.setStrokeColor(self.c_line)
         c.rect(511, 60, rb_right - 16 - 511, alert_h, fill=1, stroke=1)
         c.setFont(FONT_BOLD, 8.5)
-        c.setFillColor(HexColor('#991B1B'))
-        alert_lines = self._wrap_text_to_width(c, "★ 9~12장의 모든 매출·손익·BEP 추정치는 위 표준 모델을 전제로 산출되었습니다.", FONT_BOLD, 8.5, rb_text_w - 14, max_lines=2)
+        c.setFillColor(self.c_mck_navy)
+        alert_lines = self._wrap_text_to_width(c, "참고: 9~12장의 모든 매출·손익·BEP 추정치는 위 표준 모델을 전제로 산출되었습니다.", FONT_BOLD, 8.5, rb_text_w - 14, max_lines=2)
         ay = 60 + alert_h - 16
         for al in alert_lines:
             c.drawString(525, ay, al)
@@ -727,7 +733,7 @@ class PDFGenerator:
         c.setFont(FONT_REGULAR, 7.5)
         c.drawString(525, ay - 4, f"(기준: {site['rooms']}타석 {site['area_pyeong']}평 / 총투자금 {fmt_eok(inv['total_capex'])} / 점주 {site['staff_count']}인 상주 운영 모델)")
 
-        self._draw_footer(c, "MYPARK Standard Investment Criteria & Regulatory Caveat")
+        self._draw_footer(c, "MYPARK Standard Investment Criteria & Reference Notes")
         c.showPage()
 
         # ---------------------------------------------------------------------
@@ -912,7 +918,7 @@ class PDFGenerator:
         c.rect(40, 48, 425, 196, fill=1, stroke=1)
         c.setFont(FONT_BOLD, 10.5)
         c.setFillColor(self.c_mck_navy)
-        c.drawString(56, 222, "🌟【 가맹점주 핵심 경쟁력 및 최종 제언 】")
+        c.drawString(56, 222, "【 가맹점주 핵심 경쟁력 및 최종 제언 】")
         c.setFont(FONT_REGULAR, 8.5)
         c.setFillColor(self.c_charcoal)
         val_f_lines = score['value_franchisee'].split('\n')
@@ -929,7 +935,7 @@ class PDFGenerator:
         c.rect(495, 48, right_col_w, 196, fill=1, stroke=1)
         c.setFont(FONT_BOLD, 10.5)
         c.setFillColor(HexColor('#166534'))
-        c.drawString(511, 222, "🏢【 건물주 및 상가 상생 활성화 효과 】")
+        c.drawString(511, 222, "【 건물주 및 상가 상생 활성화 효과 】")
         c.setFont(FONT_REGULAR, 8.5)
         c.setFillColor(HexColor('#14532D'))
         val_l_lines = score['value_landlord'].split('\n')

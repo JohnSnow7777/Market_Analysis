@@ -35,7 +35,7 @@ VERIFIED_NATIONAL_PARK_GOLF_DB = [
         'address': '경기도 고양시 덕양구 어울림로 33 (성사동, 사업지 1.8km)',
         'system': '지자체 공공 복지 실내 타석',
         'rooms': 2,
-        'features': '관내 시니어 복지 전용 시설 (일반 상업 예약 불가, 민간 전환 대기 수요 풍부)',
+        'features': '지자체가 운영하는 시니어 복지 전용 시설로 일반 상업 예약은 불가하나, 유료 민간 시설 전환에 대한 잠재 수요가 있는 것으로 파악됩니다.',
         'status': '공공시설',
         'sido': '경기도',
         'sigungu': '고양시 덕양구',
@@ -103,7 +103,7 @@ VERIFIED_NATIONAL_PARK_GOLF_DB = [
         'address': '경기도 성남시 분당구 불정로 50 (정자동, 사업지 2.8km)',
         'system': '지자체 공공 복지 시설',
         'rooms': 2,
-        'features': '관내 시니어 복지 전용 시설 (일반 상업용 예약 불가, 대기 수요 풍부)',
+        'features': '지자체가 운영하는 시니어 복지 전용 시설로 일반 상업 예약은 불가하나, 유료 민간 시설 전환에 대한 잠재 수요가 있는 것으로 파악됩니다.',
         'status': '공공시설',
         'sido': '경기도',
         'sigungu': '성남시 분당구',
@@ -340,13 +340,14 @@ class CompetitorEngine:
         stores = []
         for d in docs[:4]:
             dist_m = d.get('distance')
-            dist_txt = f"{float(dist_m)/1000:.1f}km" if dist_m else '거리 미확인'
+            dist_txt = f"약 {float(dist_m)/1000:.1f}km" if dist_m else '거리 확인 불가'
+            phone_txt = d.get('phone') or '확인되지 않음'
             stores.append({
                 'name': d.get('place_name', '이름 미상'),
                 'address': d.get('road_address_name') or d.get('address_name', ''),
-                'system': '카카오맵 실시간 검색 (시스템 사양 미확인)',
+                'system': '시스템 사양은 현장 확인이 필요합니다.',
                 'rooms': 0,
-                'features': f"카카오맵 실시간 검색 매칭 (사업지 기준 {dist_txt} · 전화: {d.get('phone') or '미등록'})",
+                'features': f"사업지 기준 {dist_txt} 거리에 위치한 업체로 확인됩니다. 문의처: {phone_txt}",
                 'status': '실시간 검색 확인'
             })
         return stores
@@ -393,12 +394,13 @@ class CompetitorEngine:
             return []
         stores = []
         for m in merged[:4]:
+            src = m.get('source', '지도')
             stores.append({
                 'name': m['name'],
                 'address': m.get('address', ''),
-                'system': f"{m.get('source', '지도')} 실시간 검색 (시스템 사양 미확인)",
+                'system': '시스템 사양은 현장 확인이 필요합니다.',
                 'rooms': 0,
-                'features': f"{m.get('source', '지도')} 실시간 검색 매칭 (다중 소스 교차검증)",
+                'features': f"{src} 지도 데이터에서 실제 운영 중인 업체로 확인되었습니다.",
                 'status': '실시간 검색 확인'
             })
         return stores
@@ -431,9 +433,9 @@ class CompetitorEngine:
         is_self_location = any(k in full_addr for k in ['우경', '화신로272번길 11', '마실파크골프'])
 
         if final_stores:
-            summary_txt = f"반경 3km 내 실측 전문 매장 {len(final_stores)}곳 운영 중 ({final_stores[0]['name'].split()[0]} 등 주요 매장 실측 완료)"
+            summary_txt = f"반경 3km 내 실측 전문 매장 {len(final_stores)}곳이 운영 중이며, {final_stores[0]['name'].split()[0]} 등 주요 매장의 현황을 확인했습니다."
             if is_self_location:
-                summary_txt = f"【현 사업지 실측】 현재 운영 중인 '{final_stores[0]['name']}' 매장 주소지 (리뉴얼 및 상권 독점 강화 분석)"
+                summary_txt = f"현재 이 주소에서 운영 중인 '{final_stores[0]['name']}' 매장을 대상으로, 리뉴얼 및 상권 경쟁력 강화 관점에서 분석했습니다."
             return {
                 'region_key': s_sigungu,
                 'stores': final_stores,
@@ -486,7 +488,7 @@ class CompetitorEngine:
                     'verified_count': len(live_stores),
                     'is_verified': True,
                     'is_blue_ocean': False,
-                    'summary': f"지도 API 실시간 검색 결과 반경 3km 내 {len(live_stores)}곳 매칭 (카카오/TMap/네이버 교차검증)"
+                    'summary': f"카카오·TMap·네이버 지도 데이터를 교차 확인한 결과, 반경 3km 내 {len(live_stores)}곳의 관련 업체가 확인되었습니다."
                 }
             return {
                 'region_key': 'blue_ocean',
@@ -495,43 +497,43 @@ class CompetitorEngine:
                 'verified_count': 0,
                 'is_verified': True,
                 'is_blue_ocean': True,
-                'summary': "지도 API 실시간 검색 결과 반경 3km 내 상업용 전문 스크린 파크골프장 미등록 확인 (카카오/TMap/네이버 교차검증, 마이파크 1호점 선점 최적지)"
+                'summary': "카카오·TMap·네이버 지도 데이터를 교차 확인한 결과, 반경 3km 내 상업용 전문 스크린 파크골프 매장이 확인되지 않아 1호점 선점에 유리한 입지로 판단됩니다."
             }
 
         # 3. 실측 DB 미등록 + 실시간 API 전부 미설정인 경우:
         #    실제 업체가 아닌 "가상 시나리오"임을 명확히 표시하여 예시로만 제공
         fallback_stores = [
             {
-                'name': f"({s_sigungu} 예시) 스크린 파크골프 매장",
+                'name': f"{s_sigungu} 예시 매장 A",
                 'address': f"{resolved['full_address']} 반경 1.5km 중심 권역",
                 'system': '마이파크 최신 플래그십 표준 권장',
                 'rooms': 10,
-                'features': f"실제 업체 정보 아님 — {s_sigungu} 핵심 상권 내 대형 플래그십 매장이 있을 경우를 가정한 예시 시나리오입니다.",
-                'status': '가상 시나리오 (미확인)'
+                'features': f"실제 운영 중인 업체가 아니며, {s_sigungu} 핵심 상권에 대형 플래그십 매장이 있다고 가정했을 때의 예시입니다.",
+                'status': '예시 시나리오 (미확인)'
             },
             {
-                'name': f"({s_sigungu} 예시) 지자체 복지관 실내스크린",
+                'name': f"{s_sigungu} 예시 매장 B (지자체 복지관 실내스크린)",
                 'address': f"{s_sido} {s_sigungu} 행정복지센터 인근",
-                'system': '지자체 공공 복지 실내 타석 (가정)',
+                'system': '지자체 공공 복지 실내 타석으로 가정',
                 'rooms': 2,
-                'features': '실제 업체 정보 아님 — 지자체 복지관에 저가 실내 타석이 있을 경우를 가정한 예시 시나리오입니다.',
-                'status': '가상 시나리오 (미확인)'
+                'features': '실제 운영 중인 업체가 아니며, 지자체 복지관에 저가 실내 타석이 있다고 가정했을 때의 예시입니다.',
+                'status': '예시 시나리오 (미확인)'
             },
             {
-                'name': f"({s_sigungu} 예시) 일반 스크린골프장 A",
+                'name': f"{s_sigungu} 예시 매장 C (일반 스크린골프장)",
                 'address': f"{resolved['full_address']} 인근 상업지구",
-                'system': '일반 20~40대 골프존 투비전 (가정)',
+                'system': '일반 20~40대 골프존 투비전으로 가정',
                 'rooms': 7,
-                'features': '실제 업체 정보 아님 — 시니어 전용 타석이 없는 일반 스크린골프장이 있을 경우를 가정한 예시 시나리오입니다.',
-                'status': '가상 시나리오 (미확인)'
+                'features': '실제 운영 중인 업체가 아니며, 시니어 전용 타석이 없는 일반 스크린골프장이 있다고 가정했을 때의 예시입니다.',
+                'status': '예시 시나리오 (미확인)'
             },
             {
-                'name': f"({s_sigungu} 예시) 일반 스크린골프장 B",
+                'name': f"{s_sigungu} 예시 매장 D (일반 스크린골프장)",
                 'address': f"{resolved['full_address']} 인근 중심상가",
-                'system': '일반 카카오VX 프렌즈스크린 (가정)',
+                'system': '일반 카카오VX 프렌즈스크린으로 가정',
                 'rooms': 8,
-                'features': '실제 업체 정보 아님 — 야간 직장인 위주로 운영되는 일반 매장이 있을 경우를 가정한 예시 시나리오입니다.',
-                'status': '가상 시나리오 (미확인)'
+                'features': '실제 운영 중인 업체가 아니며, 야간 직장인 위주로 운영되는 일반 매장이 있다고 가정했을 때의 예시입니다.',
+                'status': '예시 시나리오 (미확인)'
             }
         ]
         return {
@@ -541,5 +543,5 @@ class CompetitorEngine:
             'verified_count': None,
             'is_verified': False,
             'is_blue_ocean': False,
-            'summary': f"반경 3km 내 실측/실시간 검색 결과 없음 — 아래 4곳은 참고용 가상 시나리오입니다 (실시간 API 미설정)"
+            'summary': "반경 3km 내 실측 데이터 및 실시간 검색 결과가 없어, 아래 4곳은 참고용으로 작성한 예시 시나리오입니다."
         }
