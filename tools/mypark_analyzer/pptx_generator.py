@@ -20,17 +20,20 @@ class PPTXGenerator:
         self.blank_layout = self.prs.slide_layouts[6]
 
         # McKinsey Classic Color Palette
-        self.c_mck_navy = RGBColor(0, 43, 73)      # Deep Navy #002B49
-        self.c_mck_teal = RGBColor(0, 163, 166)    # Accent Teal #00A3A6
-        self.c_charcoal = RGBColor(34, 34, 34)     # Body text #222222
-        self.c_slate = RGBColor(85, 85, 85)        # Subtext #555555
-        self.c_line = RGBColor(208, 208, 208)      # Divider #D0D0D0
-        self.c_box_bg = RGBColor(248, 250, 252)    # #F8FAFC
-        self.c_tint_blue = RGBColor(240, 244, 248) # #F0F4F8
+        self.c_mck_navy = RGBColor(0x14, 0x18, 0x1F)   # Ink #14181F
+        self.c_mck_teal = RGBColor(0x1F, 0x5A, 0x44)   # Emerald accent #1F5A44
+        self.c_charcoal = RGBColor(0x14, 0x18, 0x1F)   # Body text
+        self.c_slate = RGBColor(0x6B, 0x6F, 0x76)      # Subtext
+        self.c_line = RGBColor(0xD3, 0xD1, 0xCB)       # Divider
+        self.c_box_bg = RGBColor(0xEB, 0xEA, 0xE5)     # Card bg
+        self.c_tint_blue = RGBColor(0xE3, 0xEC, 0xE7)  # Emerald-tinted card bg
         self.c_white = RGBColor(255, 255, 255)
-        self.c_red = RGBColor(192, 0, 0)
+        self.c_red = RGBColor(0xB2, 0x3A, 0x2E)
+        self.c_paper = RGBColor(0xF4, 0xF3, 0xF0)      # Slide background (ledger paper)
 
     def _add_mckinsey_header(self, slide, section_title, lead_text):
+        slide.background.fill.solid()
+        slide.background.fill.fore_color.rgb = self.c_paper
         top_bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), self.prs.slide_width, Inches(0.4))
         top_bar.fill.solid()
         top_bar.fill.fore_color.rgb = self.c_mck_navy
@@ -157,14 +160,14 @@ class PPTXGenerator:
         p3.text = f"대상 주소: {site['full_address']}{notes_txt}  |  표준 모델: {site['rooms']}타석 ({site['area_pyeong']}평)"
         p3.font.name = 'Malgun Gothic'
         p3.font.size = Pt(13)
-        p3.font.color.rgb = RGBColor(226, 232, 240)
+        p3.font.color.rgb = RGBColor(0xC7, 0xCB, 0xC3)
 
         p4 = tf1.add_paragraph()
         p4.space_before = Pt(6)
         p4.text = f"상권 분석 범위: {site['sido']} {site['sigungu']} {target_dong} 반경 3km 생활권  |  분석 기준: {data.get('created_at', '2026.08')}"
         p4.font.name = 'Malgun Gothic'
         p4.font.size = Pt(13)
-        p4.font.color.rgb = RGBColor(226, 232, 240)
+        p4.font.color.rgb = RGBColor(0xC7, 0xCB, 0xC3)
 
         tb1_bot = s1.shapes.add_textbox(Inches(1.0), Inches(6.0), Inches(11.333), Inches(0.8))
         tf1_b = tb1_bot.text_frame
@@ -180,7 +183,7 @@ class PPTXGenerator:
         p_b2.text = "CONFIDENTIAL: 본 문서는 사업성 검토 목적 외 무단 복제 및 배포를 엄격히 금합니다."
         p_b2.font.name = 'Malgun Gothic'
         p_b2.font.size = Pt(9.5)
-        p_b2.font.color.rgb = RGBColor(160, 178, 198)
+        p_b2.font.color.rgb = RGBColor(0x9B, 0xA7, 0x9E)
 
         # ---------------------------------------------------------------------
         # Slide 2: 1. 입지 적합성 종합 판정 (5-Dimension Diamond Scoring)

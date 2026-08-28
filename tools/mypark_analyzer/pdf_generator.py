@@ -18,31 +18,29 @@ FONT_BOLD = "Helvetica-Bold"
 def init_fonts(custom_candidates=None):
     global FONT_REGULAR, FONT_BOLD
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    font_candidates = custom_candidates or [
-        os.path.join(current_dir, 'fonts', 'MalgunGothic.ttf'),
-        os.path.join(current_dir, 'fonts', 'MalgunGothicBold.ttf'),
-        r'C:\Windows\Fonts\malgun.ttf',
-        r'C:\Windows\Fonts\malgunbd.ttf',
-        r'C:\Windows\Fonts\NanumGothic.ttf',
-        r'C:\Windows\Fonts\NanumGothicBold.ttf',
-        '/usr/share/fonts/truetype/nanum/NanumGothic.ttf',
-        '/usr/share/fonts/truetype/nanum/NanumGothicBold.ttf'
+    font_pairs = custom_candidates or [
+        (os.path.join(current_dir, 'fonts', 'IBMPlexSansKR-Regular.ttf'), os.path.join(current_dir, 'fonts', 'IBMPlexSansKR-Bold.ttf')),
+        (os.path.join(current_dir, 'fonts', 'MalgunGothic.ttf'), os.path.join(current_dir, 'fonts', 'MalgunGothicBold.ttf')),
+        (r'C:\Windows\Fonts\malgun.ttf', r'C:\Windows\Fonts\malgunbd.ttf'),
+        (r'C:\Windows\Fonts\NanumGothic.ttf', r'C:\Windows\Fonts\NanumGothicBold.ttf'),
+        ('/usr/share/fonts/truetype/nanum/NanumGothic.ttf', '/usr/share/fonts/truetype/nanum/NanumGothicBold.ttf'),
     ]
-    for fpath in font_candidates:
-        if os.path.exists(fpath):
+    for regular_path, bold_path in font_pairs:
+        if os.path.exists(regular_path):
             try:
-                pdfmetrics.registerFont(TTFont('KoreanFont', fpath))
-                pdfmetrics.registerFont(TTFont('KoreanFontBold', fpath))
+                pdfmetrics.registerFont(TTFont('KoreanFont', regular_path))
+                bold_source = bold_path if os.path.exists(bold_path) else regular_path
+                pdfmetrics.registerFont(TTFont('KoreanFontBold', bold_source))
                 FONT_REGULAR = 'KoreanFont'
                 FONT_BOLD = 'KoreanFontBold'
-                print(f"[SUCCESS] Registered Korean Font: {fpath}")
+                print(f"[SUCCESS] Registered Korean Font: {regular_path} (bold: {bold_source})")
                 return True
             except Exception as e:
-                print(f"[WARN] Failed to load {fpath}: {e}")
-                
+                print(f"[WARN] Failed to load {regular_path}: {e}")
+
     FONT_REGULAR = "Helvetica"
     FONT_BOLD = "Helvetica-Bold"
-    print("[FONT WARNING] 한글 폰트를 찾지 못해 Helvetica로 대체합니다 — 생성되는 PDF의 한글이 깨질 수 있습니다.")
+    print("[FONT WARNING] 한글 폰트를 찾지 못해 Helvetica로 대체합니다. 생성되는 PDF의 한글이 깨질 수 있습니다.")
     return False
 
 init_fonts()
@@ -56,16 +54,17 @@ class PDFGenerator:
         self.pagesize = landscape(A4)
         self.width, self.height = self.pagesize
 
-        # McKinsey Classic Color Palette
-        self.c_mck_navy = HexColor('#002B49')
-        self.c_mck_teal = HexColor('#00A3A6')
-        self.c_charcoal = HexColor('#222222')
-        self.c_slate = HexColor('#555555')
-        self.c_line = HexColor('#D0D0D0')
-        self.c_box_bg = HexColor('#F8FAFC')
-        self.c_tint_blue = HexColor('#F0F4F8')
+        # Monochrome Ledger Color Palette
+        self.c_mck_navy = HexColor('#14181F')      # ink (was navy)
+        self.c_mck_teal = HexColor('#1F5A44')       # emerald accent (was teal)
+        self.c_charcoal = HexColor('#14181F')
+        self.c_slate = HexColor('#6B6F76')
+        self.c_line = HexColor('#D3D1CB')
+        self.c_box_bg = HexColor('#EBEAE5')
+        self.c_tint_blue = HexColor('#E3ECE7')      # emerald-tinted card bg (was blue tint)
         self.c_white = HexColor('#FFFFFF')
-        self.c_red = HexColor('#C00000')
+        self.c_red = HexColor('#B23A2E')
+        self.c_paper = HexColor('#F4F3F0')          # page background (ledger paper)
 
     def _wrap_text_to_width(self, c, text, font_name, font_size, max_width, max_lines=2):
         """긴 텍스트를 max_width 안에 들어오도록 줄바꿈. max_lines 초과분은 말줄임표 처리."""
@@ -91,6 +90,8 @@ class PDFGenerator:
         return lines
 
     def _draw_mckinsey_header(self, c, section_title, lead_text):
+        c.setFillColor(self.c_paper)
+        c.rect(0, 0, self.width, self.height, fill=1, stroke=0)
         c.setFillColor(self.c_mck_navy)
         c.rect(0, self.height - 24, self.width, 24, fill=1, stroke=0)
         c.setFillColor(self.c_white)
@@ -192,7 +193,7 @@ class PDFGenerator:
         c.setFont(FONT_BOLD, 11)
         c.drawString(60, 60, "마이파크(MYPARK) 가맹본부 데이터전략실")
         c.setFont(FONT_REGULAR, 9)
-        c.setFillColor(HexColor('#A0B2C6'))
+        c.setFillColor(HexColor('#9BA79E'))
         c.drawString(60, 44, "CONFIDENTIAL: 본 문서는 사업성 검토 목적 외 무단 복제 및 배포를 금합니다.")
         c.showPage()
 
@@ -930,18 +931,18 @@ class PDFGenerator:
             c.setFillColor(self.c_mck_teal)
             c.drawString(56, cur_y, f"※ 고객 특이사항 연계: {site['special_notes']}")
 
-        c.setFillColor(HexColor('#F0FDF4'))
-        c.setStrokeColor(HexColor('#BBF7D0'))
+        c.setFillColor(self.c_tint_blue)
+        c.setStrokeColor(self.c_mck_teal)
         c.rect(495, 48, right_col_w, 196, fill=1, stroke=1)
         c.setFont(FONT_BOLD, 10.5)
-        c.setFillColor(HexColor('#166534'))
+        c.setFillColor(self.c_mck_teal)
         c.drawString(511, 222, "【 건물주 및 상가 상생 활성화 효과 】")
         c.setFont(FONT_REGULAR, 8.5)
-        c.setFillColor(HexColor('#14532D'))
+        c.setFillColor(self.c_charcoal)
         val_l_lines = score['value_landlord'].split('\n')
         cur_y = 196
         for ll in val_l_lines:
-            cur_y = self._draw_multiline_text(c, ll, 511, cur_y, max_chars=23, line_height=11, max_lines=4, color=HexColor('#14532D')) - 4
+            cur_y = self._draw_multiline_text(c, ll, 511, cur_y, max_chars=23, line_height=11, max_lines=4, color=self.c_charcoal) - 4
 
         self._draw_footer(c, "MYPARK 5-Year Financial Forecast & Final Strategic Recommendation")
         c.showPage()
