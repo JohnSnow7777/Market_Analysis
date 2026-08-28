@@ -484,7 +484,13 @@ class PDFGenerator:
             c.rect(cur_x + 8, 352, card_w - 16, 54, fill=1, stroke=0)
             c.setFillColor(self.c_mck_navy)
             c.setFont(FONT_BOLD, 10.5)
-            r_str = f"{comp.get('rooms', 0)}타석 규모" if comp.get('rooms', 0) > 0 else "1호점 선점 대상"
+            is_hypothetical = '가상 시나리오' in comp.get('status', '')
+            if comp.get('rooms', 0) > 0:
+                r_str = f"{comp.get('rooms', 0)}타석 규모"
+            elif is_hypothetical:
+                r_str = "1호점 선점 대상"
+            else:
+                r_str = "타석수 미확인 (실존 업체)"
             c.drawCentredString(cur_x + card_w/2, 388, r_str)
             c.setFont(FONT_REGULAR, 7.5)
             c.setFillColor(self.c_slate)
@@ -507,7 +513,12 @@ class PDFGenerator:
             
             c.setFont(FONT_BOLD, 8)
             c.setFillColor(self.c_charcoal)
-            rooms_str = f"■ 규모: {comp['rooms']}타석 운영" if comp.get('rooms', 0) > 0 else "■ 상태: 상업용 매장 미등록"
+            if comp.get('rooms', 0) > 0:
+                rooms_str = f"■ 규모: {comp['rooms']}타석 운영"
+            elif '가상 시나리오' in comp.get('status', ''):
+                rooms_str = "■ 상태: 상업용 매장 미등록"
+            else:
+                rooms_str = "■ 규모: 타석수 미확인"
             c.drawString(cur_x + 10, 208, rooms_str)
             
             c.setFont(FONT_BOLD, 8)
@@ -516,7 +527,16 @@ class PDFGenerator:
             feat_str = str(comp.get('features', '-'))
             self._draw_multiline_text(c, feat_str, cur_x + 10, 166, max_chars=15, line_height=13, max_lines=6, font_name=FONT_REGULAR, font_size=7.5, color=self.c_charcoal)
             
-        self._draw_footer(c, "MYPARK Competitor Database Matching (Live POI Search Pending)")
+        _comp_summary = comm.get('competitor_summary', '')
+        if '가상 시나리오' in _comp_summary or '실측/실시간 검색 결과 없음' in _comp_summary:
+            _comp_source = "MYPARK Competitor Database Matching (Live POI Search Unavailable — Hypothetical Scenario)"
+        elif '소상공인시장진흥공단' in _comp_summary:
+            _comp_source = "SBIZ (Small Business Market Promotion Agency) Public Data"
+        elif '지도 API 실시간 검색' in _comp_summary:
+            _comp_source = "Live POI Search (Kakao/TMap/Naver Cross-Verified)"
+        else:
+            _comp_source = "MYPARK Verified National Store Database"
+        self._draw_footer(c, _comp_source)
         c.showPage()
 
         # ---------------------------------------------------------------------

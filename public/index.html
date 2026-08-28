@@ -1012,17 +1012,22 @@
 
             // 4) 경쟁 환경
             document.getElementById('repCompSub').innerText = comm.competitor_summary;
-            document.getElementById('repCompCards').innerHTML = (comm.competitors || []).slice(0, 4).map(c => `
+            document.getElementById('repCompCards').innerHTML = (comm.competitors || []).slice(0, 4).map(c => {
+                const isHypothetical = (c.status || '').includes('가상 시나리오');
+                const roomsLabel = c.rooms > 0 ? c.rooms + '타석 규모' : (isHypothetical ? '1호점 선점 대상' : '타석수 미확인 (실존 업체)');
+                const scaleLabel = c.rooms > 0 ? c.rooms + '타석 운영' : (isHypothetical ? '상업용 매장 미등록' : '타석수 미확인');
+                return `
                 <div class="comp-card">
                     <div class="comp-card-head">${c.name}</div>
                     <div class="comp-card-body">
-                        <div class="comp-card-rooms">${c.rooms > 0 ? c.rooms + '타석 규모' : '1호점 선점 대상'}</div>
+                        <div class="comp-card-rooms">${roomsLabel}</div>
                         <div class="comp-card-status">[${c.status || '실측완료'}] ${c.system || '스크린 시스템'}</div>
                         <div class="comp-card-row"><b>주소</b>${c.address}</div>
-                        <div class="comp-card-row"><b>규모</b>${c.rooms > 0 ? c.rooms + '타석 운영' : '상업용 매장 미등록'}</div>
+                        <div class="comp-card-row"><b>규모</b>${scaleLabel}</div>
                         <div class="comp-card-row"><b>특징</b>${c.features || '-'}</div>
                     </div>
-                </div>`).join('');
+                </div>`;
+            }).join('');
 
             // 5) 현장 출점 요건
             document.getElementById('repReqCards').innerHTML = `

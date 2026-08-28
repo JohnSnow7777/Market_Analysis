@@ -513,7 +513,12 @@ class PPTXGenerator:
             tf_m.vertical_anchor = MSO_ANCHOR.MIDDLE
             p_m1 = tf_m.paragraphs[0]
             p_m1.alignment = PP_ALIGN.CENTER
-            p_m1.text = f"{c.get('rooms', 0)}타석 규모" if c.get('rooms', 0) > 0 else "1호점 선점 대상"
+            if c.get('rooms', 0) > 0:
+                p_m1.text = f"{c.get('rooms', 0)}타석 규모"
+            elif '가상 시나리오' in c.get('status', ''):
+                p_m1.text = "1호점 선점 대상"
+            else:
+                p_m1.text = "타석수 미확인 (실존 업체)"
             p_m1.font.bold = True
             p_m1.font.size = Pt(13)
             p_m1.font.color.rgb = self.c_mck_navy
@@ -547,7 +552,12 @@ class PPTXGenerator:
             
             p3 = tf_body.add_paragraph()
             p3.space_before = Pt(5)
-            p3.text = f"■ 보유 규모: {c['rooms']}타석 운영" if c.get('rooms', 0) > 0 else "■ 상태: 상업용 매장 미등록"
+            if c.get('rooms', 0) > 0:
+                p3.text = f"■ 보유 규모: {c['rooms']}타석 운영"
+            elif '가상 시나리오' in c.get('status', ''):
+                p3.text = "■ 상태: 상업용 매장 미등록"
+            else:
+                p3.text = "■ 보유 규모: 타석수 미확인"
             p3.font.size = Pt(8.8)
             p3.font.color.rgb = self.c_charcoal
             
@@ -557,7 +567,16 @@ class PPTXGenerator:
             p4.font.size = Pt(8.8)
             p4.font.color.rgb = self.c_slate
             
-        self._add_source_footer(s6, "MYPARK Competitor Database Matching (Live POI Search Pending)")
+        _comp_summary = comm.get('competitor_summary', '')
+        if '가상 시나리오' in _comp_summary or '실측/실시간 검색 결과 없음' in _comp_summary:
+            _comp_source = "MYPARK Competitor Database Matching (Live POI Search Unavailable — Hypothetical Scenario)"
+        elif '소상공인시장진흥공단' in _comp_summary:
+            _comp_source = "SBIZ (Small Business Market Promotion Agency) Public Data"
+        elif '지도 API 실시간 검색' in _comp_summary:
+            _comp_source = "Live POI Search (Kakao/TMap/Naver Cross-Verified)"
+        else:
+            _comp_source = "MYPARK Verified National Store Database"
+        self._add_source_footer(s6, _comp_source)
 
         # ---------------------------------------------------------------------
         # Slide 7: 6. 사업지 개요 및 현장 출점 요건 (4대 건축·인프라 체크리스트)
