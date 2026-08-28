@@ -487,32 +487,62 @@ class PDFGenerator:
         # ---------------------------------------------------------------------
         self._draw_mckinsey_header(c, "5. 경쟁 환경 및 시설 공급 갭 분석", comm['competitor_summary'])
 
-        comps = comm['competitors'][:4]
-        card_w = 182
-        spacing = 10
+        # 카드 개수/너비는 실제로 확인된 경쟁사 수에 맞춰 동적으로 계산한다.
+        # (하드코딩된 4칸 틀에 3곳만 채워 오른쪽이 비는 문제 방지)
+        comps_all = comm['competitors']
+        MAX_CARDS = 5
+        comps = comps_all[:MAX_CARDS]
         start_x = 40
-        
-        for idx, comp in enumerate(comps):
-            cur_x = start_x + idx * (card_w + spacing)
-            
+        gap_x = 10
+        avail_w = (self.width - 40) - start_x
+        n = max(1, len(comps))
+        card_w = (avail_w - (n - 1) * gap_x) / n
+
+        # 헤더 구분선과 카드 상단 사이의 여백을 줄이기 위해 카드 전체 높이를 상향(460->500)
+        card_top = 500
+        card_bottom = 48
+        card_h = card_top - card_bottom
+        head_h = 46
+        head_bottom = card_top - head_h
+
+        if not comps:
+            # 확인된 경쟁사가 0곳(블루오션 판정)인 경우 빈 화면 대신 실제 요약 문구를 카드 자리에 표시
             c.setFillColor(self.c_box_bg)
             c.setStrokeColor(self.c_line)
-            c.rect(cur_x, 48, card_w, 412, fill=1, stroke=1)
-            
+            c.rect(start_x, card_bottom, avail_w, card_h, fill=1, stroke=1)
+            c.setFont(FONT_BOLD, 11)
             c.setFillColor(self.c_mck_navy)
-            c.rect(cur_x, 418, card_w, 42, fill=1, stroke=0)
+            msg_lines = self._wrap_text_to_width(c, comm.get('competitor_summary', '반경 3km 내 확인된 경쟁 매장이 없습니다.'), FONT_BOLD, 11, avail_w - 80, max_lines=4)
+            my = card_bottom + card_h/2 + (len(msg_lines) - 1) * 9
+            for ml in msg_lines:
+                c.drawCentredString(start_x + avail_w/2, my, ml)
+                my -= 18
+
+        for idx, comp in enumerate(comps):
+            cur_x = start_x + idx * (card_w + gap_x)
+
+            c.setFillColor(self.c_box_bg)
+            c.setStrokeColor(self.c_line)
+            c.rect(cur_x, card_bottom, card_w, card_h, fill=1, stroke=1)
+
+            c.setFillColor(self.c_mck_navy)
+            c.rect(cur_x, head_bottom, card_w, head_h, fill=1, stroke=0)
             c.setFillColor(self.c_white)
             c.setFont(FONT_BOLD, 9.5)
-            
-            c_name = str(comp['name'])
-            if len(c_name) > 13:
-                c.drawCentredString(cur_x + card_w/2, 451, c_name[:13])
-                c.drawCentredString(cur_x + card_w/2, 435, c_name[13:])
+
+            # 상호명은 글자수로 자르지 않고 단어(공백) 경계에서 줄바꿈한다.
+            name_lines = self._wrap_text_to_width(c, str(comp['name']), FONT_BOLD, 9.5, card_w - 16, max_lines=2)
+            if len(name_lines) > 1:
+                c.drawCentredString(cur_x + card_w/2, head_bottom + 30, name_lines[0])
+                c.drawCentredString(cur_x + card_w/2, head_bottom + 13, name_lines[1])
             else:
-                c.drawCentredString(cur_x + card_w/2, 443, c_name)
-                
+                c.drawCentredString(cur_x + card_w/2, head_bottom + 21, name_lines[0])
+
+            stat_h = 58
+            stat_top = head_bottom - 10
+            stat_bottom = stat_top - stat_h
             c.setFillColor(self.c_tint_blue)
-            c.rect(cur_x + 8, 352, card_w - 16, 54, fill=1, stroke=0)
+            c.rect(cur_x + 8, stat_bottom, card_w - 16, stat_h, fill=1, stroke=0)
             c.setFillColor(self.c_mck_navy)
             c.setFont(FONT_BOLD, 10.5)
             is_hypothetical = '예시 시나리오' in comp.get('status', '')
@@ -522,26 +552,42 @@ class PDFGenerator:
                 r_str = "1호점 선점 대상"
             else:
                 r_str = "타석 규모 미확인"
-            c.drawCentredString(cur_x + card_w/2, 388, r_str)
+            c.drawCentredString(cur_x + card_w/2, stat_top - 22, r_str)
             c.setFont(FONT_REGULAR, 7.5)
             c.setFillColor(self.c_slate)
             status_txt = f"[{comp.get('status', '실측완료')}] {comp.get('system', '스크린 시스템')}"
             status_lines = self._wrap_text_to_width(c, status_txt, FONT_REGULAR, 7.5, card_w - 22, max_lines=2)
-            sty = 372
+            sty = stat_top - 38
             for stl in status_lines:
                 c.drawCentredString(cur_x + card_w/2, sty, stl)
                 sty -= 10
-            
+
+            body_x = cur_x + 10
+            body_w = card_w - 20
+            body_y = stat_bottom - 16
+
             c.setFont(FONT_BOLD, 8)
             c.setFillColor(self.c_charcoal)
-            c.drawString(cur_x + 10, 328, "■ 주소:")
-            self._draw_multiline_text(c, comp['address'], cur_x + 10, 314, max_chars=15, line_height=13, max_lines=3, font_name=FONT_REGULAR, font_size=7.5)
-            
+            c.drawString(body_x, body_y, "■ 주소:")
+            body_y -= 13
+            c.setFont(FONT_REGULAR, 7.5)
+            addr_lines = self._wrap_text_to_width(c, comp['address'], FONT_REGULAR, 7.5, body_w, max_lines=3)
+            for al in addr_lines:
+                c.drawString(body_x, body_y, al)
+                body_y -= 12
+            body_y -= 6
+
             c.setFont(FONT_BOLD, 8)
             c.setFillColor(self.c_mck_teal)
-            c.drawString(cur_x + 10, 260, "■ 시스템:")
-            self._draw_multiline_text(c, comp['system'], cur_x + 10, 246, max_chars=15, line_height=13, max_lines=2, font_name=FONT_REGULAR, font_size=7.5, color=self.c_mck_teal)
-            
+            c.drawString(body_x, body_y, "■ 시스템:")
+            body_y -= 13
+            c.setFont(FONT_REGULAR, 7.5)
+            sys_lines = self._wrap_text_to_width(c, comp['system'], FONT_REGULAR, 7.5, body_w, max_lines=2)
+            for sl in sys_lines:
+                c.drawString(body_x, body_y, sl)
+                body_y -= 12
+            body_y -= 6
+
             c.setFont(FONT_BOLD, 8)
             c.setFillColor(self.c_charcoal)
             if comp.get('rooms', 0) > 0:
@@ -550,13 +596,22 @@ class PDFGenerator:
                 rooms_str = "■ 상태: 상업용 매장 미등록"
             else:
                 rooms_str = "■ 규모: 타석수 미확인"
-            c.drawString(cur_x + 10, 208, rooms_str)
-            
+            c.drawString(body_x, body_y, rooms_str)
+            body_y -= 20
+
             c.setFont(FONT_BOLD, 8)
             c.setFillColor(self.c_slate)
-            c.drawString(cur_x + 10, 180, "■ 특징:")
+            c.drawString(body_x, body_y, "■ 특징:")
+            body_y -= 13
             feat_str = str(comp.get('features', '-'))
-            self._draw_multiline_text(c, feat_str, cur_x + 10, 166, max_chars=15, line_height=13, max_lines=6, font_name=FONT_REGULAR, font_size=7.5, color=self.c_charcoal)
+            # 카드가 커진 만큼 남은 세로 공간을 실제로 다 활용하도록 줄 수를 동적으로 계산 (하단 여백 10pt 확보)
+            max_feat_lines = max(2, int((body_y - (card_bottom + 10)) // 12))
+            feat_lines = self._wrap_text_to_width(c, feat_str, FONT_REGULAR, 7.5, body_w, max_lines=max_feat_lines)
+            c.setFont(FONT_REGULAR, 7.5)
+            c.setFillColor(self.c_charcoal)
+            for fl in feat_lines:
+                c.drawString(body_x, body_y, fl)
+                body_y -= 12
             
         _comp_summary = comm.get('competitor_summary', '')
         if '예시 시나리오' in _comp_summary:

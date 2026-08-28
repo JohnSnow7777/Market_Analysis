@@ -512,11 +512,33 @@ class PPTXGenerator:
         s6 = self.prs.slides.add_slide(self.blank_layout)
         self._add_mckinsey_header(s6, "5. 경쟁 환경 및 시설 공급 갭 분석", comm['competitor_summary'])
         
-        comps = comm['competitors'][:4]
-        card_w = Inches(2.88)
+        # 카드 개수/너비는 실제로 확인된 경쟁사 수에 맞춰 동적으로 계산한다.
+        # (하드코딩된 4칸 틀에 3곳만 채워 오른쪽이 비는 문제 방지)
+        comps_all = comm['competitors']
+        MAX_CARDS = 5
+        comps = comps_all[:MAX_CARDS]
         card_gap = Inches(0.19)
         start_x = Inches(0.6)
-        
+        avail_w_in = 12.133
+        n = max(1, len(comps))
+        card_w = Inches((avail_w_in - (n - 1) * 0.19) / n)
+
+        if not comps:
+            # 확인된 경쟁사가 0곳(블루오션 판정)인 경우 빈 화면 대신 실제 요약 문구를 카드 자리에 표시
+            empty_box = s6.shapes.add_shape(MSO_SHAPE.RECTANGLE, start_x, Inches(1.45), Inches(avail_w_in), Inches(5.45))
+            empty_box.fill.solid()
+            empty_box.fill.fore_color.rgb = self.c_box_bg
+            empty_box.line.color.rgb = self.c_line
+            tf_e = empty_box.text_frame
+            tf_e.word_wrap = True
+            tf_e.vertical_anchor = MSO_ANCHOR.MIDDLE
+            p_e = tf_e.paragraphs[0]
+            p_e.alignment = PP_ALIGN.CENTER
+            p_e.text = comm.get('competitor_summary', '반경 3km 내 확인된 경쟁 매장이 없습니다.')
+            p_e.font.bold = True
+            p_e.font.size = Pt(14)
+            p_e.font.color.rgb = self.c_mck_navy
+
         for idx, c in enumerate(comps):
             cur_x = start_x + idx * (card_w + card_gap)
             
