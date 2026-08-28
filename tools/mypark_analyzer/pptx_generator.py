@@ -190,23 +190,47 @@ class PPTXGenerator:
         # [PART 2 재구성: 재무 금액 배제, 순수 입지 평가 전진 배치]
         # ---------------------------------------------------------------------
         s2 = self.prs.slides.add_slide(self.blank_layout)
-        self._add_mckinsey_header(s2, "1. 입지 적합성 종합 판정 (5-Dimension Diamond Scoring)", f"5대 다이아몬드 스코어링 총점 {score['total_score']}점({score['grade']}등급)으로 출점 최우선 추천 판정")
-        
+        self._add_mckinsey_header(s2, "1. 입지 적합성 종합 판정 (5-Dimension Diamond Scoring)", f"5대 다이아몬드 스코어링 총점 {score['total_score']}점({score['grade']}등급) - {score['grade_desc']}")
+
         if 'radar_score' in charts and os.path.exists(charts['radar_score']):
             s2.shapes.add_picture(charts['radar_score'], Inches(0.6), Inches(1.45), width=Inches(5.6))
-            
+
         tb2 = s2.shapes.add_textbox(Inches(6.4), Inches(1.45), Inches(6.3), Inches(5.5))
         tf2 = tb2.text_frame
         tf2.word_wrap = True
-        
-        comp_cnt = len(comm.get('competitors', []))
-        comp_name_str = f"'{comm['competitors'][0]['name']}' 등 {comp_cnt}곳" if comp_cnt > 0 else "전문 시설 전무"
-        
+
+        # 접근성 지표: 실제 채점에 사용된 버스/지하철 데이터를 그대로 근거 문구에 반영
+        _infra = comm.get('infra', {})
+        _bus_count = _infra.get('버스정류장', 30)
+        _subway_info = _infra.get('지하철', '')
+        _has_subway = '지하철' in _subway_info or '역세권' in _subway_info or _subway_info.endswith('역')
+        if _has_subway or _bus_count >= 35:
+            _access_desc = f"{_subway_info + ' 역세권, ' if _has_subway else ''}버스정류장 {_bus_count}개소로 대중교통망 우수"
+        elif _bus_count >= 20:
+            _access_desc = f"버스정류장 {_bus_count}개소 확보된 표준 수준 교통망"
+        elif _bus_count >= 10:
+            _access_desc = f"버스정류장 {_bus_count}개소로 교통망이 다소 협소한 편"
+        else:
+            _access_desc = f"버스정류장 {_bus_count}개소로 대중교통 접근성이 열위한 편"
+        _access_desc += " / 10타석 권장 주차면은 '현장 실측' 요망"
+
+        # 공간 적합성 지표: 실제 채점에 사용된 타석당 평수 구간을 그대로 근거 문구에 반영
+        _pyeong_per_room = site['area_pyeong'] / max(1, site['rooms'])
+        if _pyeong_per_room >= 12.0:
+            _space_desc = f"{site['area_pyeong']}평 {site['rooms']}타석 (타석당 {_pyeong_per_room:.1f}평), 여유로운 플래그십 규모"
+        elif _pyeong_per_room >= 10.0:
+            _space_desc = f"{site['area_pyeong']}평 {site['rooms']}타석 (타석당 {_pyeong_per_room:.1f}평), 표준 배치 규모"
+        elif _pyeong_per_room >= 8.0:
+            _space_desc = f"{site['area_pyeong']}평 {site['rooms']}타석 (타석당 {_pyeong_per_room:.1f}평), 다소 협소한 배치"
+        else:
+            _space_desc = f"{site['area_pyeong']}평 {site['rooms']}타석 (타석당 {_pyeong_per_room:.1f}평), 초협소 배치로 별도 검토 필요"
+        _space_desc += " / 권장 유효 층고 2.8m 이상 여부는 '인테리어 실측' 필수"
+
         indicators = [
             ("1) 시니어 인구 밀집도", score['scores']['senior_population'], 25, f"{pop_source_tag}: 반경 3km 내 50대 이상 시니어 {demo['senior_50_plus']:,}명 (비중 {demo['senior_ratio']}%) 밀집"),
-            ("2) 접근성 및 주차 인프라", score['scores']['accessibility_parking'], 25, f"간선도로 접면 및 대중교통 우수({score['scores']['accessibility_parking']:.1f}점) / 10타석 권장 주차면은 '현장 실측' 요망"),
-            ("3) 공간 적합성 및 층고", score['scores']['space_efficiency'], 15, f"{site['area_pyeong']}평 10타석 배치 최적({score['scores']['space_efficiency']:.1f}점) / 권장 유효 층고 2.8m 이상 여부는 '인테리어 실측' 필수"),
-            ("4) 경쟁 매장 여유도", score['scores']['supply_gap'], 15, f"전문 스크린 파크골프 {comp_name_str} 수준으로, {demo['total_pop']/10000:.1f}만 인구 대비 10타석 플래그십 공급 절대 부족"),
+            ("2) 접근성 및 주차 인프라", score['scores']['accessibility_parking'], 25, _access_desc),
+            ("3) 공간 적합성 및 층고", score['scores']['space_efficiency'], 15, _space_desc),
+            ("4) 경쟁 매장 여유도", score['scores']['supply_gap'], 15, f"{comm.get('competitor_summary', '반경 3km 내 대형 플래그십 매장 공급 부족')}"),
             ("5) 지역 소비력 및 여가지출", score['scores']['commercial_spending'], 20, f"MYPARK 지역등급 추정: 골프용품 성장 1위(+{comm.get('growth_rate', 145.2)}%) 및 스크린골프 상위 20% 월 {comm['top_20_sales']//10000:,}만원 상권")
         ]
         for idx, (iname, iscore, imax, idesc) in enumerate(indicators):
@@ -338,10 +362,13 @@ class PPTXGenerator:
         p.font.bold = True
         p.font.color.rgb = self.c_mck_navy
         
+        _senior_total3 = max(1, demo['senior_50_plus'])
+        _60s_share3 = demo['pop_60s'] / _senior_total3 * 100
+        _70s_share3 = demo['pop_70_plus'] / _senior_total3 * 100
         insights3 = [
             f"• 압도적인 타겟 집적도: 반경 3km 내 50대 이상 인구 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%) 확보로 안정적 단골 풀 형성",
-            "• 60대 주력 고객군 43%: 은퇴 후 평일 낮 시간 여유가 있는 60대가 절반을 차지하여 평일 주간 가동률 극대화",
-            "• 70대 실버 헬스케어 수요: 관절 부담이 없는 파크골프 특성상 부부 동반 및 시니어 커뮤니티 공간으로 정착",
+            f"• 60대 주력 고객군 {_60s_share3:.0f}%: 은퇴 후 평일 낮 시간 여유가 있는 60대가 전체 시니어 중 {_60s_share3:.0f}%를 차지하여 평일 주간 가동률 극대화",
+            f"• 70대 실버 헬스케어 수요 {_70s_share3:.0f}%: 관절 부담이 없는 파크골프 특성상 부부 동반 및 시니어 커뮤니티 공간으로 정착",
             "• 일반 스크린골프 대비 회전율 우위: 야간 직장인 편중 매장과 달리 주간 7시간 집중 가동으로 일일 높은 회전수 확보"
         ]
         for ins in insights3:
@@ -483,7 +510,7 @@ class PPTXGenerator:
         # Slide 6: 5. 경쟁 환경 및 시설 공급 갭 분석
         # ---------------------------------------------------------------------
         s6 = self.prs.slides.add_slide(self.blank_layout)
-        self._add_mckinsey_header(s6, "5. 경쟁 환경 및 시설 공급 갭 분석", f"반경 3km 내 {comm['competitor_summary']}")
+        self._add_mckinsey_header(s6, "5. 경쟁 환경 및 시설 공급 갭 분석", comm['competitor_summary'])
         
         comps = comm['competitors'][:4]
         card_w = Inches(2.88)
@@ -684,9 +711,9 @@ class PPTXGenerator:
         p.font.color.rgb = self.c_mck_navy
         
         items8_a = [
-            f"• 시뮬레이터 장비: 10대 × 대당 1,500만원 = 1억 5,000만원",
-            f"• 인테리어 공사비: 120평 × 평당 120만원 = 1억 4,400만원",
-            f"• 부대설비 (냉난방/간판/가구/초도용품): 2,500만원",
+            f"• 시뮬레이터 장비: {site['rooms']}대 × 대당 {DEFAULT_SETTINGS['simulator_unit_price']//10000:,}만원 = {fmt_won_full(inv['simulator_cost'])}",
+            f"• 인테리어 공사비: {site['area_pyeong']}평 × 평당 {DEFAULT_SETTINGS['interior_cost_per_pyeong']//10000:,}만원 = {fmt_won_full(inv['interior_cost'])}",
+            f"• 부대설비 (냉난방/간판/가구/초도용품): {fmt_won_full(inv['other_facilities'])}",
             f"  - 냉난방기(1,200만) / 간판(500만) / 가구(300만) / 초도용품(500만)",
             f"★ 총 초기 투자금: {fmt_won_full(inv['total_capex'])} ({fmt_eok(inv['total_capex'])})",
             "",
@@ -694,7 +721,7 @@ class PPTXGenerator:
             f"• 표준 모델 (점주 {site['staff_count']}인 상주): 인건비 월 {site['staff_count']*DEFAULT_SETTINGS['labor_cost_manager']//10000:,}만원 (수익률 극대화)",
             f"• 비교 모델 (직원 3인 채용): 인건비 월 {3*DEFAULT_SETTINGS['labor_cost_manager']//10000:,}만원 (회수기간 {fin['owner_operated']['staff3_payback_months']:.1f}개월)",
             f"• 게임비 요금: 1인 18홀 7,000원 (4인 1팀 28,000원)",
-            f"• 3대 매출원: 게임비 회전 + 용품 판매(150만) + 식음료(180만)",
+            f"• 3대 매출원: 게임비 회전 + 용품 판매(월 {fin['monthly_scenarios']['moderate']['goods_revenue']//10000:,}만) + 식음료(월 {fin['monthly_scenarios']['moderate']['beverage_revenue']//10000:,}만)",
             f"• 월 임대료 기준: {'지역 시세 추정' if site.get('rent_is_estimated') else '입력하신 실측'} {site['monthly_rent']//10000:,}만원/월 반영"
         ]
         for it in items8_a:
@@ -1069,7 +1096,7 @@ class PPTXGenerator:
              f"• MYPARK 지역등급 추정 상위 20% 월매출 {comm['top_20_sales']//10000:,}만원 시장을 단독 선점 점유\n"
              f"• 카페형 휴게 라운지 및 파크골프 용품 샵 결합으로 객단가 및 체류시간 극대화"),
             ("3. 빠른 원금 회수 및 압도적 고수익성",
-             f"• 직원 위탁 운영: 월 순영업익 약 {fin['monthly_scenarios']['moderate']['operating_profit']//10000:,}만원 (이익률 48.6%) / 회수 15.8개월\n"
+             f"• 직원 위탁 운영: 월 순영업익 약 {inv['owner_operated']['staff3_operating_profit']//10000:,}만원 (이익률 {inv['owner_operated']['staff3_operating_profit']/fin['monthly_scenarios']['moderate']['total_revenue']*100:.1f}%) / 회수 {inv['owner_operated']['staff3_payback_months']:.1f}개월\n"
              f"★ 창업주 직접 운영 시: 월 순영업익 {fin['monthly_scenarios']['moderate']['operating_profit']//10000:,}만원 / 단 {inv['payback_months_moderate']:.1f}개월({fmt_months(inv['payback_months_moderate'])}) 회수\n"
              f"• 손익분기점(BEP)이 기기당 하루 {inv['bep_turns_per_room']}회전에 불과하여 적자 리스크 전무")
         ]

@@ -201,17 +201,44 @@ class PDFGenerator:
         # Page 2: 1. 입지 적합성 종합 판정 (5-Dimension Diamond Scoring)
         # [PART 2 재구성: 재무 금액 배제, 순수 입지 적합성 평가 전진 배치]
         # ---------------------------------------------------------------------
-        self._draw_mckinsey_header(c, "1. 입지 적합성 종합 판정 (5-Dimension Diamond Scoring)", f"5대 다이아몬드 스코어링 총점 {score['total_score']}점({score['grade']}등급) - 출점 최우선 추천 판정")
-        
+        self._draw_mckinsey_header(c, "1. 입지 적합성 종합 판정 (5-Dimension Diamond Scoring)", f"5대 다이아몬드 스코어링 총점 {score['total_score']}점({score['grade']}등급) - {score['grade_desc']}")
+
         # 좌측 레이더 차트
         if 'radar_score' in charts and os.path.exists(charts['radar_score']):
             c.drawImage(charts['radar_score'], 40, 48, width=440, height=425, preserveAspectRatio=True)
-            
+
+        # 접근성 지표: 실제 채점에 사용된 버스/지하철 데이터를 그대로 근거 문구에 반영 (점수와 문구가 서로 다른 결론을 말하지 않도록)
+        _infra = comm.get('infra', {})
+        _bus_count = _infra.get('버스정류장', 30)
+        _subway_info = _infra.get('지하철', '')
+        _has_subway = '지하철' in _subway_info or '역세권' in _subway_info or _subway_info.endswith('역')
+        if _has_subway or _bus_count >= 35:
+            _access_desc = f"{_subway_info + ' 역세권, ' if _has_subway else ''}버스정류장 {_bus_count}개소로 대중교통망 우수"
+        elif _bus_count >= 20:
+            _access_desc = f"버스정류장 {_bus_count}개소 확보된 표준 수준 교통망"
+        elif _bus_count >= 10:
+            _access_desc = f"버스정류장 {_bus_count}개소로 교통망이 다소 협소한 편"
+        else:
+            _access_desc = f"버스정류장 {_bus_count}개소로 대중교통 접근성이 열위한 편"
+        _access_desc += " / 10타석 주차면은 '현장 실측' 요망"
+
+        # 공간 적합성 지표: 실제 채점에 사용된 타석당 평수 구간을 그대로 근거 문구에 반영
+        _pyeong_per_room = site['area_pyeong'] / max(1, site['rooms'])
+        if _pyeong_per_room >= 12.0:
+            _space_desc = f"{site['area_pyeong']}평 {site['rooms']}타석 (타석당 {_pyeong_per_room:.1f}평), 여유로운 플래그십 규모"
+        elif _pyeong_per_room >= 10.0:
+            _space_desc = f"{site['area_pyeong']}평 {site['rooms']}타석 (타석당 {_pyeong_per_room:.1f}평), 표준 배치 규모"
+        elif _pyeong_per_room >= 8.0:
+            _space_desc = f"{site['area_pyeong']}평 {site['rooms']}타석 (타석당 {_pyeong_per_room:.1f}평), 다소 협소한 배치"
+        else:
+            _space_desc = f"{site['area_pyeong']}평 {site['rooms']}타석 (타석당 {_pyeong_per_room:.1f}평), 초협소 배치로 별도 검토 필요"
+        _space_desc += " / 유효 층고 2.8m 이상은 '인테리어 실측' 필수"
+
         # 우측 5대 지표별 점수 및 산출 근거
         indicators = [
             ("1) 시니어 인구 밀집도", score['scores']['senior_population'], 25, f"{pop_source_tag}: 반경 3km 내 50대 이상 시니어 {demo['senior_50_plus']:,}명 ({demo['senior_ratio']}%) 밀집"),
-            ("2) 접근성 및 주차 인프라", score['scores']['accessibility_parking'], 25, f"간선도로 접면/교통망 우수({score['scores']['accessibility_parking']:.1f}점) / 10타석 주차면은 '현장 실측' 요망"),
-            ("3) 공간 적합성 및 층고", score['scores']['space_efficiency'], 15, f"{site['area_pyeong']}평 10타석 배치 최적({score['scores']['space_efficiency']:.1f}점) / 유효 층고 2.8m 이상은 '인테리어 실측' 필수"),
+            ("2) 접근성 및 주차 인프라", score['scores']['accessibility_parking'], 25, _access_desc),
+            ("3) 공간 적합성 및 층고", score['scores']['space_efficiency'], 15, _space_desc),
             ("4) 경쟁 매장 여유도", score['scores']['supply_gap'], 15, f"{comm.get('competitor_summary', '반경 3km 내 대형 플래그십 매장 공급 부족')}"),
             ("5) 지역 소비력 및 여가지출", score['scores']['commercial_spending'], 20, f"MYPARK 지역등급 추정: 골프용품 성장 1위(+{comm['growth_rate']}%) 및 스크린골프 상위 20% 월 {comm['top_20_sales']//10000:,}만원 상권"),
         ]
@@ -225,7 +252,7 @@ class PDFGenerator:
             
             c.setFont(FONT_REGULAR, 8.5)
             c.setFillColor(self.c_slate)
-            desc_lines = self._wrap_text_to_width(c, f"↳ 산출 근거: {idesc}", FONT_REGULAR, 8.5, self.width - 40 - 510, max_lines=3)
+            desc_lines = self._wrap_text_to_width(c, f"· 산출 근거: {idesc}", FONT_REGULAR, 8.5, self.width - 40 - 510, max_lines=3)
             dy = y_ind - 18
             for dl in desc_lines:
                 c.drawString(510, dy, dl)
@@ -342,9 +369,12 @@ class PDFGenerator:
         
         c.setFont(FONT_REGULAR, 9)
         c.setFillColor(self.c_charcoal)
+        _senior_total = max(1, demo['senior_50_plus'])
+        _60s_share = demo['pop_60s'] / _senior_total * 100
+        _70s_share = demo['pop_70_plus'] / _senior_total * 100
         c.drawString(56, 196, f"• 압도적인 타겟 집적도: 반경 3km 내 50대 이상 인구 {demo['senior_50_plus']:,}명 확보로 안정적 고객 풀 형성")
-        c.drawString(56, 168, "• 60대 주력 고객군 43%: 은퇴 후 평일 낮 시간 여유가 있는 60대가 전체 시니어의 절반을 차지하여 평일 낮 가동률 극대화")
-        c.drawString(56, 140, "• 70대 실버 헬스케어 수요 21%: 관절 부담이 없는 파크골프 특성상 부부 동반 및 시니어 커뮤니티 공간으로 정착")
+        c.drawString(56, 168, f"• 60대 주력 고객군 {_60s_share:.0f}%: 은퇴 후 평일 낮 시간 여유가 있는 60대가 전체 시니어 중 {_60s_share:.0f}%를 차지하여 평일 낮 가동률 극대화")
+        c.drawString(56, 140, f"• 70대 실버 헬스케어 수요 {_70s_share:.0f}%: 관절 부담이 없는 파크골프 특성상 부부 동반 및 시니어 커뮤니티 공간으로 정착")
         c.drawString(56, 112, "• 일반 스크린골프 대비 회전율 우위: 야간 직장인 편중 매장과 달리 주간 7시간 집중 가동으로 일일 높은 회전수 확보")
         
         self._draw_footer(c, "KOSIS National Statistics Portal" + (" (※ 행정동 추정 모델 적용)" if demo.get("is_estimated") else f" ({demo.get('base_date', '2026.08')})"))
@@ -387,7 +417,7 @@ class PDFGenerator:
         c.setFont(FONT_REGULAR, 9)
         c.setFillColor(self.c_charcoal)
         c.drawString(56, 194, f"• 소비 수준: {comm['spending_grade']} (시니어 여가 및 생활체육 소비 여력 충분)")
-        c.drawString(56, 168, "• 주간 매출 집중형: 평일 10~17시 매출 비중이 71.4%로 주간 시간대 수익 창출력 탁월")
+        c.drawString(56, 168, f"• 주간 매출 집중형: 평일 10~17시 매출 비중이 {comm['time_distribution']['주간_10_17시_비중']}%로 주간 시간대 수익 창출력 탁월")
         c.drawString(56, 142, "• 4인 1팀 단체 이용: 파크골프 1팀당 식음료 및 추가 게임비 지출로 객단가 극대화")
         c.drawString(56, 116, "• 안정적 단골 매출: 동호회 정기 예약(월 단위 선결제) 비중이 높아 계절성 리스크 방어")
 
@@ -779,7 +809,7 @@ class PDFGenerator:
         c.rect(40, 48, full_box_w, 196, fill=1, stroke=1)
         c.setFont(FONT_BOLD, 10.5)
         c.setFillColor(self.c_mck_navy)
-        c.drawString(56, 222, "■ 매출 추정 핵심 근거 (엑셀 수익분석표 일치)")
+        c.drawString(56, 222, "■ 매출 추정 산출 기준")
         
         c.setFont(FONT_REGULAR, 9)
         c.setFillColor(self.c_charcoal)
@@ -925,7 +955,7 @@ class PDFGenerator:
         val_f_lines = score['value_franchisee'].split('\n')
         cur_y = 196
         for fl in val_f_lines:
-            cur_y = self._draw_multiline_text(c, fl, 56, cur_y, max_chars=34, line_height=14, max_lines=3) - 4
+            cur_y = self._draw_multiline_text(c, fl, 56, cur_y, max_chars=40, line_height=13, max_lines=4) - 3
         if site.get('special_notes'):
             c.setFont(FONT_BOLD, 8.5)
             c.setFillColor(self.c_mck_teal)
@@ -942,7 +972,7 @@ class PDFGenerator:
         val_l_lines = score['value_landlord'].split('\n')
         cur_y = 196
         for ll in val_l_lines:
-            cur_y = self._draw_multiline_text(c, ll, 511, cur_y, max_chars=23, line_height=11, max_lines=4, color=self.c_charcoal) - 4
+            cur_y = self._draw_multiline_text(c, ll, 511, cur_y, max_chars=26, line_height=10.5, max_lines=5, color=self.c_charcoal) - 3
 
         self._draw_footer(c, "MYPARK 5-Year Financial Forecast & Final Strategic Recommendation")
         c.showPage()
