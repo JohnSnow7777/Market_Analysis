@@ -1036,8 +1036,12 @@ class PPTXGenerator:
         p.font.bold = True
         p.font.color.rgb = self.c_mck_navy
         
+        if inv.get('conservative_viable', True):
+            _bep_con_line = f"• 보수적 시나리오: 월 순익 {m_scen['conservative']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_conservative']:.1f}개월"
+        else:
+            _bep_con_line = f"• 보수적 시나리오(3회전): 월 {abs(m_scen['conservative']['operating_profit'])//10000:,}만원 적자 (최소 4회전 이상 가동 필요)"
         bep_sim = [
-            f"• 보수적 시나리오: 월 순익 {m_scen['conservative']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_conservative']:.1f}개월",
+            _bep_con_line,
             f"• 보편적 시나리오: 월 순익 {m_scen['moderate']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_moderate']:.1f}개월 (약 {fmt_months(inv['payback_months_moderate'])})",
             f"• 긍정적 시나리오: 월 순익 {m_scen['optimistic']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_optimistic']:.1f}개월",
             f"★ BEP 달성 요건: 타석당 하루 {inv['bep_turns_per_room']}회전 (1일 {inv['bep_daily_users']}명 이용)",

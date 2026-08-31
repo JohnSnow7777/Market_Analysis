@@ -1143,7 +1143,12 @@ class PDFGenerator:
         c.setFont(FONT_REGULAR, 8.5)
         c.setFillColor(self.c_charcoal)
         ry11 = chart_top11 - head_h11 - 22
-        c.drawString(511, ry11, f"• 보수적 시나리오: 월 순익 {scenarios['conservative']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_conservative']:.1f}개월")
+        if inv.get('conservative_viable', True):
+            c.drawString(511, ry11, f"• 보수적 시나리오: 월 순익 {scenarios['conservative']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_conservative']:.1f}개월")
+        else:
+            c.setFillColor(self.c_red)
+            c.drawString(511, ry11, f"• 보수적 시나리오(3회전): 월 {abs(scenarios['conservative']['operating_profit'])//10000:,}만원 적자 (최소 4회전 이상 가동 필요)")
+            c.setFillColor(self.c_charcoal)
         ry11 -= 20
         c.drawString(511, ry11, f"• 보편적 시나리오: 월 순익 {scenarios['moderate']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_moderate']:.1f}개월 ({fmt_months(inv['payback_months_moderate'])})")
         ry11 -= 20
@@ -1160,11 +1165,16 @@ class PDFGenerator:
         # 하단: 회수기간을 실제로 움직이는 레버를 정량 비교한다.
         # (회수기간이 길게 나오는 사업지에서 '무엇을 바꾸면 얼마나 개선되는지'를
         #  숫자로 제시. 각 수치는 동일 재무엔진으로 재계산한 실제 값이다.)
-        _lv_base_op = scenarios['conservative']['operating_profit']
+        # 보수적 시나리오가 적자(고임대료 상권)면 회수기간 레버 계산 자체가 무의미
+        # 하므로, 그 경우엔 보편적 시나리오를 기준선으로 전환해 레버표를 계산한다.
+        _lv_use_moderate = not inv.get('conservative_viable', True)
+        _lv_base_label = "보편적" if _lv_use_moderate else "보수적"
+        _lv_base_op = scenarios['moderate']['operating_profit'] if _lv_use_moderate else scenarios['conservative']['operating_profit']
         _lv_capex = inv['total_capex']
         _lv_base_pb = (_lv_capex / _lv_base_op) if _lv_base_op > 0 else 0
-        _lv_turn_op = scenarios['moderate']['operating_profit']
+        _lv_turn_op = scenarios['optimistic']['operating_profit'] if _lv_use_moderate else scenarios['moderate']['operating_profit']
         _lv_turn_pb = (_lv_capex / _lv_turn_op) if _lv_turn_op > 0 else 0
+        _lv_turn_label = "4회전 → 5회전" if _lv_use_moderate else "3회전 → 4회전"
         _lv_rent_op = _lv_base_op + 1000000
         _lv_rent_pb = (_lv_capex / _lv_rent_op) if _lv_rent_op > 0 else 0
         _lv_int_capex = _lv_capex - int(site['area_pyeong'] * 300000)
@@ -1177,10 +1187,10 @@ class PDFGenerator:
         c.rect(40, 216, self.width - 80, 28, fill=1, stroke=0)
         c.setFont(FONT_BOLD, 10)
         c.setFillColor(self.c_white)
-        c.drawString(56, 225, "■ 투자금 회수기간 단축 레버 (보수적 시나리오 기준 민감도 분석)")
+        c.drawString(56, 225, f"■ 투자금 회수기간 단축 레버 ({_lv_base_label} 시나리오 기준 민감도 분석)")
 
         _lv_rows = [
-            ("가동률 상향 (3회전 → 4회전)", f"{_lv_base_pb:.1f}개월", f"{_lv_turn_pb:.1f}개월", f"-{_lv_base_pb - _lv_turn_pb:.1f}개월", "동호회 정기예약·평일 낮 단체 유치가 가장 강력한 레버"),
+            (f"가동률 상향 ({_lv_turn_label})", f"{_lv_base_pb:.1f}개월", f"{_lv_turn_pb:.1f}개월", f"-{_lv_base_pb - _lv_turn_pb:.1f}개월", "동호회 정기예약·평일 낮 단체 유치가 가장 강력한 레버"),
             ("인테리어 단가 조정 (평당 -30만원)", f"{_lv_base_pb:.1f}개월", f"{_lv_int_pb:.1f}개월", f"-{_lv_base_pb - _lv_int_pb:.1f}개월", "기존 상가 시설 승계·부분 시공으로 초기 투자비 절감"),
             ("임대료 협상 (월 -100만원)", f"{_lv_base_pb:.1f}개월", f"{_lv_rent_pb:.1f}개월", f"-{_lv_base_pb - _lv_rent_pb:.1f}개월", "장기계약·렌트프리 조건 협상 시 매월 순익에 직접 반영"),
         ]

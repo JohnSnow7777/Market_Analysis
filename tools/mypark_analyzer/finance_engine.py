@@ -157,6 +157,10 @@ class FinanceEngine:
         inv['payback_months_moderate'] = payback_months_mod
         inv['payback_months_optimistic'] = payback_months_opt
         inv['payback_months_conservative'] = payback_months_con
+        # 초고가 임대료 상권(예: 강남·해운대 프라임 상권)은 보수적 시나리오(3회전) 매출로
+        # 고정비를 못 덮어 월 순익이 음수가 될 수 있다. 이 경우 99.0개월 같은 무의미한
+        # 숫자를 그대로 보여주면 안 되므로, 호출부에서 이 플래그로 분기해 캐베앗을 띄운다.
+        inv['conservative_viable'] = op_con > 0
         
         # 직원 위탁 운영 모델 (직원 2명 추가 채용 = 인건비 500만원 추가)
         staff3_fixed_cost = fixed_cost + 5000000
