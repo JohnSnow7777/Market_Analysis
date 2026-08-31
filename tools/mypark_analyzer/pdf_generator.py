@@ -476,11 +476,31 @@ class PDFGenerator:
         n = max(1, len(comps))
         card_w = (avail_w - (n - 1) * gap_x) / n
 
-        # 헤더 구분선과 카드 상단 사이의 여백을 줄이기 위해 카드 전체 높이를 상향(460->500)
-        card_top = 500
+        # 카드 높이는 고정값이 아니라 실제 내용 길이에 맞춰 계산한다.
+        # (내용은 짧은데 박스만 크면 하단에 빈 여백이 크게 남는 문제 방지)
         card_bottom = 48
-        card_h = card_top - card_bottom
         head_h = 46
+        stat_h = 58
+        FEAT_MAX_LINES = 4
+        body_w_probe = card_w - 20
+
+        def _measure_card_content_h(comp):
+            name_lines = self._wrap_text_to_width(c, str(comp['name']), FONT_BOLD, 9.5, card_w - 16, max_lines=2)
+            addr_lines = self._wrap_text_to_width(c, comp['address'], FONT_REGULAR, 7.5, body_w_probe, max_lines=3)
+            sys_lines = self._wrap_text_to_width(c, comp['system'], FONT_REGULAR, 7.5, body_w_probe, max_lines=2)
+            feat_lines = self._wrap_text_to_width(c, str(comp.get('features', '-')), FONT_REGULAR, 7.5, body_w_probe, max_lines=FEAT_MAX_LINES)
+            h = head_h + 10 + stat_h + 16
+            h += 13 + len(addr_lines) * 12 + 6
+            h += 13 + len(sys_lines) * 12 + 6
+            h += 20
+            h += 13 + len(feat_lines) * 12
+            h += 16  # 하단 여백
+            return h
+
+        content_heights = [_measure_card_content_h(comp) for comp in comps] or [260]
+        card_h = max(260, min(452, max(content_heights)))
+        card_top = 500
+        card_bottom = card_top - card_h
         head_bottom = card_top - head_h
 
         if not comps:
@@ -582,9 +602,7 @@ class PDFGenerator:
             c.drawString(body_x, body_y, "■ 특징:")
             body_y -= 13
             feat_str = str(comp.get('features', '-'))
-            # 카드가 커진 만큼 남은 세로 공간을 실제로 다 활용하도록 줄 수를 동적으로 계산 (하단 여백 10pt 확보)
-            max_feat_lines = max(2, int((body_y - (card_bottom + 10)) // 12))
-            feat_lines = self._wrap_text_to_width(c, feat_str, FONT_REGULAR, 7.5, body_w, max_lines=max_feat_lines)
+            feat_lines = self._wrap_text_to_width(c, feat_str, FONT_REGULAR, 7.5, body_w, max_lines=FEAT_MAX_LINES)
             c.setFont(FONT_REGULAR, 7.5)
             c.setFillColor(self.c_charcoal)
             for fl in feat_lines:
