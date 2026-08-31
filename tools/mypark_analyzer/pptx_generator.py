@@ -189,100 +189,8 @@ class PPTXGenerator:
         # Slide 2: 1. 입지 적합성 종합 판정 (5-Dimension Diamond Scoring)
         # [PART 2 재구성: 재무 금액 배제, 순수 입지 평가 전진 배치]
         # ---------------------------------------------------------------------
-        s2 = self.prs.slides.add_slide(self.blank_layout)
-        self._add_mckinsey_header(s2, "1. 입지 적합성 종합 판정 (5-Dimension Diamond Scoring)", f"5대 다이아몬드 스코어링 총점 {score['total_score']}점({score['grade']}등급) - {score['grade_desc']}")
-
-        if 'radar_score' in charts and os.path.exists(charts['radar_score']):
-            s2.shapes.add_picture(charts['radar_score'], Inches(0.6), Inches(1.45), width=Inches(5.6))
-
-        tb2 = s2.shapes.add_textbox(Inches(6.4), Inches(1.45), Inches(6.3), Inches(5.5))
-        tf2 = tb2.text_frame
-        tf2.word_wrap = True
-
-        # 접근성 지표: 실제 채점에 사용된 버스/지하철 데이터를 그대로 근거 문구에 반영
-        _infra = comm.get('infra', {})
-        _bus_count = _infra.get('버스정류장', 30)
-        _subway_info = _infra.get('지하철', '')
-        _has_subway = '지하철' in _subway_info or '역세권' in _subway_info or _subway_info.endswith('역')
-        if _has_subway or _bus_count >= 35:
-            _access_desc = f"{_subway_info + ' 역세권, ' if _has_subway else ''}버스정류장 {_bus_count}개소로 대중교통망 우수"
-        elif _bus_count >= 20:
-            _access_desc = f"버스정류장 {_bus_count}개소 확보된 표준 수준 교통망"
-        elif _bus_count >= 10:
-            _access_desc = f"버스정류장 {_bus_count}개소로 교통망이 다소 협소한 편"
-        else:
-            _access_desc = f"버스정류장 {_bus_count}개소로 대중교통 접근성이 열위한 편"
-        _access_desc += " / 10타석 권장 주차면은 '현장 실측' 요망"
-
-        # 공간 적합성 지표: 실제 채점에 사용된 타석당 평수 구간을 그대로 근거 문구에 반영
-        _pyeong_per_room = site['area_pyeong'] / max(1, site['rooms'])
-        if _pyeong_per_room >= 12.0:
-            _space_desc = f"{site['area_pyeong']}평 {site['rooms']}타석 (타석당 {_pyeong_per_room:.1f}평), 여유로운 플래그십 규모"
-        elif _pyeong_per_room >= 10.0:
-            _space_desc = f"{site['area_pyeong']}평 {site['rooms']}타석 (타석당 {_pyeong_per_room:.1f}평), 표준 배치 규모"
-        elif _pyeong_per_room >= 8.0:
-            _space_desc = f"{site['area_pyeong']}평 {site['rooms']}타석 (타석당 {_pyeong_per_room:.1f}평), 다소 협소한 배치"
-        else:
-            _space_desc = f"{site['area_pyeong']}평 {site['rooms']}타석 (타석당 {_pyeong_per_room:.1f}평), 초협소 배치로 별도 검토 필요"
-        _space_desc += " / 권장 유효 층고 2.8m 이상 여부는 '인테리어 실측' 필수"
-
-        indicators = [
-            ("1) 시니어 인구 밀집도", score['scores']['senior_population'], 25, f"{pop_source_tag}: 반경 3km 내 50대 이상 시니어 {demo['senior_50_plus']:,}명 (비중 {demo['senior_ratio']}%) 밀집"),
-            ("2) 접근성 및 주차 인프라", score['scores']['accessibility_parking'], 25, _access_desc),
-            ("3) 공간 적합성 및 층고", score['scores']['space_efficiency'], 15, _space_desc),
-            ("4) 경쟁 매장 여유도", score['scores']['supply_gap'], 15, f"{comm.get('competitor_summary', '반경 3km 내 대형 플래그십 매장 공급 부족')}"),
-            ("5) 지역 소비력 및 여가지출", score['scores']['commercial_spending'], 20, f"MYPARK 지역등급 추정: 골프용품 성장 1위(+{comm.get('growth_rate', 145.2)}%) 및 스크린골프 상위 20% 월 {comm['top_20_sales']//10000:,}만원 상권")
-        ]
-        for idx, (iname, iscore, imax, idesc) in enumerate(indicators):
-            p = tf2.add_paragraph() if idx > 0 else tf2.paragraphs[0]
-            p.space_before = Pt(6)
-            r1 = p.add_run()
-            r1.text = f"■ {iname}: "
-            r1.font.bold = True
-            r1.font.size = Pt(11)
-            r1.font.color.rgb = self.c_mck_navy
-            r2 = p.add_run()
-            r2.text = f"{iscore}점 / {imax}점 만점"
-            r2.font.bold = True
-            r2.font.size = Pt(11)
-            r2.font.color.rgb = self.c_mck_teal
-            p_desc = tf2.add_paragraph()
-            p_desc.text = f"   ↳ 산출 근거: {idesc}"
-            p_desc.font.size = Pt(9.2)
-            p_desc.font.color.rgb = self.c_slate
-
-        box2_res = s2.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(6.4), Inches(5.5), Inches(6.3), Inches(1.4))
-        box2_res.fill.solid()
-        box2_res.fill.fore_color.rgb = self.c_box_bg
-        box2_res.line.color.rgb = self.c_line
-        tf_b2 = box2_res.text_frame
-        tf_b2.word_wrap = True
-        
-        p_b2_t = tf_b2.paragraphs[0]
-        p_b2_t.text = f"★ 종합 입지 판정: 총점 {score['total_score']}점 / {score['grade']}등급 ({score['grade_desc']})"
-        p_b2_t.font.bold = True
-        p_b2_t.font.size = Pt(11.5)
-        p_b2_t.font.color.rgb = self.c_mck_navy
-        
-        grade_summary_lines_pptx = {
-            'S': "본 사업지는 50~70대 풍부한 시니어 수요와 우수한 접근성을 갖추어 출점에 최적화된 입지입니다.",
-            'A': "본 사업지는 시니어 배후 수요와 접근성 등 핵심 조건을 대체로 충족하는 안정적인 입지입니다.",
-            'B': "본 사업지는 일부 지표가 표준 기준에 못 미쳐, 아래 세부 근거를 현장 실측과 함께 신중히 검토해야 합니다.",
-            'C': "본 사업지는 5대 지표 중 다수가 표준 기준에 미달하여, 출점 전 현장 재확인이 반드시 필요합니다.",
-        }
-        p_b2_d = tf_b2.add_paragraph()
-        p_b2_d.space_before = Pt(4)
-        p_b2_d.text = f"• {grade_summary_lines_pptx.get(score['grade'], grade_summary_lines_pptx['B'])}\n• 상세 상권 및 경쟁 환경 분석은 다음 3~7번 슬라이드에서 상술합니다."
-        p_b2_d.font.size = Pt(9.2)
-        p_b2_d.font.color.rgb = self.c_charcoal
-
-        self._add_source_footer(s2, f"MYPARK 5-Dimension Diamond Scoring Methodology ({score['total_score']}점 {score['grade']}등급)")
-
-        # ---------------------------------------------------------------------
-        # Slide 3: 2. 배후 인구 및 타겟 연령 분석
-        # ---------------------------------------------------------------------
         s3 = self.prs.slides.add_slide(self.blank_layout)
-        self._add_mckinsey_header(s3, "2. 3km 생활권 인구 및 타겟 연령 분석", f"사업지 반경 3km 내 {demo['total_pop']/10000:.1f}만 명({len(demo['dongs'])}개 행정동) 및 50대 이상 시니어 {demo['senior_50_plus']/10000:.1f}만 명({demo['senior_ratio']}%) 확보")
+        self._add_mckinsey_header(s3, "1. 3km 생활권 인구 및 타겟 연령 분석", f"사업지 반경 3km 내 {demo['total_pop']/10000:.1f}만 명({len(demo['dongs'])}개 행정동) 및 50대 이상 시니어 {demo['senior_50_plus']/10000:.1f}만 명({demo['senior_ratio']}%) 확보")
         
         # 좌측 행정동별 인구 테이블
         rows2 = min(len(demo['dongs']) + 2, 8)
@@ -384,7 +292,7 @@ class PPTXGenerator:
         # Slide 4: 3. 상권 소비력 및 유동 패턴 분석
         # ---------------------------------------------------------------------
         s4 = self.prs.slides.add_slide(self.blank_layout)
-        self._add_mckinsey_header(s4, "3. 상권 소비력 및 유동 패턴 분석", f"주거지역 {comm.get('residential_pop_ratio', 93.4)}% 밀집 상권 및 유사 골프업종 상위 20% 월매출 {comm['top_20_sales']//10000:,}만원 시장 타겟팅")
+        self._add_mckinsey_header(s4, "2. 상권 소비력 및 유동 패턴 분석", f"주거지역 {comm.get('residential_pop_ratio', 93.4)}% 밀집 상권 및 유사 골프업종 상위 20% 월매출 {comm['top_20_sales']//10000:,}만원 시장 타겟팅")
         
         top20_str = f"{comm['top_20_sales']//10000:,}만원"
         bot20_str = f"{comm.get('bottom_20_sales', 3020000)//10000:,}만원"
@@ -449,7 +357,8 @@ class PPTXGenerator:
         # Slide 5: 4. 업종 성장률 및 골프 특화도
         # ---------------------------------------------------------------------
         s5 = self.prs.slides.add_slide(self.blank_layout)
-        self._add_mckinsey_header(s5, "4. 업종 성장률 및 골프 특화도", f"골프용품 매출성장률 1위(+{comm.get('growth_rate', 145.2)}%) 및 전국 평균 대비 {comm['golf_industry_density']['multiple']}배 높은 골프 특화 상권")
+        _top_ind_s5 = comm['top_growth_industries'][0]
+        self._add_mckinsey_header(s5, "3. 업종 성장률 및 골프 특화도", f"성장률 1위 업종 {_top_ind_s5['name']}({_top_ind_s5['growth']}) 및 전국 평균 대비 {comm['golf_industry_density']['multiple']}배 높은 골프 특화 상권")
         
         if 'growth_radar' in charts and os.path.exists(charts['growth_radar']):
             s5.shapes.add_picture(charts['growth_radar'], Inches(0.6), Inches(1.45), width=Inches(5.9))
@@ -491,8 +400,9 @@ class PPTXGenerator:
         p.font.bold = True
         p.font.color.rgb = self.c_mck_navy
         
+        _golf_ind_s5 = next((d for d in comm['top_growth_industries'] if '골프' in d['name']), comm['top_growth_industries'][0])
         insights5 = [
-            f"• 레저 스포츠 소비 1위: {comm['top_growth_industries'][0]['name']}이 매출성장률 {comm['top_growth_industries'][0]['growth']}로 전 업종 중 1위 기록",
+            f"• 레저 스포츠 소비 상위권: {comm['top_growth_industries'][0]['name']}({comm['top_growth_industries'][0]['growth']})이 1위, {_golf_ind_s5['name']}({_golf_ind_s5['growth']})이 {_golf_ind_s5['rank']}위로 시니어 여가 업종이 성장 상위 점유",
             f"• 골프 인프라 밀집도: 전국 평균 대비 {comm['golf_industry_density']['multiple']}배 높은 골프 시설 집적으로 검증된 골프 수요층 상존",
             "• 일반 골프의 파크골프 전환: 일반 골프 비용/체력 부담을 느끼는 시니어층의 스크린 파크골프 유입 가속화",
             "• 성장 단계: 단순 유행이 아닌 시니어 여가 문화의 핵심 트렌드로 정착 단계 진입"
@@ -510,7 +420,7 @@ class PPTXGenerator:
         # Slide 6: 5. 경쟁 환경 및 시설 공급 갭 분석
         # ---------------------------------------------------------------------
         s6 = self.prs.slides.add_slide(self.blank_layout)
-        self._add_mckinsey_header(s6, "5. 경쟁 환경 및 시설 공급 갭 분석", comm['competitor_summary'])
+        self._add_mckinsey_header(s6, "4. 경쟁 환경 및 시설 공급 갭 분석", comm['competitor_summary'])
         
         # 카드 개수/너비는 실제로 확인된 경쟁사 수에 맞춰 동적으로 계산한다.
         # (하드코딩된 4칸 틀에 3곳만 채워 오른쪽이 비는 문제 방지)
@@ -634,7 +544,7 @@ class PPTXGenerator:
         # Slide 7: 6. 사업지 개요 및 현장 출점 요건 (4대 건축·인프라 체크리스트)
         # ---------------------------------------------------------------------
         s7 = self.prs.slides.add_slide(self.blank_layout)
-        self._add_mckinsey_header(s7, "6. 사업지 개요 및 현장 출점 요건", f"10타석 {site['area_pyeong']}평 규모 출점을 위한 4대 건축·인프라 현장 실측 기준")
+        self._add_mckinsey_header(s7, "5. 사업지 개요 및 현장 출점 요건", f"10타석 {site['area_pyeong']}평 규모 출점을 위한 4대 건축·인프라 현장 실측 기준")
         
         base_bullets = [
             f"• 대상 주소: {site['full_address']}",
@@ -701,6 +611,118 @@ class PPTXGenerator:
         # ---------------------------------------------------------------------
         # Slide 8: [신규] 7. 표준 투자 조건 및 사업 추진 유의사항
         # [PART 2 신설: 이 보고서에서 재무 금액이 최초로 등장하는 지점 & Caveat 명시]
+        # ---------------------------------------------------------------------
+        s2 = self.prs.slides.add_slide(self.blank_layout)
+        self._add_mckinsey_header(s2, "6. 입지 적합성 종합 판정 (5-Dimension Diamond Scoring)", f"앞선 5개 항목 분석을 종합한 다이아몬드 스코어링 총점 {score['total_score']}점({score['grade']}등급) - {score['grade_desc']}")
+
+        if 'radar_score' in charts and os.path.exists(charts['radar_score']):
+            s2.shapes.add_picture(charts['radar_score'], Inches(0.6), Inches(1.45), width=Inches(5.6))
+
+        tb2 = s2.shapes.add_textbox(Inches(6.4), Inches(1.45), Inches(6.3), Inches(5.5))
+        tf2 = tb2.text_frame
+        tf2.word_wrap = True
+
+        # 접근성 지표: infra(버스정류장 수 등)는 실측 API가 아니라 지역등급(4단계)별
+        # 고정값 테이블에서 나온다 — 이 주소만의 실측치인 것처럼 쓰지 않는다.
+        _infra = comm.get('infra', {})
+        _bus_count = _infra.get('버스정류장', 30)
+        _subway_info = _infra.get('지하철', '')
+        _has_subway = '지하철' in _subway_info or '역세권' in _subway_info or _subway_info.endswith('역')
+        if _has_subway or _bus_count >= 35:
+            _access_desc = f"{comm.get('spending_grade', '')} 지역등급 기준 대중교통망 우수 추정(버스정류장 약 {_bus_count}개소 수준)"
+        elif _bus_count >= 20:
+            _access_desc = f"{comm.get('spending_grade', '')} 지역등급 기준 표준 수준 교통망 추정(버스정류장 약 {_bus_count}개소 수준)"
+        elif _bus_count >= 10:
+            _access_desc = f"{comm.get('spending_grade', '')} 지역등급 기준 교통망 다소 협소 추정(버스정류장 약 {_bus_count}개소 수준)"
+        else:
+            _access_desc = f"{comm.get('spending_grade', '')} 지역등급 기준 대중교통 접근성 열위 추정(버스정류장 약 {_bus_count}개소 수준)"
+        _access_desc += " / 실제 건물 주차면·지하철 도보거리는 '현장 실측' 필요"
+
+        # 공간 적합성: 룸/평수 미입력 시(is_auto_estimated) 표준값 대신 중립 점수를
+        # 적용한 것이므로 산출근거 문구도 그 사실을 그대로 반영한다.
+        _pyeong_per_room = site['area_pyeong'] / max(1, site['rooms'])
+        if not score.get('space_is_verified', True):
+            _space_desc = "룸/평수 미입력으로 표준값 대신 미검증 중립 점수 적용 (현장 실측 필요)"
+        elif _pyeong_per_room >= 12.0:
+            _space_desc = f"{site['area_pyeong']}평 {site['rooms']}타석 (타석당 {_pyeong_per_room:.1f}평), 여유로운 플래그십 규모"
+        elif _pyeong_per_room >= 10.0:
+            _space_desc = f"{site['area_pyeong']}평 {site['rooms']}타석 (타석당 {_pyeong_per_room:.1f}평), 표준 배치 규모"
+        elif _pyeong_per_room >= 8.0:
+            _space_desc = f"{site['area_pyeong']}평 {site['rooms']}타석 (타석당 {_pyeong_per_room:.1f}평), 다소 협소한 배치"
+        else:
+            _space_desc = f"{site['area_pyeong']}평 {site['rooms']}타석 (타석당 {_pyeong_per_room:.1f}평), 초협소 배치로 별도 검토 필요"
+        if score.get('space_is_verified', True):
+            _space_desc += " / 권장 유효 층고 2.8m 이상 여부는 '인테리어 실측' 필수"
+
+        indicators = [
+            ("1) 시니어 인구 밀집도", score['scores']['senior_population'], 25,
+             f"{pop_source_tag}: 반경 3km 내 50대 이상 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%) / 본 매장 운영에 필요한 단골 약 {score.get('senior_customers_needed', 1200):,}명은 배후 시니어의 {score.get('senior_penetration', 0)}% 수준",
+             not demo.get('is_estimated', False)),
+            ("2) 접근성 및 주차 인프라", score['scores']['accessibility_parking'], 25, _access_desc, False),
+            ("3) 공간 적합성 및 층고", score['scores']['space_efficiency'], 15, _space_desc, score.get('space_is_verified', True)),
+            ("4) 경쟁 매장 여유도", score['scores']['supply_gap'], 15, f"{comm.get('competitor_summary', '반경 3km 내 대형 플래그십 매장 공급 부족')}", score.get('gap_is_verified', False)),
+            ("5) 지역 소비력 및 여가지출", score['scores']['commercial_spending'], 20,
+             f"MYPARK 지역등급(4단계 분류) 추정치: 골프용품 성장 +{comm.get('growth_rate', 145.2)}% 및 스크린골프 상위 20% 월 {comm['top_20_sales']//10000:,}만원 상권 (동일 등급 지역은 동일 수치 적용, 개별 카드매출 실측 아님)", False),
+        ]
+        for idx, (iname, iscore, imax, idesc, iverified) in enumerate(indicators):
+            badge_color = self.c_mck_teal if iverified else RGBColor(0x9A, 0xA5, 0xB1)
+            badge_text = "실측·확인" if iverified else "추정·미검증"
+            p = tf2.add_paragraph() if idx > 0 else tf2.paragraphs[0]
+            p.space_before = Pt(6)
+            r1 = p.add_run()
+            r1.text = f"■ {iname}: "
+            r1.font.bold = True
+            r1.font.size = Pt(11)
+            r1.font.color.rgb = self.c_mck_navy
+            r2 = p.add_run()
+            r2.text = f"{iscore}점 / {imax}점 만점  ["
+            r2.font.bold = True
+            r2.font.size = Pt(11)
+            r2.font.color.rgb = self.c_mck_teal
+            r3 = p.add_run()
+            r3.text = badge_text
+            r3.font.bold = True
+            r3.font.size = Pt(9)
+            r3.font.color.rgb = badge_color
+            r4 = p.add_run()
+            r4.text = "]"
+            r4.font.bold = True
+            r4.font.size = Pt(11)
+            r4.font.color.rgb = self.c_mck_teal
+            p_desc = tf2.add_paragraph()
+            p_desc.text = f"   ↳ 산출 근거: {idesc}"
+            p_desc.font.size = Pt(9.2)
+            p_desc.font.color.rgb = self.c_slate
+
+        box2_res = s2.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(6.4), Inches(5.5), Inches(6.3), Inches(1.4))
+        box2_res.fill.solid()
+        box2_res.fill.fore_color.rgb = self.c_box_bg
+        box2_res.line.color.rgb = self.c_line
+        tf_b2 = box2_res.text_frame
+        tf_b2.word_wrap = True
+        
+        p_b2_t = tf_b2.paragraphs[0]
+        p_b2_t.text = f"★ 종합 입지 판정: 총점 {score['total_score']}점 / {score['grade']}등급 ({score['grade_desc']})"
+        p_b2_t.font.bold = True
+        p_b2_t.font.size = Pt(11.5)
+        p_b2_t.font.color.rgb = self.c_mck_navy
+        
+        grade_summary_lines_pptx = {
+            'S': "본 사업지는 50~70대 풍부한 시니어 수요와 우수한 접근성을 갖추어 출점에 최적화된 입지입니다.",
+            'A': "본 사업지는 시니어 배후 수요와 접근성 등 핵심 조건을 대체로 충족하는 안정적인 입지입니다.",
+            'B': "본 사업지는 일부 지표가 표준 기준에 못 미쳐, 아래 세부 근거를 현장 실측과 함께 신중히 검토해야 합니다.",
+            'C': "본 사업지는 5대 지표 중 다수가 표준 기준에 미달하여, 출점 전 현장 재확인이 반드시 필요합니다.",
+        }
+        p_b2_d = tf_b2.add_paragraph()
+        p_b2_d.space_before = Pt(4)
+        p_b2_d.text = f"• {grade_summary_lines_pptx.get(score['grade'], grade_summary_lines_pptx['B'])}\n• 위 5개 지표의 상세 근거는 앞선 1~5번 슬라이드(인구·상권·업종·경쟁·사업지 개요)를 참조하십시오."
+        p_b2_d.font.size = Pt(9.2)
+        p_b2_d.font.color.rgb = self.c_charcoal
+
+        self._add_source_footer(s2, f"MYPARK 5-Dimension Diamond Scoring Methodology ({score['total_score']}점 {score['grade']}등급)")
+
+        # ---------------------------------------------------------------------
+        # Slide 3: 2. 배후 인구 및 타겟 연령 분석
         # ---------------------------------------------------------------------
         s8 = self.prs.slides.add_slide(self.blank_layout)
         self._add_mckinsey_header(s8, "7. 표준 투자 조건 및 사업 추진 유의사항", f"{site['rooms']}타석 {site['area_pyeong']}평 표준 모델 기준 및 투자 결정 전 필수 점검사항")
@@ -1006,8 +1028,8 @@ class PPTXGenerator:
             f"• 보수적 시나리오: 월 순익 {m_scen['conservative']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_conservative']:.1f}개월",
             f"• 보편적 시나리오: 월 순익 {m_scen['moderate']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_moderate']:.1f}개월 (약 {fmt_months(inv['payback_months_moderate'])})",
             f"• 긍정적 시나리오: 월 순익 {m_scen['optimistic']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_optimistic']:.1f}개월",
-            f"★ BEP 달성 요건: 기기 1대당 하루 {inv['bep_turns_per_room']}회전 (1일 {inv['bep_daily_users']}명 이용)",
-            f"★ 일 평균 {inv['bep_daily_users']}명만 방문해도 월 고정비 전액 커버 (적자 리스크 전무)"
+            f"★ BEP 달성 요건: 타석당 하루 {inv['bep_turns_per_room']}회전 (1일 {inv['bep_daily_users']}명 이용)",
+            f"★ 일 평균 {inv['bep_daily_users']}명 방문 시 월 고정비 전액 커버 (보편 시나리오의 {inv['bep_daily_users']/max(1,m_scen['moderate']['daily_users'])*100:.0f}% 수준)"
         ]
         for bs in bep_sim:
             p_b = tf11_1.add_paragraph()
@@ -1120,7 +1142,7 @@ class PPTXGenerator:
             ("3. 빠른 원금 회수 및 압도적 고수익성",
              f"• 직원 위탁 운영: 월 순영업익 약 {inv['owner_operated']['staff3_operating_profit']//10000:,}만원 (이익률 {inv['owner_operated']['staff3_operating_profit']/fin['monthly_scenarios']['moderate']['total_revenue']*100:.1f}%) / 회수 {inv['owner_operated']['staff3_payback_months']:.1f}개월\n"
              f"★ 창업주 직접 운영 시: 월 순영업익 {fin['monthly_scenarios']['moderate']['operating_profit']//10000:,}만원 / 단 {inv['payback_months_moderate']:.1f}개월({fmt_months(inv['payback_months_moderate'])}) 회수\n"
-             f"• 손익분기점(BEP)이 기기당 하루 {inv['bep_turns_per_room']}회전에 불과하여 적자 리스크 전무")
+             f"• 손익분기점(BEP)은 타석당 하루 {inv['bep_turns_per_room']}회전(1일 {inv['bep_daily_users']}명) 수준으로 안정적인 가동 목표")
         ]
         for idx, (title, desc) in enumerate(f_points):
             p_t = tf_lb.add_paragraph() if idx > 0 else tf_lb.paragraphs[0]
