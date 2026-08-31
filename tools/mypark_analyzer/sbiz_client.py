@@ -53,7 +53,13 @@ def search_stores_in_radius(x, y, radius=3000, page_no=1, num_rows=100):
             err = data['OpenAPI_ServiceResponse'].get('cmmMsgHeader', {})
             print(f"[SBIZ API ERROR] {err.get('errMsg')}: {err.get('returnAuthMsg')}")
             return None
-        body = data.get('response', {}).get('body', {})
+        header = data.get('header', {})
+        if header.get('resultCode') not in (None, '00'):
+            print(f"[SBIZ API ERROR] {header.get('resultCode')}: {header.get('resultMsg')}")
+            return None
+        # 실제 응답은 'response' 래퍼 없이 최상위에 바로 header/body가 온다
+        # (2026-08-31 실키로 확인: {"header":..., "body":{"items":[...]}})
+        body = data.get('body', {})
         items = body.get('items', [])
         if isinstance(items, dict):
             items = items.get('item', [])
@@ -74,8 +80,12 @@ def _norm(store):
 
 
 def find_golf_competitors(x, y, radius=3000):
-    """반경 내 골프/스크린골프 관련 업소만 필터링. 실패 시 None."""
-    items = search_stores_in_radius(x, y, radius=radius)
+    """반경 내 골프/스크린골프 관련 업소만 필터링. 실패 시 None.
+
+    밀집 상권은 3km 반경에 상가업소가 만 단위로 잡혀 골프 관련 업소가
+    상위 100건 안에 없을 수 있어 500건까지 조회한다
+    (2026-08-31 전주 완산구 실키 테스트: 100건 내 0건, 500건 내 5건 확인)."""
+    items = search_stores_in_radius(x, y, radius=radius, num_rows=500)
     if items is None:
         return None
     out = []
