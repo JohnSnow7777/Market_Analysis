@@ -450,6 +450,11 @@ class PDFGenerator:
         c.drawString(56, 140, f"• 70대 실버 헬스케어 수요 {_70s_share:.0f}%: 관절 부담이 없는 파크골프 특성상 부부 동반 및 시니어 커뮤니티 공간으로 정착")
         c.drawString(56, 112, "• 일반 스크린골프 대비 회전율 우위: 야간 직장인 편중 매장과 달리 주간 7시간 집중 가동으로 일일 높은 회전수 확보")
 
+        apt_sum = demo.get('apartment_summary')
+        if apt_sum:
+            yr_txt = f"{apt_sum['year_min']}년~{apt_sum['year_max']}년 준공" if apt_sum.get('year_min') else "준공년도 확인 중"
+            c.drawString(56, 84, f"• 배후 주거 기반: {apt_sum['scope_label']} 공동주택 {apt_sum['complex_count']}개 단지 (표본 {apt_sum['sample_count']}개 단지 합산 {apt_sum['total_households_sample']:,}세대, {yr_txt}) — 국토교통부 공동주택 기본정보 기준")
+
         self._draw_footer(c, "KOSIS National Statistics Portal" + (" (※ 행정동 추정 모델 적용)" if demo.get("is_estimated") else f" ({demo.get('base_date', '2026.08')})"))
         c.showPage()
 

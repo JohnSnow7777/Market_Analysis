@@ -3,6 +3,7 @@
 from .address_resolver import AddressResolver
 from .config import classify_region_tier, TIER_PRIME, TIER_METRO, TIER_MID_CITY
 from . import sgis_client
+from . import apt_client
 
 # 전국 주요 거점 행정동 실측 KOSIS 인구 통계 데이터 (2026년 기준)
 DONG_POPULATION_DB = {
@@ -217,6 +218,17 @@ class DemographicsEngine:
         ratio_60s = round(pop_60s / tot_pop * 100.0, 1) if tot_pop > 0 else 13.8
         ratio_70_plus = round(pop_70_plus / tot_pop * 100.0, 1) if tot_pop > 0 else 8.1
 
+        # 3-2. 국토부 공동주택(아파트) 단지 현황 — 개인정보 없는 단지 단위 공개정보
+        # (키 없음/좌표변환 실패/API 미승인 시 조용히 생략, 기존 흐름에 영향 없음)
+        apt_summary = None
+        try:
+            from . import competitor_engine
+            b_code = competitor_engine.CompetitorEngine.geocode_address_bcode(f"{sido} {sigungu} {dong}")
+            if b_code:
+                apt_summary = apt_client.fetch_apt_summary(b_code[:5], dong)
+        except Exception:
+            apt_summary = None
+
         is_estimated_flag = (target_dongs_is_fallback or any(d.get('is_estimated', False) for d in dong_list))
         if sgis_used:
             data_source_text = 'SGIS 통계청 실제 인구 + MYPARK 연령비중 추정 모델'
@@ -245,5 +257,6 @@ class DemographicsEngine:
             'base_date': '2026년 07월 KOSIS 국가통계포털 기준',
             'data_source': data_source_text,
             'sgis_verified': sgis_used,
-            'is_estimated': is_estimated_flag
+            'is_estimated': is_estimated_flag,
+            'apartment_summary': apt_summary
         }

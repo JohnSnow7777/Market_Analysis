@@ -271,6 +271,33 @@ class CompetitorEngine:
         return None, None
 
     @staticmethod
+    def _kakao_geocode_bcode(address, api_key):
+        """카카오 로컬 API 주소 검색으로 법정동코드(b_code, 10자리) 획득.
+        국토부 공동주택 API 등 법정동코드 기반 API의 시군구코드(앞5자리) 조회용."""
+        try:
+            url = "https://dapi.kakao.com/v2/local/search/address.json?query=" + urllib.parse.quote(address)
+            req = urllib.request.Request(url, headers={'Authorization': f'KakaoAK {api_key}'})
+            with urllib.request.urlopen(req, timeout=4) as resp:
+                data = json.loads(resp.read().decode('utf-8'))
+            docs = data.get('documents', [])
+            if docs:
+                addr = docs[0].get('address') or docs[0].get('road_address') or {}
+                b_code = addr.get('b_code')
+                if b_code:
+                    return b_code
+        except Exception:
+            pass
+        return None
+
+    @staticmethod
+    def geocode_address_bcode(address):
+        """카카오 키가 있으면 주소의 법정동코드(b_code) 획득. 키 없음/실패 시 None."""
+        api_key = os.environ.get(KAKAO_API_KEY_ENV)
+        if not api_key:
+            return None
+        return CompetitorEngine._kakao_geocode_bcode(address, api_key)
+
+    @staticmethod
     def _kakao_keyword_search(query, x, y, radius, api_key):
         """카카오 로컬 API 키워드 장소 검색 (좌표 중심 반경 검색).
 
