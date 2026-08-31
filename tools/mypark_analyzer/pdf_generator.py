@@ -332,72 +332,106 @@ class PDFGenerator:
         # Page 3: 2. 배후 인구 및 타겟 연령 분석
         # ---------------------------------------------------------------------
         self._draw_mckinsey_header(c, "2. 3km 생활권 인구 및 타겟 연령 분석", f"반경 3km 내 50대 이상 시니어 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%)의 핵심 소비 수요 확보")
-        
+
+        tbl_bottom = 268
+        tbl_top = 500
+        tbl_h = tbl_top - tbl_bottom
+        head_h = 28
+
+        # 좌측: 행정동별 인구 집계 (렛저 테이블)
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
-        c.rect(40, 268, 425, 192, fill=1, stroke=1)
-        c.setFont(FONT_BOLD, 10.5)
+        c.rect(40, tbl_bottom, 425, tbl_h, fill=1, stroke=1)
         c.setFillColor(self.c_mck_navy)
-        c.drawString(56, 438, f"■ {target_dong} 반경 3km 행정동별 인구 집계 ({pop_source_tag})")
-        
+        c.rect(40, tbl_top - head_h, 425, head_h, fill=1, stroke=0)
+        c.setFont(FONT_BOLD, 10)
+        c.setFillColor(self.c_white)
+        c.drawString(56, tbl_top - 19, f"{target_dong} 반경 3km 행정동별 인구 집계 ({pop_source_tag})")
+
+        col_y = tbl_top - head_h - 20
         c.setFont(FONT_BOLD, 8)
         c.setFillColor(self.c_slate)
-        c.drawString(56, 412, "행정동명")
-        c.drawString(160, 412, "총 인구")
-        c.drawString(250, 412, "50대 이상")
-        c.drawString(350, 412, "시니어 비중")
-        c.line(56, 404, 445, 404)
-        
-        c.setFont(FONT_REGULAR, 8)
-        c.setFillColor(self.c_charcoal)
-        y_d = 390
-        for d in demo['dongs'][:6]:
-            c.drawString(56, y_d, str(d['dong']))
-            c.drawString(160, y_d, f"{d['total']:,}명")
-            s_val = d.get('senior_50', int(d['total'] * (demo['senior_ratio'] / 100.0)))
-            c.drawString(250, y_d, f"{s_val:,}명")
-            c.drawString(350, y_d, f"{d.get('senior_ratio', demo['senior_ratio'])}%")
-            y_d -= 18
+        c.drawString(56, col_y, "행정동명")
+        c.drawRightString(230, col_y, "총 인구")
+        c.drawRightString(330, col_y, "50대 이상")
+        c.drawRightString(429, col_y, "시니어 비중")
+        c.setStrokeColor(self.c_line)
+        c.setLineWidth(0.8)
+        c.line(56, col_y - 8, 429, col_y - 8)
 
+        row_h1 = min(24, (col_y - 8 - (tbl_bottom + 12)) / max(1, len(demo['dongs'][:6])))
+        y_d = col_y - 8 - row_h1 + 7
+        for ridx, d in enumerate(demo['dongs'][:6]):
+            if ridx % 2 == 1:
+                c.setFillColor(self.c_box_bg)
+            else:
+                c.setFillColor(self.c_paper)
+            c.rect(41, y_d - 7, 423, row_h1, fill=1, stroke=0)
+            c.setFont(FONT_REGULAR, 8.5)
+            c.setFillColor(self.c_charcoal)
+            c.drawString(56, y_d, str(d['dong']))
+            c.drawRightString(230, y_d, f"{d['total']:,}명")
+            s_val = d.get('senior_50', int(d['total'] * (demo['senior_ratio'] / 100.0)))
+            c.drawRightString(330, y_d, f"{s_val:,}명")
+            c.setFillColor(self.c_mck_teal)
+            c.setFont(FONT_BOLD, 8.5)
+            c.drawRightString(429, y_d, f"{d.get('senior_ratio', demo['senior_ratio'])}%")
+            y_d -= row_h1
+
+        # 우측: 연령대 분포 매트릭스 (렛저 테이블)
         box2_right = self.width - 40
         box2_w = box2_right - 495
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
-        c.rect(495, 268, box2_w, 192, fill=1, stroke=1)
-        c.setFont(FONT_BOLD, 10.5)
+        c.rect(495, tbl_bottom, box2_w, tbl_h, fill=1, stroke=1)
         c.setFillColor(self.c_mck_navy)
-        c.drawString(511, 438, "■ 50대 이상 시니어 연령대 분포 매트릭스")
+        c.rect(495, tbl_top - head_h, box2_w, head_h, fill=1, stroke=0)
+        c.setFont(FONT_BOLD, 10)
+        c.setFillColor(self.c_white)
+        c.drawString(511, tbl_top - 19, "50대 이상 시니어 연령대 분포 매트릭스")
 
+        col_y2 = tbl_top - head_h - 20
         c.setFont(FONT_BOLD, 8)
         c.setFillColor(self.c_slate)
-        c.drawString(511, 412, "연령 구간")
-        c.drawString(578, 412, "인구수")
-        c.drawString(628, 412, "비중")
-        c.drawString(672, 412, "파크골프 이용 행태")
-        c.line(511, 404, box2_right - 16, 404)
+        c.drawString(511, col_y2, "연령 구간")
+        c.drawRightString(635, col_y2, "인구수")
+        c.drawRightString(685, col_y2, "비중")
+        c.drawString(708, col_y2, "파크골프 이용 행태")
+        c.setStrokeColor(self.c_line)
+        c.line(511, col_y2 - 8, box2_right - 16, col_y2 - 8)
 
-        c.setFont(FONT_REGULAR, 7.5)
-        c.setFillColor(self.c_charcoal)
         age_matrix = [
             ("50대 (액티브)", f"{demo['pop_50s']:,}명", f"{demo['ratio_50s']}%", "부부/동호회 주말 및 평일 야간"),
             ("60대 (은퇴 시니어)", f"{demo['pop_60s']:,}명", f"{demo['ratio_60s']}%", "평일 주간 정기 리그 핵심 주력"),
             ("70대 이상 (실버)", f"{demo['pop_70_plus']:,}명", f"{demo['ratio_70_plus']}%", "오전 시간대 건강 증진 친목 모임"),
-            ("50대+ 합계", f"{demo['senior_50_plus']:,}명", f"{demo['senior_ratio']}%", "★ 평일 낮 10~17시 풀가동 타겟")
+            ("50대+ 합계", f"{demo['senior_50_plus']:,}명", f"{demo['senior_ratio']}%", "평일 낮 10~17시 풀가동 타겟"),
         ]
-        y_a = 390
-        beh_col_w = box2_right - 16 - 672
-        for grp, cnt, rt, beh in age_matrix:
-            c.setFont(FONT_REGULAR, 8)
+        beh_col_w = box2_right - 16 - 708
+        row_h2 = (col_y2 - 8 - (tbl_bottom + 10)) / len(age_matrix)
+        y_a = col_y2 - 8 - row_h2 + 20
+        for ridx, (grp, cnt, rt, beh) in enumerate(age_matrix):
+            is_total = (ridx == len(age_matrix) - 1)
+            if is_total:
+                c.setFillColor(self.c_tint_blue)
+            elif ridx % 2 == 1:
+                c.setFillColor(self.c_box_bg)
+            else:
+                c.setFillColor(self.c_paper)
+            c.rect(496, y_a - row_h2 + 13, box2_w - 2, row_h2, fill=1, stroke=0)
+            c.setFont(FONT_BOLD if is_total else FONT_REGULAR, 8.5)
+            c.setFillColor(self.c_mck_navy if is_total else self.c_charcoal)
             c.drawString(511, y_a, grp)
-            c.drawString(578, y_a, cnt)
-            c.drawString(628, y_a, rt)
+            c.drawRightString(635, y_a, cnt)
+            c.setFillColor(self.c_mck_teal)
+            c.drawRightString(685, y_a, rt)
             c.setFont(FONT_REGULAR, 7.5)
+            c.setFillColor(self.c_slate)
             beh_lines = self._wrap_text_to_width(c, beh, FONT_REGULAR, 7.5, beh_col_w, max_lines=2)
             by = y_a
             for bl in beh_lines:
-                c.drawString(672, by, bl)
+                c.drawString(708, by, bl)
                 by -= 9
-            y_a -= 22
+            y_a -= row_h2
 
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
@@ -405,7 +439,7 @@ class PDFGenerator:
         c.setFont(FONT_BOLD, 10.5)
         c.setFillColor(self.c_mck_navy)
         c.drawString(56, 226, "■ 3km 생활권 시니어 인구 분석 시사점")
-        
+
         c.setFont(FONT_REGULAR, 9)
         c.setFillColor(self.c_charcoal)
         _senior_total = max(1, demo['senior_50_plus'])
@@ -415,7 +449,7 @@ class PDFGenerator:
         c.drawString(56, 168, f"• 60대 주력 고객군 {_60s_share:.0f}%: 은퇴 후 평일 낮 시간 여유가 있는 60대가 전체 시니어 중 {_60s_share:.0f}%를 차지하여 평일 낮 가동률 극대화")
         c.drawString(56, 140, f"• 70대 실버 헬스케어 수요 {_70s_share:.0f}%: 관절 부담이 없는 파크골프 특성상 부부 동반 및 시니어 커뮤니티 공간으로 정착")
         c.drawString(56, 112, "• 일반 스크린골프 대비 회전율 우위: 야간 직장인 편중 매장과 달리 주간 7시간 집중 가동으로 일일 높은 회전수 확보")
-        
+
         self._draw_footer(c, "KOSIS National Statistics Portal" + (" (※ 행정동 추정 모델 적용)" if demo.get("is_estimated") else f" ({demo.get('base_date', '2026.08')})"))
         c.showPage()
 
@@ -423,28 +457,45 @@ class PDFGenerator:
         # Page 4: 3. 상권 소비력 및 유동 패턴 분석
         # ---------------------------------------------------------------------
         self._draw_mckinsey_header(c, "3. 상권 소비력 및 유동 패턴 분석", f"주거지역 {comm.get('residential_pop_ratio', 93.4)}% 밀집 상권 및 스크린골프 상위 20% 월매출 {comm['top_20_sales']//10000:,}만원 시장 타겟팅")
-        
+
+        chart_bottom, chart_top = 260, 500
+        chart_h = chart_top - chart_bottom
         if 'sales_trend' in charts and os.path.exists(charts['sales_trend']):
-            c.drawImage(charts['sales_trend'], 40, 260, width=440, height=200, preserveAspectRatio=True)
-            
+            c.drawImage(charts['sales_trend'], 40, chart_bottom, width=440, height=chart_h, preserveAspectRatio=True, anchor='n')
+
+        head_h = 28
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
-        c.rect(495, 260, right_col_w, 200, fill=1, stroke=1)
-        c.setFont(FONT_BOLD, 10.5)
+        c.rect(495, chart_bottom, right_col_w, chart_h, fill=1, stroke=1)
         c.setFillColor(self.c_mck_navy)
-        c.drawString(511, 438, "■ 유사 골프업종 수익구조 격차 (MYPARK 추정)")
-        
+        c.rect(495, chart_top - head_h, right_col_w, head_h, fill=1, stroke=0)
+        c.setFont(FONT_BOLD, 10)
+        c.setFillColor(self.c_white)
+        c.drawString(511, chart_top - 19, "유사 골프업종 수익구조 격차 (MYPARK 추정)")
+
         c.setFont(FONT_REGULAR, 8.5)
         c.setFillColor(self.c_charcoal)
-        c.drawString(511, 412, f"• 상위 20% 매장 월매출: 약 {comm['top_20_sales']//10000:,}만원 (대형 최신 매장)")
-        c.drawString(511, 392, f"• 하위 20% 매장 월매출: 약 {comm.get('bottom_20_sales', 3020000)//10000:,}만원 (노후 소형 매장)")
-        c.drawString(511, 372, "• 시장 특성: 시설 규모와 쾌적성에 따른 매출 양극화 뚜렷")
-        c.drawString(511, 352, "★ 마이파크 포지셔닝: 10타석 최신식 플래그십으로 상위 20% 시장 흡수")
-        
+        ry = chart_top - head_h - 22
+        c.drawString(511, ry, f"• 상위 20% 매장 월매출: 약 {comm['top_20_sales']//10000:,}만원 (대형 최신 매장)")
+        ry -= 20
+        c.drawString(511, ry, f"• 하위 20% 매장 월매출: 약 {comm.get('bottom_20_sales', 3020000)//10000:,}만원 (노후 소형 매장)")
+        ry -= 20
+        c.drawString(511, ry, "• 시장 특성: 시설 규모와 쾌적성에 따른 매출 양극화 뚜렷")
+        ry -= 20
+        c.setFillColor(self.c_mck_teal)
+        c.drawString(511, ry, "★ 마이파크 포지셔닝: 10타석 최신식 플래그십으로 상위 20% 시장 흡수")
+        ry -= 30
+
+        c.setStrokeColor(self.c_line)
+        c.setLineWidth(0.6)
+        c.line(511, ry + 14, 495 + right_col_w - 16, ry + 14)
+        ry -= 4
+
         c.setFont(FONT_BOLD, 9.5)
         c.setFillColor(self.c_mck_teal)
-        c.drawString(511, 320, f"■ 요일별 매출 비중: 주중 {100 - comm['day_distribution']['주말평균비중']*2:.1f}% / 주말 {comm['day_distribution']['주말평균비중']*2:.1f}%")
-        c.drawString(511, 300, f"■ 시간대별 비중: 주간(10~17시) {comm['time_distribution']['주간_10_17시_비중']}% 집중 가동")
+        c.drawString(511, ry, f"■ 요일별 매출 비중: 주중 {100 - comm['day_distribution']['주말평균비중']*2:.1f}% / 주말 {comm['day_distribution']['주말평균비중']*2:.1f}%")
+        ry -= 20
+        c.drawString(511, ry, f"■ 시간대별 비중: 주간(10~17시) {comm['time_distribution']['주간_10_17시_비중']}% 집중 가동")
 
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
@@ -452,7 +503,7 @@ class PDFGenerator:
         c.setFont(FONT_BOLD, 10.5)
         c.setFillColor(self.c_mck_navy)
         c.drawString(56, 222, "■ 상권 소비력 종합 평가")
-        
+
         c.setFont(FONT_REGULAR, 9)
         c.setFillColor(self.c_charcoal)
         c.drawString(56, 194, f"• 소비 수준: {comm['spending_grade']} (시니어 여가 및 생활체육 소비 여력 충분)")
@@ -467,42 +518,56 @@ class PDFGenerator:
         # Page 5: 4. 업종 성장률 및 골프 특화도
         # ---------------------------------------------------------------------
         self._draw_mckinsey_header(c, "4. 업종 성장률 및 골프 특화도", f"골프용품 매출성장률 1위(+{comm['growth_rate']}%) 및 전국 평균 대비 {comm['golf_industry_density']['multiple']}배 높은 골프 특화 상권")
-        
+
         if 'growth_radar' in charts and os.path.exists(charts['growth_radar']):
-            c.drawImage(charts['growth_radar'], 40, 260, width=440, height=200, preserveAspectRatio=True)
-            
+            c.drawImage(charts['growth_radar'], 40, chart_bottom, width=440, height=chart_h, preserveAspectRatio=True, anchor='n')
+
         box4_right = self.width - 40
         box4_w = box4_right - 495
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
-        c.rect(495, 260, box4_w, 200, fill=1, stroke=1)
-        c.setFont(FONT_BOLD, 10.5)
+        c.rect(495, chart_bottom, box4_w, chart_h, fill=1, stroke=1)
         c.setFillColor(self.c_mck_navy)
-        c.drawString(511, 438, "■ TOP 5 매출 증가 업종 (MYPARK 지역등급 추정)")
+        c.rect(495, chart_top - head_h, box4_w, head_h, fill=1, stroke=0)
+        c.setFont(FONT_BOLD, 10)
+        c.setFillColor(self.c_white)
+        c.drawString(511, chart_top - 19, "TOP 5 매출 증가 업종 (MYPARK 지역등급 추정)")
 
+        col_y5 = chart_top - head_h - 22
         c.setFont(FONT_BOLD, 8)
         c.setFillColor(self.c_slate)
-        c.drawString(511, 412, "순위")
-        c.drawString(535, 412, "업종명")
-        c.drawString(635, 412, "성장률")
-        c.drawString(693, 412, "업종 상태")
-        c.line(511, 404, box4_right - 16, 404)
+        c.drawString(511, col_y5, "순위")
+        c.drawString(535, col_y5, "업종명")
+        c.drawRightString(670, col_y5, "성장률")
+        c.drawString(693, col_y5, "업종 상태")
+        c.setStrokeColor(self.c_line)
+        c.line(511, col_y5 - 8, box4_right - 16, col_y5 - 8)
 
-        c.setFillColor(self.c_charcoal)
-        y_g = 388
         status_col_w = box4_right - 16 - 693
-        for ind in comm['top_growth_industries']:
-            c.setFont(FONT_REGULAR, 8)
+        n_ind = max(1, len(comm['top_growth_industries']))
+        row_h5 = (col_y5 - 8 - (chart_bottom + 10)) / n_ind
+        y_g = col_y5 - 8 - row_h5 + 18
+        for ridx, ind in enumerate(comm['top_growth_industries']):
+            if ridx % 2 == 1:
+                c.setFillColor(self.c_box_bg)
+            else:
+                c.setFillColor(self.c_paper)
+            c.rect(496, y_g - row_h5 + 11, box4_w - 2, row_h5, fill=1, stroke=0)
+            c.setFont(FONT_REGULAR, 8.5)
+            c.setFillColor(self.c_charcoal)
             c.drawString(511, y_g, str(ind['rank']))
             c.drawString(535, y_g, ind['name'])
-            c.drawString(635, y_g, ind['growth'])
+            c.setFillColor(self.c_mck_teal)
+            c.setFont(FONT_BOLD, 8.5)
+            c.drawRightString(670, y_g, ind['growth'])
             c.setFont(FONT_REGULAR, 7.5)
+            c.setFillColor(self.c_slate)
             status_lines = self._wrap_text_to_width(c, ind['status'], FONT_REGULAR, 7.5, status_col_w, max_lines=2)
             sy = y_g
             for sl in status_lines:
                 c.drawString(693, sy, sl)
                 sy -= 9
-            y_g -= 18
+            y_g -= row_h5
 
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
@@ -510,7 +575,7 @@ class PDFGenerator:
         c.setFont(FONT_BOLD, 10.5)
         c.setFillColor(self.c_mck_navy)
         c.drawString(56, 222, "■ 골프 특화 상권 시사점")
-        
+
         c.setFont(FONT_REGULAR, 9)
         c.setFillColor(self.c_charcoal)
         c.drawString(56, 194, f"• 레저 스포츠 소비 1위: {comm['top_growth_industries'][0]['name']}이 매출성장률 {comm['top_growth_industries'][0]['growth']}로 전 업종 중 1위 기록")
@@ -680,8 +745,8 @@ class PDFGenerator:
             f"• 바닥 하중: 스크린 타석 및 키오스크 하중(300kg/㎡ 이상) 적합 여부"
         ]
         cards = [
-            (40, 260, 425, 200, "■ 공간 및 유효 층고 요건", space_card_lines),
-            (495, 260, 425, 200, "■ 주차 및 차량 접근성 기준", [
+            (40, 260, 425, 240, "공간 및 유효 층고 요건", space_card_lines),
+            (495, 260, 425, 240, "주차 및 차량 접근성 기준", [
                 f"• 주차 요건: {site['parking_spec']}",
                 f"• 고객 특성: 자차 이용 시니어 비중 80% 이상으로 편리한 진출입 필수",
                 f"• 진입 여건: 램프 폭 및 회전각 여유 있는 자주식 주차장 최우선",
@@ -689,7 +754,7 @@ class PDFGenerator:
                 f"• 보행 동선: 대중교통(버스/지하철) 도보 5~10분 생활권 완비",
                 f"• 승하차 편의: 주차장에서 매장 입구까지 단차 없는 완만한 동선"
             ]),
-            (40, 48, 425, 196, "■ 건물 편의 및 승강기 설비", [
+            (40, 48, 425, 196, "건물 편의 및 승강기 설비", [
                 f"• 고객 편의: {site['accessibility_spec']}",
                 f"• 계단 여건: 계단 단차가 낮거나 완만한 진입 경사로 확보 필요",
                 f"• 냉난방/환기: 개별 공조 및 고성능 환기 덕트 설치 공간 확인",
@@ -697,7 +762,7 @@ class PDFGenerator:
                 f"• 쾌적성: 남녀 분리 청결 화장실 및 쾌적한 로비 라운지 구축",
                 f"• 장애인 편의: 엘리베이터 단차 제거 및 자동문 출입구 권장"
             ]),
-            (495, 48, 425, 196, "■ 인허가 및 건축물 용도", [
+            (495, 48, 425, 196, "인허가 및 건축물 용도", [
                 f"• 적합 용도: {site['zoning_spec']}",
                 f"• 지자체 체육시설: 체육시설의 설치·이용에 관한 법률 인허가 검토",
                 f"• 소방 기준: 스프링클러, 비상유도등, 비상탈출구 완비 점검",
@@ -709,15 +774,18 @@ class PDFGenerator:
         for x, y, w, h, title, lines in cards:
             card_right = min(x + w, self.width - 40)
             card_w_actual = card_right - x
+            head_h_c = 26
             c.setFillColor(self.c_box_bg)
             c.setStrokeColor(self.c_line)
             c.rect(x, y, card_w_actual, h, fill=1, stroke=1)
-            c.setFont(FONT_BOLD, 10)
             c.setFillColor(self.c_mck_navy)
-            c.drawString(x + 14, y + h - 22, title)
+            c.rect(x, y + h - head_h_c, card_w_actual, head_h_c, fill=1, stroke=0)
+            c.setFont(FONT_BOLD, 9.5)
+            c.setFillColor(self.c_white)
+            c.drawString(x + 14, y + h - head_h_c + 9, title)
             c.setFont(FONT_REGULAR, 8.5)
             c.setFillColor(self.c_charcoal)
-            y_l = y + h - 42
+            y_l = y + h - head_h_c - 20
             text_w = card_w_actual - 24
             for l in lines[:6]:
                 wrapped = self._wrap_text_to_width(c, l, FONT_REGULAR, 8.5, text_w, max_lines=2)
@@ -738,60 +806,60 @@ class PDFGenerator:
         # 블록 A (좌측): 표준 투자 조건 (전제조건 명시)
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
-        c.rect(40, 48, 425, 412, fill=1, stroke=1)
-        
+        c.rect(40, 48, 425, 452, fill=1, stroke=1)
+
         c.setFillColor(self.c_mck_navy)
-        c.rect(40, 418, 425, 42, fill=1, stroke=0)
+        c.rect(40, 458, 425, 42, fill=1, stroke=0)
         c.setFillColor(self.c_white)
         c.setFont(FONT_BOLD, 11)
-        c.drawString(56, 436, f"■ {site['rooms']}타석 {site['area_pyeong']}평 표준 모델 투자 조건 (SSOT)")
-        
+        c.drawString(56, 476, f"■ {site['rooms']}타석 {site['area_pyeong']}평 표준 모델 투자 조건 (SSOT)")
+
         c.setFont(FONT_BOLD, 10)
         c.setFillColor(self.c_mck_navy)
-        c.drawString(56, 396, "● 초기 투자금 상세 내역")
-        
+        c.drawString(56, 436, "● 초기 투자금 상세 내역")
+
         c.setFont(FONT_REGULAR, 9)
         c.setFillColor(self.c_charcoal)
-        c.drawString(56, 374, f"• 시뮬레이터 장비: {site['rooms']}대 × 대당 {DEFAULT_SETTINGS['simulator_unit_price']//10000:,}만원 = {fmt_won_full(inv['simulator_cost'])}")
-        c.drawString(56, 354, f"• 인테리어 공사비: {site['area_pyeong']}평 × 평당 {DEFAULT_SETTINGS['interior_cost_per_pyeong']//10000:,}만원 = {fmt_won_full(inv['interior_cost'])}")
-        c.drawString(56, 334, f"• 부대설비 (냉난방/간판/가구/초도용품): {fmt_won_full(inv['other_facilities'])}")
-        c.drawString(70, 316, "- 냉난방기(4대 1,200만) / 간판(500만) / 가구(300만) / 초도용품(500만)")
-        
+        c.drawString(56, 414, f"• 시뮬레이터 장비: {site['rooms']}대 × 대당 {DEFAULT_SETTINGS['simulator_unit_price']//10000:,}만원 = {fmt_won_full(inv['simulator_cost'])}")
+        c.drawString(56, 394, f"• 인테리어 공사비: {site['area_pyeong']}평 × 평당 {DEFAULT_SETTINGS['interior_cost_per_pyeong']//10000:,}만원 = {fmt_won_full(inv['interior_cost'])}")
+        c.drawString(56, 374, f"• 부대설비 (냉난방/간판/가구/초도용품): {fmt_won_full(inv['other_facilities'])}")
+        c.drawString(70, 356, "- 냉난방기(4대 1,200만) / 간판(500만) / 가구(300만) / 초도용품(500만)")
+
         c.setFillColor(self.c_tint_blue)
-        c.rect(56, 260, 393, 40, fill=1, stroke=0)
+        c.rect(56, 300, 393, 40, fill=1, stroke=0)
         c.setFillColor(self.c_mck_navy)
         c.setFont(FONT_BOLD, 12)
-        c.drawString(70, 276, f"★ 총 초기 투자금: {fmt_won_full(inv['total_capex'])} ({fmt_eok(inv['total_capex'])})")
-        
+        c.drawString(70, 316, f"★ 총 초기 투자금: {fmt_won_full(inv['total_capex'])} ({fmt_eok(inv['total_capex'])})")
+
         c.setFont(FONT_BOLD, 10)
         c.setFillColor(self.c_mck_navy)
-        c.drawString(56, 236, "● 표준 운영 방식 및 인건비 모델")
+        c.drawString(56, 276, "● 표준 운영 방식 및 인건비 모델")
         c.setFont(FONT_REGULAR, 9)
         c.setFillColor(self.c_charcoal)
-        c.drawString(56, 214, f"• 표준 모델 (점주 {site['staff_count']}인 상주 운영): 인건비 월 {site['staff_count']*DEFAULT_SETTINGS['labor_cost_manager']//10000:,}만원 (수익률 극대화)")
-        c.drawString(56, 194, f"• 비교 모델 (직원 3인 채용 운영): 인건비 월 {3*DEFAULT_SETTINGS['labor_cost_manager']//10000:,}만원 (회수기간 {fin['owner_operated']['staff3_payback_months']:.1f}개월)")
-        c.drawString(56, 174, f"• 게임비 요금: 1인 18홀 7,000원 (4인 1팀 28,000원)")
-        c.drawString(56, 154, f"• 3대 매출원: 게임비 회전 + 용품 판매(월 {scenarios['moderate']['goods_revenue']//10000:,}만) + 식음료(월 {scenarios['moderate']['beverage_revenue']//10000:,}만)")
+        c.drawString(56, 254, f"• 표준 모델 (점주 {site['staff_count']}인 상주 운영): 인건비 월 {site['staff_count']*DEFAULT_SETTINGS['labor_cost_manager']//10000:,}만원 (수익률 극대화)")
+        c.drawString(56, 234, f"• 비교 모델 (직원 3인 채용 운영): 인건비 월 {3*DEFAULT_SETTINGS['labor_cost_manager']//10000:,}만원 (회수기간 {fin['owner_operated']['staff3_payback_months']:.1f}개월)")
+        c.drawString(56, 214, f"• 게임비 요금: 1인 18홀 7,000원 (4인 1팀 28,000원)")
+        c.drawString(56, 194, f"• 3대 매출원: 게임비 회전 + 용품 판매(월 {scenarios['moderate']['goods_revenue']//10000:,}만) + 식음료(월 {scenarios['moderate']['beverage_revenue']//10000:,}만)")
         rent_tag = "지역 시세 추정" if site.get('rent_is_estimated') else "입력하신 실측"
-        c.drawString(56, 134, f"• 월 임대료 기준: {rent_tag} {site['monthly_rent']//10000:,}만원/월 반영")
-        
+        c.drawString(56, 174, f"• 월 임대료 기준: {rent_tag} {site['monthly_rent']//10000:,}만원/월 반영")
+
         c.setFont(FONT_REGULAR, 8.5)
         c.setFillColor(self.c_slate)
-        c.drawString(56, 80, "※ 레슨, 락커비, 홀인원펀드 등 근거 없는 부가 항목은 전액 배제되었습니다.")
+        c.drawString(56, 120, "※ 레슨, 락커비, 홀인원펀드 등 근거 없는 부가 항목은 전액 배제되었습니다.")
 
         # 블록 B (우측): 투자 결정 전 유의사항 (Caveat)
         rb_right = 495 + right_col_w
         rb_text_w = rb_right - 16 - 511
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
-        c.rect(495, 48, right_col_w, 412, fill=1, stroke=1)
+        c.rect(495, 48, right_col_w, 452, fill=1, stroke=1)
 
         c.setFillColor(self.c_mck_navy)
-        c.rect(495, 418, right_col_w, 42, fill=1, stroke=0)
+        c.rect(495, 458, right_col_w, 42, fill=1, stroke=0)
         c.setFillColor(self.c_white)
         c.setFont(FONT_BOLD, 10.5)
         hdr_lines = self._wrap_text_to_width(c, "참고사항 (사업 검토 시 확인해 주십시오)", FONT_BOLD, 10.5, rb_text_w, max_lines=2)
-        hy = 442 if len(hdr_lines) > 1 else 436
+        hy = 482 if len(hdr_lines) > 1 else 476
         for hl in hdr_lines:
             c.drawString(511, hy, hl)
             hy -= 13
@@ -809,10 +877,10 @@ class PDFGenerator:
 
         c.setFont(FONT_BOLD, 9.5)
         c.setFillColor(self.c_mck_navy)
-        c.drawString(511, 396, "● 현장 실측 및 인허가 유의사항")
+        c.drawString(511, 436, "● 현장 실측 및 인허가 유의사항")
         c.setFont(FONT_REGULAR, 8.5)
         c.setFillColor(self.c_charcoal)
-        y_after = draw_wrapped_bullets(374, [
+        y_after = draw_wrapped_bullets(414, [
             "• 위 수치는 표준 모델 기준 추정치이며, 실제 임대료·공사비는 현장 견적에 따라 달라질 수 있습니다.",
             "• 건물 내 보/배관 간섭 및 유효 층고(2.8m 이상 확보) 여부를 사전 실측하십시오.",
             "• 10타석 동시 가동에 필요한 전기 인입 용량(30kW 이상)을 확인하십시오.",
@@ -865,38 +933,56 @@ class PDFGenerator:
         # Page 9: 8. 사업 타당성 분석 - 매출 추정 (3대 시나리오)
         # ---------------------------------------------------------------------
         self._draw_mckinsey_header(c, "8. 사업 타당성 분석 - 매출 추정 (3대 시나리오)", f"보수적(일 {scenarios['conservative']['daily_turns_per_room']}회전) {scenarios['conservative']['total_revenue']//10000:,}만원 ~ 보편적(일 {scenarios['moderate']['daily_turns_per_room']}회전) {scenarios['moderate']['total_revenue']//10000:,}만원 ~ 긍정적(일 {scenarios['optimistic']['daily_turns_per_room']}회전) {scenarios['optimistic']['total_revenue']//10000:,}만원")
-        
+
         full_box_w = (self.width - 40) - 40
+        tbl_bottom9, tbl_top9 = 260, 500
+        head_h9 = 30
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
-        c.rect(40, 260, full_box_w, 200, fill=1, stroke=1)
+        c.rect(40, tbl_bottom9, full_box_w, tbl_top9 - tbl_bottom9, fill=1, stroke=1)
+        c.setFillColor(self.c_mck_navy)
+        c.rect(40, tbl_top9 - head_h9, full_box_w, head_h9, fill=1, stroke=0)
+        c.setFont(FONT_BOLD, 10.5)
+        c.setFillColor(self.c_white)
+        c.drawString(56, tbl_top9 - 20, "시나리오별 매출 구조 상세")
 
         headers = ["구분 / 시나리오", "일 가동률 (타석당)", "월 게임비 매출", "용품 판매 매출", "식음료 등 기타", "월 총매출액", "연간 총매출액"]
+        x_offsets = [48, 155, 270, 380, 480, 580, 690]
+        col_y9 = tbl_top9 - head_h9 - 22
         c.setFont(FONT_BOLD, 8.5)
         c.setFillColor(self.c_slate)
-        x_offsets = [48, 155, 270, 380, 480, 580, 690]
         for h, x in zip(headers, x_offsets):
-            c.drawString(x, 438, h)
-        c.line(48, 428, 40 + full_box_w - 16, 428)
+            c.drawString(x, col_y9, h)
+        c.setStrokeColor(self.c_line)
+        c.line(48, col_y9 - 8, 40 + full_box_w - 16, col_y9 - 8)
 
         sc_data = [
             ("보수적 (초기/비수기)", f"1일 {scenarios['conservative']['daily_turns_per_room']}회전 ({scenarios['conservative']['daily_users']}명)", f"{scenarios['conservative']['room_revenue']//10000:,}만원", f"{scenarios['conservative']['goods_revenue']//10000:,}만원", f"{scenarios['conservative']['beverage_revenue']//10000:,}만원", f"{scenarios['conservative']['total_revenue']//10000:,}만원", f"{scenarios['conservative']['annual_revenue']//100000000:.1f}억원"),
             ("보편적 (정기예약 정착)", f"1일 {scenarios['moderate']['daily_turns_per_room']}회전 ({scenarios['moderate']['daily_users']}명)", f"{scenarios['moderate']['room_revenue']//10000:,}만원", f"{scenarios['moderate']['goods_revenue']//10000:,}만원", f"{scenarios['moderate']['beverage_revenue']//10000:,}만원", f"{scenarios['moderate']['total_revenue']//10000:,}만원", f"{scenarios['moderate']['annual_revenue']//100000000:.1f}억원"),
-            ("긍정적 (주간/주말 풀가동)", f"1일 {scenarios['optimistic']['daily_turns_per_room']}회전 ({scenarios['optimistic']['daily_users']}명)", f"{scenarios['optimistic']['room_revenue']//10000:,}만원", f"{scenarios['optimistic']['goods_revenue']//10000:,}만원", f"{scenarios['optimistic']['beverage_revenue']//10000:,}만원", f"{scenarios['optimistic']['total_revenue']//10000:,}만원", f"{scenarios['optimistic']['annual_revenue']//100000000:.1f}억원")
+            ("긍정적 (주간/주말 풀가동)", f"1일 {scenarios['optimistic']['daily_turns_per_room']}회전 ({scenarios['optimistic']['daily_users']}명)", f"{scenarios['optimistic']['room_revenue']//10000:,}만원", f"{scenarios['optimistic']['goods_revenue']//10000:,}만원", f"{scenarios['optimistic']['beverage_revenue']//10000:,}만원", f"{scenarios['optimistic']['total_revenue']//10000:,}만원", f"{scenarios['optimistic']['annual_revenue']//100000000:.1f}억원"),
         ]
-        y_s = 405
-        for sname, rturn, rrev, grev, brev, tot, ann in sc_data:
+        row_h9 = (col_y9 - 8 - (tbl_bottom9 + 12)) / len(sc_data)
+        y_s = col_y9 - 8 - row_h9 + 18
+        for ridx, (sname, rturn, rrev, grev, brev, tot, ann) in enumerate(sc_data):
             is_mod = "보편적" in sname
-            c.setFont(FONT_BOLD if is_mod else FONT_REGULAR, 7.5)
+            if is_mod:
+                c.setFillColor(self.c_tint_blue)
+            elif ridx % 2 == 1:
+                c.setFillColor(self.c_box_bg)
+            else:
+                c.setFillColor(self.c_paper)
+            c.rect(41, y_s - row_h9 + 15, full_box_w - 2, row_h9, fill=1, stroke=0)
+            c.setFont(FONT_BOLD if is_mod else FONT_REGULAR, 8.5)
             c.setFillColor(self.c_mck_navy if is_mod else self.c_charcoal)
             c.drawString(48, y_s, sname)
             c.drawString(155, y_s, rturn)
             c.drawString(270, y_s, rrev)
             c.drawString(380, y_s, grev)
             c.drawString(480, y_s, brev)
+            c.setFillColor(self.c_mck_teal if is_mod else self.c_charcoal)
             c.drawString(580, y_s, tot)
             c.drawString(690, y_s, ann)
-            y_s -= 24
+            y_s -= row_h9
 
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
@@ -904,7 +990,7 @@ class PDFGenerator:
         c.setFont(FONT_BOLD, 10.5)
         c.setFillColor(self.c_mck_navy)
         c.drawString(56, 222, "■ 매출 추정 산출 기준")
-        
+
         c.setFont(FONT_REGULAR, 9)
         c.setFillColor(self.c_charcoal)
         c.drawString(56, 194, "• 게임비 단가: 1인 18홀 7,000원 (4인 1팀 1게임당 28,000원)")
@@ -919,29 +1005,44 @@ class PDFGenerator:
         # Page 10: 9. 사업 타당성 분석 - 비용 구조 및 순영업이익
         # ---------------------------------------------------------------------
         self._draw_mckinsey_header(c, "9. 사업 타당성 분석 - 비용 구조 및 순영업이익", f"월 고정비 {fin['owner_operated']['fixed_cost']//10000:,}만원(임대료 {site['monthly_rent']//10000:,}만+인건비 250만+운영비) 및 보편 월 순영업이익 {scenarios['moderate']['operating_profit']//10000:,}만원")
-        
+
+        chart_bottom10, chart_top10 = 260, 500
+        chart_h10 = chart_top10 - chart_bottom10
         if 'waterfall_cost' in charts and os.path.exists(charts['waterfall_cost']):
-            c.drawImage(charts['waterfall_cost'], 40, 260, width=440, height=200, preserveAspectRatio=True)
-            
+            c.drawImage(charts['waterfall_cost'], 40, chart_bottom10, width=440, height=chart_h10, preserveAspectRatio=True, anchor='n')
+
+        head_h10 = 28
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
-        c.rect(495, 260, right_col_w, 200, fill=1, stroke=1)
-        c.setFont(FONT_BOLD, 10.5)
+        c.rect(495, chart_bottom10, right_col_w, chart_h10, fill=1, stroke=1)
         c.setFillColor(self.c_mck_navy)
-        c.drawString(511, 438, "■ 월간 비용 구조 상세 (보편 시나리오 기준)")
+        c.rect(495, chart_top10 - head_h10, right_col_w, head_h10, fill=1, stroke=0)
+        c.setFont(FONT_BOLD, 10)
+        c.setFillColor(self.c_white)
+        c.drawString(511, chart_top10 - 19, "월간 비용 구조 상세 (보편 시나리오 기준)")
 
         c.setFont(FONT_REGULAR, 8.5)
         c.setFillColor(self.c_charcoal)
+        ry10 = chart_top10 - head_h10 - 22
         rent_basis = "입력하신 임대료" if not site.get('rent_is_estimated') else "지역 시세 추정 임대료"
-        c.drawString(511, 412, f"• 월 임대료: {site['monthly_rent']//10000:,}만원 ({rent_basis})")
-        c.drawString(511, 392, f"• 인건비 (점주 직접운영): {scenarios['moderate']['labor_cost']//10000:,}만원 ({site['staff_count']}인 상주 운영)")
-        c.drawString(511, 372, f"• 매장 운영비/소모품: {DEFAULT_SETTINGS['store_ops_monthly']//10000:,}만원  |  통신/POS: {DEFAULT_SETTINGS['pos_telecom_monthly']//10000:,}만원  |  마케팅비: {DEFAULT_SETTINGS['marketing_monthly']//10000:,}만원")
-        c.drawString(511, 352, f"• 변동비 (매출연동): 매출원가 {(scenarios['moderate']['cost_goods']+scenarios['moderate']['cost_beverage'])//10000:,}만원 + 카드수수료({DEFAULT_SETTINGS['card_fee_rate']*100:.1f}%) {scenarios['moderate']['card_fee']//10000:,}만원")
-        c.drawString(511, 332, f"★ 월 총지출 합계: {scenarios['moderate']['total_cost']//10000:,}만원")
-        
-        c.setFont(FONT_BOLD, 10)
+        c.drawString(511, ry10, f"• 월 임대료: {site['monthly_rent']//10000:,}만원 ({rent_basis})")
+        ry10 -= 20
+        c.drawString(511, ry10, f"• 인건비 (점주 직접운영): {scenarios['moderate']['labor_cost']//10000:,}만원 ({site['staff_count']}인 상주 운영)")
+        ry10 -= 20
+        c.drawString(511, ry10, f"• 매장 운영비/소모품: {DEFAULT_SETTINGS['store_ops_monthly']//10000:,}만원  |  통신/POS: {DEFAULT_SETTINGS['pos_telecom_monthly']//10000:,}만원  |  마케팅비: {DEFAULT_SETTINGS['marketing_monthly']//10000:,}만원")
+        ry10 -= 20
+        c.drawString(511, ry10, f"• 변동비 (매출연동): 매출원가 {(scenarios['moderate']['cost_goods']+scenarios['moderate']['cost_beverage'])//10000:,}만원 + 카드수수료({DEFAULT_SETTINGS['card_fee_rate']*100:.1f}%) {scenarios['moderate']['card_fee']//10000:,}만원")
+        ry10 -= 24
+        c.setFont(FONT_BOLD, 9.5)
+        c.setFillColor(self.c_mck_navy)
+        c.drawString(511, ry10, f"★ 월 총지출 합계: {scenarios['moderate']['total_cost']//10000:,}만원")
+
+        ry10 -= 40
+        c.setFillColor(self.c_tint_blue)
+        c.rect(505, ry10 - 12, right_col_w - 10, 34, fill=1, stroke=0)
+        c.setFont(FONT_BOLD, 11)
         c.setFillColor(self.c_mck_teal)
-        c.drawString(511, 290, f"★ 월 순영업이익: {scenarios['moderate']['operating_profit']//10000:,}만원 (영업이익률 {scenarios['moderate']['profit_margin']}%)")
+        c.drawString(515, ry10, f"★ 월 순영업이익: {scenarios['moderate']['operating_profit']//10000:,}만원 (영업이익률 {scenarios['moderate']['profit_margin']}%)")
 
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
@@ -949,7 +1050,7 @@ class PDFGenerator:
         c.setFont(FONT_BOLD, 10.5)
         c.setFillColor(self.c_mck_navy)
         c.drawString(56, 222, "■ 운영 모델별 순영업이익 비교")
-        
+
         c.setFont(FONT_REGULAR, 9)
         c.setFillColor(self.c_charcoal)
         c.drawString(56, 194, f"• 점주 직접 운영 모델 (표준): 월 순영업이익 {scenarios['moderate']['operating_profit']//10000:,}만원 (연간 {scenarios['moderate']['operating_profit']*12//10000:,}만원 / 이익률 {scenarios['moderate']['profit_margin']}%)")
@@ -964,27 +1065,38 @@ class PDFGenerator:
         # Page 11: 10. 손익분기점(BEP) 및 투자금 회수기간
         # ---------------------------------------------------------------------
         self._draw_mckinsey_header(c, "10. 손익분기점(BEP) 및 투자금 회수기간", f"손익분기 매출 월 {inv['bep_monthly_sales']//10000:,}만원 (타석당 일 {inv['bep_turns_per_room']}회전) 및 투자금 {fmt_eok(inv['total_capex'])} 회수기간 약 {inv['payback_months_moderate']:.1f}개월")
-        
+
+        chart_bottom11, chart_top11 = 260, 500
+        chart_h11 = chart_top11 - chart_bottom11
         if 'bep_chart' in charts and os.path.exists(charts['bep_chart']):
-            c.drawImage(charts['bep_chart'], 40, 260, width=440, height=200, preserveAspectRatio=True)
-            
+            c.drawImage(charts['bep_chart'], 40, chart_bottom11, width=440, height=chart_h11, preserveAspectRatio=True, anchor='n')
+
+        head_h11 = 28
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
-        c.rect(495, 260, right_col_w, 200, fill=1, stroke=1)
-        c.setFont(FONT_BOLD, 10.5)
+        c.rect(495, chart_bottom11, right_col_w, chart_h11, fill=1, stroke=1)
         c.setFillColor(self.c_mck_navy)
-        c.drawString(511, 438, f"■ 투자금 {fmt_eok(inv['total_capex'])} 회수 시뮬레이션")
-        
+        c.rect(495, chart_top11 - head_h11, right_col_w, head_h11, fill=1, stroke=0)
+        c.setFont(FONT_BOLD, 10)
+        c.setFillColor(self.c_white)
+        c.drawString(511, chart_top11 - 19, f"투자금 {fmt_eok(inv['total_capex'])} 회수 시뮬레이션")
+
         c.setFont(FONT_REGULAR, 8.5)
         c.setFillColor(self.c_charcoal)
-        c.drawString(511, 412, f"• 보수적 시나리오: 월 순익 {scenarios['conservative']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_conservative']:.1f}개월")
-        c.drawString(511, 392, f"• 보편적 시나리오: 월 순익 {scenarios['moderate']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_moderate']:.1f}개월 (약 1년)")
-        c.drawString(511, 372, f"• 긍정적 시나리오: 월 순익 {scenarios['optimistic']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_optimistic']:.1f}개월")
-        
+        ry11 = chart_top11 - head_h11 - 22
+        c.drawString(511, ry11, f"• 보수적 시나리오: 월 순익 {scenarios['conservative']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_conservative']:.1f}개월")
+        ry11 -= 20
+        c.drawString(511, ry11, f"• 보편적 시나리오: 월 순익 {scenarios['moderate']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_moderate']:.1f}개월 (약 1년)")
+        ry11 -= 20
+        c.drawString(511, ry11, f"• 긍정적 시나리오: 월 순익 {scenarios['optimistic']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_optimistic']:.1f}개월")
+        ry11 -= 34
+
+        c.setFillColor(self.c_tint_blue)
+        c.rect(505, ry11 - 34, right_col_w - 10, 56, fill=1, stroke=0)
         c.setFont(FONT_BOLD, 9.5)
-        c.setFillColor(self.c_red)
-        c.drawString(511, 332, f"★ BEP 달성 요건: 기기 1대당 하루 {inv['bep_turns_per_room']}회전 (1일 {inv['bep_daily_users']}명 이용)")
-        c.drawString(511, 312, f"★ 일 평균 {inv['bep_daily_users']}명만 방문해도 월 고정비 전액 커버 (적자 리스크 전무)")
+        c.setFillColor(self.c_mck_navy)
+        c.drawString(515, ry11, f"★ BEP 달성 요건: 기기 1대당 하루 {inv['bep_turns_per_room']}회전 (1일 {inv['bep_daily_users']}명 이용)")
+        c.drawString(515, ry11 - 20, f"★ 일 평균 {inv['bep_daily_users']}명만 방문해도 월 고정비 전액 커버 (적자 리스크 전무)")
 
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
@@ -992,7 +1104,7 @@ class PDFGenerator:
         c.setFont(FONT_BOLD, 10.5)
         c.setFillColor(self.c_mck_navy)
         c.drawString(56, 222, "■ 투자 안정성 및 리스크 평가")
-        
+
         c.setFont(FONT_REGULAR, 9)
         c.setFillColor(self.c_charcoal)
         c.drawString(56, 194, "• 초저위험 구조: 타석당 1일 1회전(4명)만 가동되어도 손익분기점을 초과하여 적자 발생 확률이 극히 희박")
@@ -1007,47 +1119,68 @@ class PDFGenerator:
         # Page 12: 11. 5개년 중장기 손익 전망 및 종합 제언
         # ---------------------------------------------------------------------
         self._draw_mckinsey_header(c, "11. 5개년 중장기 손익 전망 및 종합 제언", f"5개년 누적 매출 {fin['five_year']['total_5yr_revenue']//100000000:.1f}억원, 누적 순영업이익 {fin['five_year']['total_5yr_profit']//100000000:.1f}억원 달성 전망")
-        
+
+        tbl_bottom12, tbl_top12 = 260, 500
+        head_h12 = 30
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
-        c.rect(40, 260, full_box_w, 200, fill=1, stroke=1)
+        c.rect(40, tbl_bottom12, full_box_w, tbl_top12 - tbl_bottom12, fill=1, stroke=1)
+        c.setFillColor(self.c_mck_navy)
+        c.rect(40, tbl_top12 - head_h12, full_box_w, head_h12, fill=1, stroke=0)
+        c.setFont(FONT_BOLD, 10.5)
+        c.setFillColor(self.c_white)
+        c.drawString(56, tbl_top12 - 20, "5개년 손익 전망 요약")
 
         headers_5y = ["연차", "1차년도 (안정화)", "2차년도 (성장기)", "3차년도 (성숙기)", "4차년도 (유지기)", "5차년도 (성숙유지)", "5개년 누적 합계"]
+        x_5y = [48, 145, 240, 335, 430, 525, 625]
+        col_y12 = tbl_top12 - head_h12 - 22
         c.setFont(FONT_BOLD, 8.5)
         c.setFillColor(self.c_slate)
-        x_5y = [48, 145, 240, 335, 430, 525, 625]
         for h, x in zip(headers_5y, x_5y):
-            c.drawString(x, 438, h)
-        c.line(48, 428, 40 + full_box_w - 16, 428)
-        
-        y_5 = 405
+            c.drawString(x, col_y12, h)
+        c.setStrokeColor(self.c_line)
+        c.line(48, col_y12 - 8, 40 + full_box_w - 16, col_y12 - 8)
+
         rows_5y = [
             ("연간 총매출액", [f"{y['revenue']/100000000:.2f}억원" for y in fin['five_year']['years']], f"{fin['five_year']['total_5yr_revenue']//100000000:.1f}억원"),
             ("연간 총비용", [f"{y['cost']/100000000:.2f}억원" for y in fin['five_year']['years']], f"{fin['five_year']['total_5yr_cost']//100000000:.1f}억원"),
             ("연간 순영업익", [f"{y['profit']/100000000:.2f}억원" for y in fin['five_year']['years']], f"{fin['five_year']['total_5yr_profit']//100000000:.1f}억원"),
-            ("투자금 누적회수", [f"{fmt_eok(inv['total_capex'])} 회수완료" if fin['five_year']['years'][i]['cumulative_profit'] >= inv['total_capex'] else f"{fin['five_year']['years'][i]['cumulative_profit']/100000000:.2f}억원" for i in range(5)], f"회수율 {fin['five_year']['total_5yr_profit']/inv['total_capex']*100:.0f}%")
+            ("투자금 누적회수", [f"{fmt_eok(inv['total_capex'])} 회수완료" if fin['five_year']['years'][i]['cumulative_profit'] >= inv['total_capex'] else f"{fin['five_year']['years'][i]['cumulative_profit']/100000000:.2f}억원" for i in range(5)], f"회수율 {fin['five_year']['total_5yr_profit']/inv['total_capex']*100:.0f}%"),
         ]
-        for rname, yvals, totval in rows_5y:
+        row_h12 = (col_y12 - 8 - (tbl_bottom12 + 12)) / len(rows_5y)
+        y_5 = col_y12 - 8 - row_h12 + 18
+        for ridx, (rname, yvals, totval) in enumerate(rows_5y):
             is_prof = "순영업익" in rname
+            if is_prof:
+                c.setFillColor(self.c_tint_blue)
+            elif ridx % 2 == 1:
+                c.setFillColor(self.c_box_bg)
+            else:
+                c.setFillColor(self.c_paper)
+            c.rect(41, y_5 - row_h12 + 15, full_box_w - 2, row_h12, fill=1, stroke=0)
             c.setFont(FONT_BOLD if is_prof else FONT_REGULAR, 8.5)
             c.setFillColor(self.c_mck_teal if is_prof else self.c_charcoal)
             c.drawString(48, y_5, rname)
             for idx, yv in enumerate(yvals):
                 c.drawString(x_5y[idx+1], y_5, yv)
+            c.setFont(FONT_BOLD, 8.5)
             c.drawString(x_5y[-1], y_5, totval)
-            y_5 -= 24
+            y_5 -= row_h12
 
         # 하단 2개 박스 (가맹점주 기대효과 vs 건물주 상생 효과)
+        head_h12b = 26
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
         c.rect(40, 48, 425, 196, fill=1, stroke=1)
-        c.setFont(FONT_BOLD, 10.5)
         c.setFillColor(self.c_mck_navy)
-        c.drawString(56, 222, "【 가맹점주 핵심 경쟁력 및 최종 제언 】")
+        c.rect(40, 48 + 196 - head_h12b, 425, head_h12b, fill=1, stroke=0)
+        c.setFont(FONT_BOLD, 10)
+        c.setFillColor(self.c_white)
+        c.drawString(56, 48 + 196 - head_h12b + 9, "가맹점주 핵심 경쟁력 및 최종 제언")
         c.setFont(FONT_REGULAR, 8.5)
         c.setFillColor(self.c_charcoal)
         val_f_lines = score['value_franchisee'].split('\n')
-        cur_y = 196
+        cur_y = 48 + 196 - head_h12b - 16
         for fl in val_f_lines:
             cur_y = self._draw_multiline_text(c, fl, 56, cur_y, max_chars=40, line_height=13, max_lines=4) - 3
         if site.get('special_notes'):
@@ -1058,13 +1191,15 @@ class PDFGenerator:
         c.setFillColor(self.c_tint_blue)
         c.setStrokeColor(self.c_mck_teal)
         c.rect(495, 48, right_col_w, 196, fill=1, stroke=1)
-        c.setFont(FONT_BOLD, 10.5)
         c.setFillColor(self.c_mck_teal)
-        c.drawString(511, 222, "【 건물주 및 상가 상생 활성화 효과 】")
+        c.rect(495, 48 + 196 - head_h12b, right_col_w, head_h12b, fill=1, stroke=0)
+        c.setFont(FONT_BOLD, 10)
+        c.setFillColor(self.c_white)
+        c.drawString(511, 48 + 196 - head_h12b + 9, "건물주 및 상가 상생 활성화 효과")
         c.setFont(FONT_REGULAR, 8.5)
         c.setFillColor(self.c_charcoal)
         val_l_lines = score['value_landlord'].split('\n')
-        cur_y = 196
+        cur_y = 48 + 196 - head_h12b - 16
         for ll in val_l_lines:
             cur_y = self._draw_multiline_text(c, ll, 511, cur_y, max_chars=26, line_height=10.5, max_lines=5, color=self.c_charcoal) - 3
 
