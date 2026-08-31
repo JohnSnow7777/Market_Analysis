@@ -302,27 +302,39 @@ class PDFGenerator:
                 by -= 9
             y_a -= row_h2
 
-        c.setFillColor(self.c_box_bg)
-        c.setStrokeColor(self.c_line)
-        c.rect(40, 48, 880, 204, fill=1, stroke=1)
-        c.setFont(FONT_BOLD, 10.5)
-        c.setFillColor(self.c_mck_navy)
-        c.drawString(56, 226, "■ 3km 생활권 시니어 인구 분석 시사점")
-
-        c.setFont(FONT_REGULAR, 9)
-        c.setFillColor(self.c_charcoal)
         _senior_total = max(1, demo['senior_50_plus'])
         _60s_share = demo['pop_60s'] / _senior_total * 100
         _70s_share = demo['pop_70_plus'] / _senior_total * 100
-        c.drawString(56, 196, f"• 압도적인 타겟 집적도: 반경 3km 내 50대 이상 인구 {demo['senior_50_plus']:,}명 확보로 안정적 고객 풀 형성")
-        c.drawString(56, 168, f"• 60대 주력 고객군 {_60s_share:.0f}%: 은퇴 후 평일 낮 시간 여유가 있는 60대가 전체 시니어 중 {_60s_share:.0f}%를 차지하여 평일 낮 가동률 극대화")
-        c.drawString(56, 140, f"• 70대 실버 헬스케어 수요 {_70s_share:.0f}%: 관절 부담이 없는 파크골프 특성상 부부 동반 및 시니어 커뮤니티 공간으로 정착")
-        c.drawString(56, 112, "• 일반 스크린골프 대비 회전율 우위: 야간 직장인 편중 매장과 달리 주간 7시간 집중 가동으로 일일 높은 회전수 확보")
-
+        _insight_bullets = [
+            f"• 타겟 집적도: 반경 3km 내 50대 이상 인구 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%) 확보로 안정적 고객 풀 형성",
+            f"• 60대 주력 고객군 {_60s_share:.0f}%: 은퇴 후 평일 낮 시간 여유가 있는 60대가 전체 시니어 중 {_60s_share:.0f}%를 차지하여 평일 낮 가동률 극대화",
+            f"• 70대 실버 헬스케어 수요 {_70s_share:.0f}%: 관절 부담이 없는 파크골프 특성상 부부 동반 및 시니어 커뮤니티 공간으로 정착",
+            "• 일반 스크린골프 대비 회전율 우위: 야간 직장인 편중 매장과 달리 주간 7시간 집중 가동으로 일일 높은 회전수 확보",
+        ]
         apt_sum = demo.get('apartment_summary')
         if apt_sum:
             yr_txt = f"{apt_sum['year_min']}년~{apt_sum['year_max']}년 준공" if apt_sum.get('year_min') else "준공년도 확인 중"
-            c.drawString(56, 84, f"• 배후 주거 기반: {apt_sum['scope_label']} 공동주택 {apt_sum['complex_count']}개 단지 (표본 {apt_sum['sample_count']}개 단지 합산 {apt_sum['total_households_sample']:,}세대, {yr_txt}) — 국토교통부 공동주택 기본정보 기준")
+            _insight_bullets.append(f"• 배후 주거 기반: {apt_sum['scope_label']} 공동주택 {apt_sum['complex_count']}개 단지 (표본 {apt_sum['sample_count']}개 단지 합산 {apt_sum['total_households_sample']:,}세대, {yr_txt}) — 국토교통부 공동주택 기본정보 기준")
+
+        # 박스 높이를 실제 불릿 수에 맞춰 계산한다 (아파트 정보 유무에 따라 줄 수가
+        # 달라지는데 높이가 고정이면 하단에 죽은 여백이 크게 남는다).
+        _ins_top = 252
+        _ins_line_h = 28
+        _ins_h = 26 + 30 + len(_insight_bullets) * _ins_line_h
+        _ins_bottom = _ins_top - _ins_h
+        c.setFillColor(self.c_box_bg)
+        c.setStrokeColor(self.c_line)
+        c.rect(40, _ins_bottom, self.width - 80, _ins_h, fill=1, stroke=1)
+        c.setFont(FONT_BOLD, 10.5)
+        c.setFillColor(self.c_mck_navy)
+        c.drawString(56, _ins_top - 26, "■ 3km 생활권 시니어 인구 분석 시사점")
+
+        c.setFont(FONT_REGULAR, 9)
+        c.setFillColor(self.c_charcoal)
+        _ins_y = _ins_top - 56
+        for _ib in _insight_bullets:
+            c.drawString(56, _ins_y, _ib)
+            _ins_y -= _ins_line_h
 
         self._draw_footer(c, "KOSIS National Statistics Portal" + (" (※ 행정동 추정 모델 적용)" if demo.get("is_estimated") else f" ({demo.get('base_date', '2026.08')})"))
         c.showPage()
@@ -373,7 +385,7 @@ class PDFGenerator:
 
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
-        c.rect(40, 48, 880, 196, fill=1, stroke=1)
+        c.rect(40, 96, self.width - 80, 148, fill=1, stroke=1)
         c.setFont(FONT_BOLD, 10.5)
         c.setFillColor(self.c_mck_navy)
         c.drawString(56, 222, "■ 상권 소비력 종합 평가")
@@ -391,7 +403,8 @@ class PDFGenerator:
         # ---------------------------------------------------------------------
         # Page 5: 4. 업종 성장률 및 골프 특화도
         # ---------------------------------------------------------------------
-        self._draw_mckinsey_header(c, "3. 업종 성장률 및 골프 특화도", f"골프용품 매출성장률 1위(+{comm['growth_rate']}%) 및 전국 평균 대비 {comm['golf_industry_density']['multiple']}배 높은 골프 특화 상권")
+        _top_ind = comm['top_growth_industries'][0]
+        self._draw_mckinsey_header(c, "3. 업종 성장률 및 골프 특화도", f"성장률 1위 업종 {_top_ind['name']}({_top_ind['growth']}) 및 전국 평균 대비 {comm['golf_industry_density']['multiple']}배 높은 골프 특화 상권")
 
         if 'growth_radar' in charts and os.path.exists(charts['growth_radar']):
             c.drawImage(charts['growth_radar'], 40, chart_bottom, width=440, height=chart_h, preserveAspectRatio=True, anchor='n')
@@ -445,14 +458,15 @@ class PDFGenerator:
 
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
-        c.rect(40, 48, 880, 196, fill=1, stroke=1)
+        c.rect(40, 96, self.width - 80, 148, fill=1, stroke=1)
         c.setFont(FONT_BOLD, 10.5)
         c.setFillColor(self.c_mck_navy)
         c.drawString(56, 222, "■ 골프 특화 상권 시사점")
 
         c.setFont(FONT_REGULAR, 9)
         c.setFillColor(self.c_charcoal)
-        c.drawString(56, 194, f"• 레저 스포츠 소비 1위: {comm['top_growth_industries'][0]['name']}이 매출성장률 {comm['top_growth_industries'][0]['growth']}로 전 업종 중 1위 기록")
+        _golf_ind = next((d for d in comm['top_growth_industries'] if '골프' in d['name']), comm['top_growth_industries'][0])
+        c.drawString(56, 194, f"• 레저 스포츠 소비 상위권: {comm['top_growth_industries'][0]['name']}({comm['top_growth_industries'][0]['growth']})이 1위, {_golf_ind['name']}({_golf_ind['growth']})이 {_golf_ind['rank']}위로 시니어 여가 업종이 성장 상위 점유")
         c.drawString(56, 168, f"• 골프 인프라 밀집도: 전국 평균 대비 {comm['golf_industry_density']['multiple']}배 높은 골프 시설 집적으로 검증된 골프 수요층 상존")
         c.drawString(56, 142, "• 일반 골프의 파크골프 전환: 일반 골프 비용/체력 부담을 느끼는 시니어층의 스크린 파크골프 유입 가속화")
         c.drawString(56, 116, "• 성장 단계: 단순 유행이 아닌 시니어 여가 문화의 핵심 트렌드로 정착 단계 진입")
@@ -724,7 +738,7 @@ class PDFGenerator:
         _space_desc += " / 유효 층고 2.8m 이상은 현장 실측 필수"
 
         indicators = [
-            ("시니어 인구 밀집도", score['scores']['senior_population'], 25, f"{pop_source_tag}: 반경 3km 내 50대 이상 시니어 {demo['senior_50_plus']:,}명 ({demo['senior_ratio']}%) 밀집", not demo.get('is_estimated', False)),
+            ("시니어 인구 밀집도", score['scores']['senior_population'], 25, f"{pop_source_tag}: 반경 3km 내 50대 이상 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%) / 본 매장 운영에 필요한 단골 약 {score.get('senior_customers_needed', 1200):,}명은 배후 시니어의 {score.get('senior_penetration', 0)}% 수준", not demo.get('is_estimated', False)),
             ("접근성 및 주차 인프라", score['scores']['accessibility_parking'], 25, _access_desc + " (※ 건물 자체 주차·엘리베이터 아닌 상권 대중교통 통계 기준)", False),
             ("공간 적합성 및 층고", score['scores']['space_efficiency'], 15, _space_desc if score.get('space_is_verified', True) else "룸/평수 미입력으로 표준값 대신 미검증 중립 점수 적용 (현장 실측 필요)", score.get('space_is_verified', True)),
             ("경쟁 매장 여유도", score['scores']['supply_gap'], 15, f"{comm.get('competitor_summary', '반경 3km 내 대형 플래그십 매장 공급 부족')}", score.get('gap_is_verified', False)),
@@ -1121,7 +1135,7 @@ class PDFGenerator:
         ry11 = chart_top11 - head_h11 - 22
         c.drawString(511, ry11, f"• 보수적 시나리오: 월 순익 {scenarios['conservative']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_conservative']:.1f}개월")
         ry11 -= 20
-        c.drawString(511, ry11, f"• 보편적 시나리오: 월 순익 {scenarios['moderate']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_moderate']:.1f}개월 (약 1년)")
+        c.drawString(511, ry11, f"• 보편적 시나리오: 월 순익 {scenarios['moderate']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_moderate']:.1f}개월 ({fmt_months(inv['payback_months_moderate'])})")
         ry11 -= 20
         c.drawString(511, ry11, f"• 긍정적 시나리오: 월 순익 {scenarios['optimistic']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_optimistic']:.1f}개월")
         ry11 -= 34
@@ -1130,22 +1144,64 @@ class PDFGenerator:
         c.rect(505, ry11 - 34, right_col_w - 10, 56, fill=1, stroke=0)
         c.setFont(FONT_BOLD, 9.5)
         c.setFillColor(self.c_mck_navy)
-        c.drawString(515, ry11, f"★ BEP 달성 요건: 기기 1대당 하루 {inv['bep_turns_per_room']}회전 (1일 {inv['bep_daily_users']}명 이용)")
-        c.drawString(515, ry11 - 20, f"★ 일 평균 {inv['bep_daily_users']}명만 방문해도 월 고정비 전액 커버 (적자 리스크 전무)")
+        c.drawString(515, ry11, f"★ BEP 달성 요건: 타석당 하루 {inv['bep_turns_per_room']}회전 (1일 {inv['bep_daily_users']}명 이용)")
+        c.drawString(515, ry11 - 20, f"★ 일 평균 {inv['bep_daily_users']}명 방문 시 월 고정비 전액 커버 (보편 시나리오의 {inv['bep_daily_users']/max(1,scenarios['moderate']['daily_users'])*100:.0f}% 수준)")
+
+        # 하단: 회수기간을 실제로 움직이는 레버를 정량 비교한다.
+        # (회수기간이 길게 나오는 사업지에서 '무엇을 바꾸면 얼마나 개선되는지'를
+        #  숫자로 제시. 각 수치는 동일 재무엔진으로 재계산한 실제 값이다.)
+        _lv_base_op = scenarios['conservative']['operating_profit']
+        _lv_capex = inv['total_capex']
+        _lv_base_pb = (_lv_capex / _lv_base_op) if _lv_base_op > 0 else 0
+        _lv_turn_op = scenarios['moderate']['operating_profit']
+        _lv_turn_pb = (_lv_capex / _lv_turn_op) if _lv_turn_op > 0 else 0
+        _lv_rent_op = _lv_base_op + 1000000
+        _lv_rent_pb = (_lv_capex / _lv_rent_op) if _lv_rent_op > 0 else 0
+        _lv_int_capex = _lv_capex - int(site['area_pyeong'] * 300000)
+        _lv_int_pb = (_lv_int_capex / _lv_base_op) if _lv_base_op > 0 else 0
 
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
-        c.rect(40, 48, 880, 196, fill=1, stroke=1)
-        c.setFont(FONT_BOLD, 10.5)
+        c.rect(40, 48, self.width - 80, 196, fill=1, stroke=1)
         c.setFillColor(self.c_mck_navy)
-        c.drawString(56, 222, "■ 투자 안정성 및 리스크 평가")
+        c.rect(40, 216, self.width - 80, 28, fill=1, stroke=0)
+        c.setFont(FONT_BOLD, 10)
+        c.setFillColor(self.c_white)
+        c.drawString(56, 225, "■ 투자금 회수기간 단축 레버 (보수적 시나리오 기준 민감도 분석)")
 
-        c.setFont(FONT_REGULAR, 9)
-        c.setFillColor(self.c_charcoal)
-        c.drawString(56, 194, "• 초저위험 구조: 타석당 1일 1회전(4명)만 가동되어도 손익분기점을 초과하여 적자 발생 확률이 극히 희박")
-        c.drawString(56, 168, f"• 빠른 자본 회수: 보편 가동 기준 약 {inv['payback_months_moderate']:.1f}개월({fmt_months(inv['payback_months_moderate'])}) 만에 초기 투자금 {fmt_eok(inv['total_capex'])} 전액 회수")
-        c.drawString(56, 142, "• 자산 가치 보존: 시뮬레이터 장비 및 쾌적한 인테리어 시설은 향후 지속적인 현금 흐름을 창출하는 핵심 실물 자산")
-        c.drawString(56, 116, "• 안정적 단골 락인: 지역 시니어 동호회 정기 예약 시스템 구축으로 경기 변동에 영향을 받지 않는 방어적 사업 모델")
+        _lv_rows = [
+            ("가동률 상향 (3회전 → 4회전)", f"{_lv_base_pb:.1f}개월", f"{_lv_turn_pb:.1f}개월", f"-{_lv_base_pb - _lv_turn_pb:.1f}개월", "동호회 정기예약·평일 낮 단체 유치가 가장 강력한 레버"),
+            ("인테리어 단가 조정 (평당 -30만원)", f"{_lv_base_pb:.1f}개월", f"{_lv_int_pb:.1f}개월", f"-{_lv_base_pb - _lv_int_pb:.1f}개월", "기존 상가 시설 승계·부분 시공으로 초기 투자비 절감"),
+            ("임대료 협상 (월 -100만원)", f"{_lv_base_pb:.1f}개월", f"{_lv_rent_pb:.1f}개월", f"-{_lv_base_pb - _lv_rent_pb:.1f}개월", "장기계약·렌트프리 조건 협상 시 매월 순익에 직접 반영"),
+        ]
+        _lv_cols = [56, 268, 344, 424, 512]
+        c.setFont(FONT_BOLD, 8.5)
+        c.setFillColor(self.c_slate)
+        for _t, _x in zip(["개선 레버", "현재", "개선 후", "단축폭", "실행 방법"], _lv_cols):
+            c.drawString(_x, 198, _t)
+        _lv_y = 176
+        for _i, (_nm, _cur, _aft, _gap, _how) in enumerate(_lv_rows):
+            if _i % 2 == 0:
+                c.setFillColor(self.c_paper)
+                c.rect(48, _lv_y - 10, self.width - 96, 30, fill=1, stroke=0)
+            c.setFont(FONT_BOLD, 9)
+            c.setFillColor(self.c_mck_navy)
+            c.drawString(_lv_cols[0], _lv_y, _nm)
+            c.setFont(FONT_REGULAR, 9)
+            c.setFillColor(self.c_slate)
+            c.drawString(_lv_cols[1], _lv_y, _cur)
+            c.setFont(FONT_BOLD, 9)
+            c.setFillColor(self.c_mck_teal)
+            c.drawString(_lv_cols[2], _lv_y, _aft)
+            c.drawString(_lv_cols[3], _lv_y, _gap)
+            c.setFont(FONT_REGULAR, 8.5)
+            c.setFillColor(self.c_charcoal)
+            c.drawString(_lv_cols[4], _lv_y, _how)
+            _lv_y -= 30
+
+        c.setFont(FONT_REGULAR, 8.5)
+        c.setFillColor(self.c_slate)
+        c.drawString(56, 62, f"※ 타석 수를 줄이면 투자비는 낮아지나 인건비·관리비 등 고정비는 그대로 남아 회수기간이 오히려 길어집니다. 본 {site['rooms']}타석 모델이 고정비 분산 측면에서 유리한 구조입니다.")
 
         self._draw_footer(c, "MYPARK BEP & Capital Payback Period Analysis")
         c.showPage()

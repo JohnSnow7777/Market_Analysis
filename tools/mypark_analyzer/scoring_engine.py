@@ -23,16 +23,40 @@ class ScoringEngine:
         monthly_sales = commercial_data.get('monthly_avg_sales', 20500000)
         
         # 1. 시니어 인구 밀집도 (25점 만점)
-        if senior_pop >= 70000:
+        # [2026-08-31 수정] 기존에는 절대 인구수 구간(7만명 이상 만점)만으로 채점해,
+        # 지표 이름이 '밀집도'인데도 정작 시니어 비중(senior_ratio)은 계산만 하고
+        # 채점에 쓰지 않았다. 그 결과 시니어 비중이 40%가 넘는 조밀한 생활권이라도
+        # 반경 3km 절대인구가 적으면 최하점(8점)이 나오는 구조적 결함이 있었다.
+        #
+        # 개선: '이 매장이 실제로 필요로 하는 고객 수 대비 배후 시니어 인구가
+        # 얼마나 여유로운가'(요구 침투율)로 채점한다. 사업모델에서 역산하므로
+        # 임의로 후하게 준 것이 아니라 근거가 명확하고, 타석 수가 작은 매장은
+        # 필요 고객도 적다는 점까지 반영된다.
+        _rooms_for_demand = max(1, site_info.get('rooms', 10))
+        _monthly_visits_needed = _rooms_for_demand * 4.0 * 4 * 30  # 보편(4회전)×팀4인×30일
+        _visits_per_customer = 4.0                                  # 단골 월 4회 방문 가정
+        _customers_needed = _monthly_visits_needed / _visits_per_customer
+        senior_penetration = (_customers_needed / senior_pop * 100.0) if senior_pop > 0 else 999.0
+
+        if senior_penetration <= 2.0:
             score_senior = 25.0
-        elif senior_pop >= 50000:
-            score_senior = 22.0
-        elif senior_pop >= 30000:
-            score_senior = 17.0
-        elif senior_pop >= 15000:
-            score_senior = 12.0
+        elif senior_penetration <= 4.0:
+            score_senior = 22.5
+        elif senior_penetration <= 7.0:
+            score_senior = 21.0
+        elif senior_penetration <= 12.0:
+            score_senior = 19.5
+        elif senior_penetration <= 20.0:
+            score_senior = 15.0
         else:
-            score_senior = 8.0
+            score_senior = 10.0
+
+        # 시니어 비중(밀집도)이 높은 생활권은 동일 인구라도 타겟 접근이 유리하므로
+        # 소폭 가산한다 (지표명 '밀집도'의 실제 반영, 만점 초과는 하지 않음).
+        if senior_ratio >= 38.0:
+            score_senior = min(25.0, score_senior + 1.5)
+        elif senior_ratio >= 33.0:
+            score_senior = min(25.0, score_senior + 0.8)
             
         # 2. 접근성 및 주차 인프라 (25점 만점)
         # 주의: 이 점수는 '건물 자체'의 주차장·엘리베이터·진입로가 아니라 상권 단위
@@ -150,6 +174,8 @@ class ScoringEngine:
             'gap_is_verified': gap_is_verified,
             'parking_is_verified': parking_is_verified,
             'space_is_verified': space_is_verified,
+            'senior_penetration': round(senior_penetration, 1),
+            'senior_customers_needed': int(_customers_needed),
             'payback_text': format_payback_text(inv['payback_months_moderate'], inv['total_capex']),
             'value_franchisee': value_franchisee,
             'value_landlord': value_landlord

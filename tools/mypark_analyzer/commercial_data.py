@@ -103,12 +103,22 @@ class CommercialEngine:
         time_dist = {'새벽_06_09시': 5.2, '오전_09_12시': 28.6, '오후_12_17시': 42.8, '야간_17_21시': 18.2, '심야_21_06시': 5.2, '주간_10_17시_비중': 71.4}
         
         # TOP 5 매출 증가 업종 실측 데이터
+        # 순위(rank)는 하드코딩하지 않고 실제 성장률 값으로 정렬해 부여한다.
+        # (골프용품 성장률은 지역등급에 따라 변하는데 rank를 1로 고정해두면,
+        #  지방 등급에서 62.1% < 스크린체육시설 84.2% 인데도 '1위'로 표기되어
+        #  같은 페이지의 차트와 본문이 서로 모순되는 문제가 있었다.)
+        _industry_pool = [
+            {'name': '골프 및 레저용품', 'value': float(growth_rate), 'status': '초고성장 / 시니어 소비 집중'},
+            {'name': '스크린 체육시설', 'value': 84.2, 'status': '고성장 / 실내 생활체육 선호'},
+            {'name': '체력단련 및 피트니스', 'value': 42.5, 'status': '안정 성장 / 건강관리 수요'},
+            {'name': '브런치 및 디저트카페', 'value': 31.8, 'status': '친목 모임 연계 소비'},
+            {'name': '한식 및 건강음식점', 'value': 18.4, 'status': '생활밀착 단골 소비'},
+        ]
+        _industry_pool.sort(key=lambda d: d['value'], reverse=True)
         top_growth_industries = [
-            {'rank': 1, 'name': '골프 및 레저용품', 'growth': f'+{growth_rate}%', 'status': '초고성장 / 시니어 소비 집중'},
-            {'rank': 2, 'name': '스크린 체육시설', 'growth': '+84.2%', 'status': '고성장 / 실내 생활체육 선호'},
-            {'rank': 3, 'name': '체력단련 및 피트니스', 'growth': '+42.5%', 'status': '안정 성장 / 건강관리 수요'},
-            {'rank': 4, 'name': '브런치 및 디저트카페', 'growth': '+31.8%', 'status': '친목 모임 연계 소비'},
-            {'rank': 5, 'name': '한식 및 건강음식점', 'growth': '+18.4%', 'status': '생활밀착 단골 소비'}
+            {'rank': i + 1, 'name': d['name'], 'growth': f"+{d['value']}%",
+             'value': d['value'], 'status': d['status']}
+            for i, d in enumerate(_industry_pool)
         ]
 
         golf_industry_density = {
