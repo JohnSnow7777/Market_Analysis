@@ -889,7 +889,12 @@ class PDFGenerator:
         c.drawString(56, 234, f"• 비교 모델 (직원 3인 채용 운영): 인건비 월 {3*DEFAULT_SETTINGS['labor_cost_manager']//10000:,}만원 (회수기간 {fin['owner_operated']['staff3_payback_months']:.1f}개월)")
         c.drawString(56, 214, f"• 게임비 요금: 1인 18홀 7,000원 (4인 1팀 28,000원)")
         c.drawString(56, 194, f"• 3대 매출원: 게임비 회전 + 용품 판매(월 {scenarios['moderate']['goods_revenue']//10000:,}만) + 식음료(월 {scenarios['moderate']['beverage_revenue']//10000:,}만)")
-        rent_tag = "지역 시세 추정" if site.get('rent_is_estimated') else "입력하신 실측"
+        if not site.get('rent_is_estimated'):
+            rent_tag = "입력하신 실측"
+        elif site.get('rent_source_label'):
+            rent_tag = "한국부동산원 R-ONE 실측 기준 추정"
+        else:
+            rent_tag = "지역 시세 추정"
         c.drawString(56, 174, f"• 월 임대료 기준: {rent_tag} {site['monthly_rent']//10000:,}만원/월 반영")
 
         c.setFont(FONT_REGULAR, 8.5)
@@ -1073,7 +1078,12 @@ class PDFGenerator:
         c.setFont(FONT_REGULAR, 8.5)
         c.setFillColor(self.c_charcoal)
         ry10 = chart_top10 - head_h10 - 22
-        rent_basis = "입력하신 임대료" if not site.get('rent_is_estimated') else "지역 시세 추정 임대료"
+        if not site.get('rent_is_estimated'):
+            rent_basis = "입력하신 임대료"
+        elif site.get('rent_source_label'):
+            rent_basis = "한국부동산원 R-ONE 실측 기준 추정"
+        else:
+            rent_basis = "지역 시세 추정 임대료"
         c.drawString(511, ry10, f"• 월 임대료: {site['monthly_rent']//10000:,}만원 ({rent_basis})")
         ry10 -= 20
         c.drawString(511, ry10, f"• 인건비 (점주 직접운영): {scenarios['moderate']['labor_cost']//10000:,}만원 ({site['staff_count']}인 상주 운영)")
