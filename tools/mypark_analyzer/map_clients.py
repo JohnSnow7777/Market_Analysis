@@ -1,20 +1,19 @@
 # -*- coding: utf-8 -*-
 """TMap(SK Open API) + 네이버 지역검색 POI 클라이언트.
 
-엔드포인트/파라미터는 실제 서버에 더미 키로 호출해 인증 단계 에러
-(403/401, 즉 요청 자체는 정상 인식됨)까지 도달하는 것을 확인함 (2026-08-27):
   - TMap POI 반경검색: GET https://apis.openapi.sk.com/tmap/pois
         ?version=1&searchKeyword=&centerLon=&centerLat=&radius=(km)&appKey=
-    -> 더미 appKey로 {"error":{"code":"INVALID_API_KEY"}} (403) 확인
-  - 네이버 지역검색: GET https://openapi.naver.com/v1/search/local.json
-        ?query=&display=
-        헤더: X-Naver-Client-Id, X-Naver-Client-Secret
-    -> 더미 값으로 {"errorCode":"024"} (401) 확인
+    -> 더미 appKey로 {"error":{"code":"INVALID_API_KEY"}} (403) 확인(2026-08-27).
+       실키 미보유 상태라 필드명은 공식 문서 기준, 첫 실호출 시 재확인 필요.
+  - 네이버 지역검색: 기존 개발자센터 엔드포인트(openapi.naver.com/v1/search/local.json,
+    X-Naver-Client-Id/Secret 헤더)는 2026-07-31부로 신규발급 차단되어 폐지 수순.
+    NAVER API HUB(NCP)로 이관된 신규 엔드포인트로 실키 호출까지 확인함(2026-08-31):
+        GET https://naverapihub.apigw.ntruss.com/search/v1/local
+        헤더: X-NCP-APIGW-API-KEY-ID, X-NCP-APIGW-API-KEY (NCP Client ID/Secret)
+        파라미터: query, display, start, sort, format
+    응답 구조(items[].title/address/roadAddress)는 기존과 동일, 실키로 확인됨.
 
-응답 필드(TMap: searchPoiInfo.pois.poi[].name/noorLat/noorLon,
-네이버: items[].title/address/roadAddress)는 각 사 공식 문서/개발자
-커뮤니티 예제 기준이며 실제 키로 첫 호출 후 재확인이 필요하다. 전부
-.get()으로 방어해 필드가 다르면 그 값만 비어 보일 뿐 예외를 던지지 않는다.
+전부 .get()으로 방어해 필드가 다르면 그 값만 비어 보일 뿐 예외를 던지지 않는다.
 """
 import os
 import re
@@ -74,10 +73,10 @@ def naver_local_search(query, region_hint='', display=10, timeout=4):
     try:
         q = f"{region_hint} {query}".strip()
         params = {'query': q, 'display': display}
-        url = "https://openapi.naver.com/v1/search/local.json?" + urllib.parse.urlencode(params)
+        url = "https://naverapihub.apigw.ntruss.com/search/v1/local?" + urllib.parse.urlencode(params)
         req = urllib.request.Request(url, headers={
-            'X-Naver-Client-Id': client_id,
-            'X-Naver-Client-Secret': client_secret,
+            'X-NCP-APIGW-API-KEY-ID': client_id,
+            'X-NCP-APIGW-API-KEY': client_secret,
         })
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             data = json.loads(resp.read().decode('utf-8'))
