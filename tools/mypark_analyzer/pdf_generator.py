@@ -465,38 +465,23 @@ class PDFGenerator:
         # ---------------------------------------------------------------------
         self._draw_mckinsey_header(c, "4. 경쟁 환경 및 시설 공급 갭 분석", comm['competitor_summary'])
 
+        # 카드 개수/너비는 실제로 확인된 경쟁사 수에 맞춰 동적으로 계산한다.
+        # (하드코딩된 4칸 틀에 3곳만 채워 오른쪽이 비는 문제 방지)
+        comps_all = comm['competitors']
+        MAX_CARDS = 5
+        comps = comps_all[:MAX_CARDS]
+        start_x = 40
+        gap_x = 10
+        avail_w = (self.width - 40) - start_x
+        n = max(1, len(comps))
+        card_w = (avail_w - (n - 1) * gap_x) / n
+
         # 헤더 구분선과 카드 상단 사이의 여백을 줄이기 위해 카드 전체 높이를 상향(460->500)
         card_top = 500
         card_bottom = 48
         card_h = card_top - card_bottom
         head_h = 46
         head_bottom = card_top - head_h
-
-        # 좌측: 3km 반경 상권 지도 (텍스트 카드만으로는 공간 감각이 안 잡히는 문제 보완)
-        map_x = 40
-        map_w = 234
-        if 'map_radius' in charts and os.path.exists(charts['map_radius']):
-            c.setFillColor(self.c_box_bg)
-            c.setStrokeColor(self.c_line)
-            c.rect(map_x, card_bottom, map_w, card_h, fill=1, stroke=1)
-            _map_img_h = map_w - 12
-            c.drawImage(charts['map_radius'], map_x + 6, card_top - _map_img_h - 6, width=map_w - 12, height=_map_img_h, preserveAspectRatio=True, anchor='n')
-            c.setFont(FONT_REGULAR, 8)
-            c.setFillColor(self.c_slate)
-            _map_cap_y = card_top - _map_img_h - 24
-            for cl in self._wrap_text_to_width(c, "지도상 위치는 상권 방향성을 보여주는 개략도이며, 실제 좌표·거리는 카카오/공공데이터 기준 주소 매칭 결과입니다.", FONT_REGULAR, 8, map_w - 12, max_lines=4):
-                c.drawString(map_x + 6, _map_cap_y, cl)
-                _map_cap_y -= 11
-
-        # 우측: 실제로 확인된 경쟁사 수에 맞춰 카드 개수/너비를 동적으로 계산한다.
-        comps_all = comm['competitors']
-        MAX_CARDS = 3
-        comps = comps_all[:MAX_CARDS]
-        start_x = map_x + map_w + 14
-        gap_x = 10
-        avail_w = (self.width - 40) - start_x
-        n = max(1, len(comps))
-        card_w = (avail_w - (n - 1) * gap_x) / n
 
         if not comps:
             # 확인된 경쟁사가 0곳(블루오션 판정)인 경우 빈 화면 대신 실제 요약 문구를 카드 자리에 표시
