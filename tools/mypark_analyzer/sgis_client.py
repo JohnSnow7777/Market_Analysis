@@ -90,29 +90,37 @@ def resolve_adm_cd(access_token, sido, sigungu, dong):
     return dong_cd
 
 
-def get_population_by_age(access_token, adm_cd, year='2025'):
+def get_population_by_age(access_token, adm_cd, year=None):
     """행정동 단위 연령대별 인구 조회. 실패/필드불일치 시 None.
+
+    SGIS 인구통계는 집계·공표 주기상 항상 '작년' 자료까지만 존재한다
+    (예: 2026년에 연도 2026을 넣으면 "년도 정보를 확인해주세요" 에러 발생,
+    2026-08-27 실키로 실제 확인함). year 미지정 시 작년부터 최대 3개년을
+    역순으로 시도해 향후 연도가 바뀌어도 재수정 없이 최신 가용 연도를 쓴다.
 
     반환 형식(성공 시): {'total': int, 'age_buckets': {age_label: count, ...}}
     """
-    try:
-        data = _get('stats/searchpopulation.json', {
-            'accessToken': access_token,
-            'adm_cd': adm_cd,
-            'low_search': '0',
-            'year': year,
-        })
-        rows = data.get('result', [])
-        if not rows:
-            return None
-        row = rows[0] if isinstance(rows, list) else rows
-        total = row.get('tot_ppltn') or row.get('population') or row.get('avg_age')
-        if total is None:
-            return None
-        return {'raw': row, 'total': int(total)}
-    except Exception as e:
-        print(f"[SGIS POPULATION FAIL] adm_cd={adm_cd}: {e}")
-        return None
+    import datetime
+    years_to_try = [str(year)] if year else [str(datetime.datetime.now().year - i) for i in (1, 2, 3)]
+    for yr in years_to_try:
+        try:
+            data = _get('stats/searchpopulation.json', {
+                'accessToken': access_token,
+                'adm_cd': adm_cd,
+                'low_search': '0',
+                'year': yr,
+            })
+            rows = data.get('result', [])
+            if not rows:
+                continue
+            row = rows[0] if isinstance(rows, list) else rows
+            total = row.get('tot_ppltn') or row.get('population') or row.get('avg_age')
+            if total is None:
+                continue
+            return {'raw': row, 'total': int(total), 'year': yr}
+        except Exception as e:
+            print(f"[SGIS POPULATION FAIL] adm_cd={adm_cd} year={yr}: {e}")
+    return None
 
 
 def fetch_real_population(sido, sigungu, dong):
