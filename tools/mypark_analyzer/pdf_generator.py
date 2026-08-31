@@ -198,140 +198,9 @@ class PDFGenerator:
         c.showPage()
 
         # ---------------------------------------------------------------------
-        # Page 2: 1. 입지 적합성 종합 판정 (5-Dimension Diamond Scoring)
-        # [PART 2 재구성: 재무 금액 배제, 순수 입지 적합성 평가 전진 배치]
-        # ---------------------------------------------------------------------
-        self._draw_mckinsey_header(c, "1. 입지 적합성 종합 판정 (5-Dimension Diamond Scoring)", f"5대 다이아몬드 스코어링 총점 {score['total_score']}점({score['grade']}등급) - {score['grade_desc']}")
-
-        # 접근성 지표: 실제 채점에 사용된 버스/지하철 데이터를 그대로 근거 문구에 반영 (점수와 문구가 서로 다른 결론을 말하지 않도록)
-        _infra = comm.get('infra', {})
-        _bus_count = _infra.get('버스정류장', 30)
-        _subway_info = _infra.get('지하철', '')
-        _has_subway = '지하철' in _subway_info or '역세권' in _subway_info or _subway_info.endswith('역')
-        if _has_subway or _bus_count >= 35:
-            _access_desc = f"{_subway_info + ' 역세권, ' if _has_subway else ''}버스정류장 {_bus_count}개소로 대중교통망 우수"
-        elif _bus_count >= 20:
-            _access_desc = f"버스정류장 {_bus_count}개소 확보된 표준 수준 교통망"
-        elif _bus_count >= 10:
-            _access_desc = f"버스정류장 {_bus_count}개소로 교통망이 다소 협소한 편"
-        else:
-            _access_desc = f"버스정류장 {_bus_count}개소로 대중교통 접근성이 열위한 편"
-        _access_desc += " / 10타석 주차면은 '현장 실측' 요망"
-
-        # 공간 적합성 지표: 실제 채점에 사용된 타석당 평수 구간을 그대로 근거 문구에 반영
-        _pyeong_per_room = site['area_pyeong'] / max(1, site['rooms'])
-        if _pyeong_per_room >= 12.0:
-            _space_desc = f"타석당 {_pyeong_per_room:.1f}평, 여유로운 플래그십 규모"
-        elif _pyeong_per_room >= 10.0:
-            _space_desc = f"타석당 {_pyeong_per_room:.1f}평, 표준 배치 규모"
-        elif _pyeong_per_room >= 8.0:
-            _space_desc = f"타석당 {_pyeong_per_room:.1f}평, 다소 협소한 배치"
-        else:
-            _space_desc = f"타석당 {_pyeong_per_room:.1f}평, 초협소 배치로 별도 검토 필요"
-        _space_desc += " / 유효 층고 2.8m 이상은 현장 실측 필수"
-
-        indicators = [
-            ("시니어 인구 밀집도", score['scores']['senior_population'], 25, f"{pop_source_tag}: 반경 3km 내 50대 이상 시니어 {demo['senior_50_plus']:,}명 ({demo['senior_ratio']}%) 밀집"),
-            ("접근성 및 주차 인프라", score['scores']['accessibility_parking'], 25, _access_desc),
-            ("공간 적합성 및 층고", score['scores']['space_efficiency'], 15, _space_desc),
-            ("경쟁 매장 여유도", score['scores']['supply_gap'], 15, f"{comm.get('competitor_summary', '반경 3km 내 대형 플래그십 매장 공급 부족')}"),
-            ("지역 소비력 및 여가지출", score['scores']['commercial_spending'], 20, f"MYPARK 지역등급 추정: 골프용품 성장 1위(+{comm['growth_rate']}%) 및 스크린골프 상위 20% 월 {comm['top_20_sales']//10000:,}만원 상권"),
-        ]
-
-        # ===== 렛저 스타일 레이아웃: 좌측 반전 히어로 셀(종합 등급) + 우측 5대 지표 막대 목록 =====
-        content_top = 500
-        content_bottom = 48
-        summary_strip_h = 56
-        bars_top = content_top
-        bars_bottom = content_bottom + summary_strip_h + 8
-
-        hero_x, hero_w = 40, 220
-        bars_x = hero_x + hero_w + 20
-        bars_right = self.width - 40
-        bars_w = bars_right - bars_x
-
-        # 히어로 셀 (반전 배경: 종합 등급)
-        c.setFillColor(self.c_mck_navy)
-        c.rect(hero_x, bars_bottom, hero_w, bars_top - bars_bottom, fill=1, stroke=0)
-        c.setFillColor(self.c_white)
-        c.setFont(FONT_BOLD, 9)
-        c.drawCentredString(hero_x + hero_w/2, bars_top - 34, "종합 입지 판정")
-        c.setFont(FONT_BOLD, 60)
-        c.drawCentredString(hero_x + hero_w/2, bars_top - 108, score['grade'])
-        c.setFont(FONT_BOLD, 13)
-        c.drawCentredString(hero_x + hero_w/2, bars_top - 130, f"{score['total_score']}점 / 100점")
-        c.setStrokeColor(self.c_mck_teal)
-        c.setLineWidth(1.2)
-        c.line(hero_x + 28, bars_top - 146, hero_x + hero_w - 28, bars_top - 146)
-        c.setFont(FONT_BOLD, 10.5)
-        c.setFillColor(self.c_mck_teal)
-        desc_lines_hero = self._wrap_text_to_width(c, score['grade_desc'], FONT_BOLD, 10.5, hero_w - 32, max_lines=2)
-        hy = bars_top - 168
-        for hl in desc_lines_hero:
-            c.drawCentredString(hero_x + hero_w/2, hy, hl)
-            hy -= 15
-
-        # 우측: 5대 지표를 렛저 스타일 막대 목록으로 표시 (레이더 차트 대신 실제 점수 구간을 그대로 시각화)
-        row_h = (bars_top - bars_bottom) / len(indicators)
-        for i, (iname, iscore, imax, idesc) in enumerate(indicators):
-            row_top = bars_top - i * row_h
-            row_bottom = row_top - row_h
-            if i > 0:
-                c.setStrokeColor(self.c_line)
-                c.setLineWidth(0.5)
-                c.line(bars_x, row_top, bars_right, row_top)
-
-            c.setFont(FONT_BOLD, 10.5)
-            c.setFillColor(self.c_mck_navy)
-            c.drawString(bars_x, row_top - 18, iname)
-            c.setFont(FONT_BOLD, 10.5)
-            c.setFillColor(self.c_mck_teal)
-            c.drawRightString(bars_right, row_top - 18, f"{iscore}점 / {imax}점")
-
-            track_y = row_top - 30
-            track_h = 7
-            c.setFillColor(self.c_line)
-            c.roundRect(bars_x, track_y - track_h, bars_w, track_h, 2, fill=1, stroke=0)
-            fill_w = max(6, bars_w * (iscore / imax))
-            c.setFillColor(self.c_mck_teal)
-            c.roundRect(bars_x, track_y - track_h, fill_w, track_h, 2, fill=1, stroke=0)
-
-            c.setFont(FONT_REGULAR, 8)
-            c.setFillColor(self.c_slate)
-            desc_lines = self._wrap_text_to_width(c, f"· 산출 근거: {idesc}", FONT_REGULAR, 8, bars_w, max_lines=2)
-            dy = track_y - track_h - 13
-            for dl in desc_lines:
-                c.drawString(bars_x, dy, dl)
-                dy -= 10
-
-        # 하단 요약 스트립 (전체 폭)
-        c.setFillColor(self.c_box_bg)
-        c.setStrokeColor(self.c_line)
-        c.rect(40, content_bottom, bars_right - 40, summary_strip_h, fill=1, stroke=1)
-        grade_summary_text = {
-            'S': "본 사업지는 50~70대 풍부한 시니어 거주 인구와 우수한 교통/접근성을 갖추어, 평일 주간 정기 예약 및 동호회 리그 중심의 높은 가동률 창출에 최적화된 입지입니다.",
-            'A': "본 사업지는 시니어 배후 수요와 접근성 등 핵심 조건을 대체로 충족하여, 평일 주간 정기 예약 중심의 안정적 가동률을 기대할 수 있는 입지입니다.",
-            'B': "본 사업지는 일부 지표에서 표준 기준을 충족하나 상대적으로 낮은 지표도 있어, 아래 세부 근거를 현장 실측과 함께 신중히 검토하시기를 권장합니다.",
-            'C': "본 사업지는 5대 지표 중 다수가 표준 기준에 미달하여, 출점 전 배후 수요·경쟁 환경에 대한 현장 재확인이 반드시 필요합니다.",
-        }
-        summary_text = grade_summary_text.get(score['grade'], grade_summary_text['B'])
-        c.setFont(FONT_REGULAR, 8.5)
-        c.setFillColor(self.c_charcoal)
-        summary_lines = self._wrap_text_to_width(c, summary_text, FONT_REGULAR, 8.5, bars_right - 40 - 32, max_lines=2)
-        gy = content_bottom + summary_strip_h - 16
-        for gl in summary_lines:
-            c.drawString(56, gy, gl)
-            gy -= 12
-        c.setFillColor(self.c_slate)
-        c.drawString(56, content_bottom + 6, "상세 상권 및 경쟁 환경 분석은 다음 페이지(2~6장)에서 상술합니다.")
-
-        self._draw_footer(c, f"MYPARK 5-Dimension Diamond Scoring Methodology ({score['total_score']}점 {score['grade']}등급)")
-        c.showPage()
-
-        # ---------------------------------------------------------------------
         # Page 3: 2. 배후 인구 및 타겟 연령 분석
         # ---------------------------------------------------------------------
-        self._draw_mckinsey_header(c, "2. 3km 생활권 인구 및 타겟 연령 분석", f"반경 3km 내 50대 이상 시니어 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%)의 핵심 소비 수요 확보")
+        self._draw_mckinsey_header(c, "1. 3km 생활권 인구 및 타겟 연령 분석", f"반경 3km 내 50대 이상 시니어 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%)의 핵심 소비 수요 확보")
 
         tbl_bottom = 268
         tbl_top = 500
@@ -461,7 +330,7 @@ class PDFGenerator:
         # ---------------------------------------------------------------------
         # Page 4: 3. 상권 소비력 및 유동 패턴 분석
         # ---------------------------------------------------------------------
-        self._draw_mckinsey_header(c, "3. 상권 소비력 및 유동 패턴 분석", f"주거지역 {comm.get('residential_pop_ratio', 93.4)}% 밀집 상권 및 스크린골프 상위 20% 월매출 {comm['top_20_sales']//10000:,}만원 시장 타겟팅")
+        self._draw_mckinsey_header(c, "2. 상권 소비력 및 유동 패턴 분석", f"주거지역 {comm.get('residential_pop_ratio', 93.4)}% 밀집 상권 및 스크린골프 상위 20% 월매출 {comm['top_20_sales']//10000:,}만원 시장 타겟팅")
 
         chart_bottom, chart_top = 260, 500
         chart_h = chart_top - chart_bottom
@@ -522,7 +391,7 @@ class PDFGenerator:
         # ---------------------------------------------------------------------
         # Page 5: 4. 업종 성장률 및 골프 특화도
         # ---------------------------------------------------------------------
-        self._draw_mckinsey_header(c, "4. 업종 성장률 및 골프 특화도", f"골프용품 매출성장률 1위(+{comm['growth_rate']}%) 및 전국 평균 대비 {comm['golf_industry_density']['multiple']}배 높은 골프 특화 상권")
+        self._draw_mckinsey_header(c, "3. 업종 성장률 및 골프 특화도", f"골프용품 매출성장률 1위(+{comm['growth_rate']}%) 및 전국 평균 대비 {comm['golf_industry_density']['multiple']}배 높은 골프 특화 상권")
 
         if 'growth_radar' in charts and os.path.exists(charts['growth_radar']):
             c.drawImage(charts['growth_radar'], 40, chart_bottom, width=440, height=chart_h, preserveAspectRatio=True, anchor='n')
@@ -594,18 +463,7 @@ class PDFGenerator:
         # ---------------------------------------------------------------------
         # Page 6: 5. 경쟁 환경 및 시설 공급 갭 분석
         # ---------------------------------------------------------------------
-        self._draw_mckinsey_header(c, "5. 경쟁 환경 및 시설 공급 갭 분석", comm['competitor_summary'])
-
-        # 카드 개수/너비는 실제로 확인된 경쟁사 수에 맞춰 동적으로 계산한다.
-        # (하드코딩된 4칸 틀에 3곳만 채워 오른쪽이 비는 문제 방지)
-        comps_all = comm['competitors']
-        MAX_CARDS = 5
-        comps = comps_all[:MAX_CARDS]
-        start_x = 40
-        gap_x = 10
-        avail_w = (self.width - 40) - start_x
-        n = max(1, len(comps))
-        card_w = (avail_w - (n - 1) * gap_x) / n
+        self._draw_mckinsey_header(c, "4. 경쟁 환경 및 시설 공급 갭 분석", comm['competitor_summary'])
 
         # 헤더 구분선과 카드 상단 사이의 여백을 줄이기 위해 카드 전체 높이를 상향(460->500)
         card_top = 500
@@ -613,6 +471,32 @@ class PDFGenerator:
         card_h = card_top - card_bottom
         head_h = 46
         head_bottom = card_top - head_h
+
+        # 좌측: 3km 반경 상권 지도 (텍스트 카드만으로는 공간 감각이 안 잡히는 문제 보완)
+        map_x = 40
+        map_w = 234
+        if 'map_radius' in charts and os.path.exists(charts['map_radius']):
+            c.setFillColor(self.c_box_bg)
+            c.setStrokeColor(self.c_line)
+            c.rect(map_x, card_bottom, map_w, card_h, fill=1, stroke=1)
+            _map_img_h = map_w - 12
+            c.drawImage(charts['map_radius'], map_x + 6, card_top - _map_img_h - 6, width=map_w - 12, height=_map_img_h, preserveAspectRatio=True, anchor='n')
+            c.setFont(FONT_REGULAR, 8)
+            c.setFillColor(self.c_slate)
+            _map_cap_y = card_top - _map_img_h - 24
+            for cl in self._wrap_text_to_width(c, "지도상 위치는 상권 방향성을 보여주는 개략도이며, 실제 좌표·거리는 카카오/공공데이터 기준 주소 매칭 결과입니다.", FONT_REGULAR, 8, map_w - 12, max_lines=4):
+                c.drawString(map_x + 6, _map_cap_y, cl)
+                _map_cap_y -= 11
+
+        # 우측: 실제로 확인된 경쟁사 수에 맞춰 카드 개수/너비를 동적으로 계산한다.
+        comps_all = comm['competitors']
+        MAX_CARDS = 3
+        comps = comps_all[:MAX_CARDS]
+        start_x = map_x + map_w + 14
+        gap_x = 10
+        avail_w = (self.width - 40) - start_x
+        n = max(1, len(comps))
+        card_w = (avail_w - (n - 1) * gap_x) / n
 
         if not comps:
             # 확인된 경쟁사가 0곳(블루오션 판정)인 경우 빈 화면 대신 실제 요약 문구를 카드 자리에 표시
@@ -737,7 +621,7 @@ class PDFGenerator:
         # ---------------------------------------------------------------------
         # Page 7: 6. 사업지 개요 및 현장 출점 요건 (4대 건축·인프라 체크리스트)
         # ---------------------------------------------------------------------
-        self._draw_mckinsey_header(c, "6. 사업지 개요 및 현장 출점 요건", f"10타석 {site['area_pyeong']}평 규모 출점을 위한 4대 건축·인프라 현장 실측 기준")
+        self._draw_mckinsey_header(c, "5. 사업지 개요 및 현장 출점 요건", f"10타석 {site['area_pyeong']}평 규모 출점을 위한 4대 건축·인프라 현장 실측 기준")
         
         space_card_lines = [f"• 대상 주소: {site['full_address']}"]
         if site.get('special_notes'):
@@ -801,6 +685,147 @@ class PDFGenerator:
 
         self._draw_footer(c, "Building Code & Field Inspection Checklist")
         c.showPage()
+        # ---------------------------------------------------------------------
+        # Page 2: 1. 입지 적합성 종합 판정 (5-Dimension Diamond Scoring)
+        # [PART 2 재구성: 재무 금액 배제, 순수 입지 적합성 평가 전진 배치]
+        # ---------------------------------------------------------------------
+        self._draw_mckinsey_header(c, "6. 입지 적합성 종합 판정 (5-Dimension Diamond Scoring)", f"앞선 5개 항목 분석을 종합한 다이아몬드 스코어링 총점 {score['total_score']}점({score['grade']}등급) - {score['grade_desc']}")
+
+        # 접근성 지표: 실제 채점에 사용된 버스/지하철 데이터를 그대로 근거 문구에 반영 (점수와 문구가 서로 다른 결론을 말하지 않도록)
+        _infra = comm.get('infra', {})
+        _bus_count = _infra.get('버스정류장', 30)
+        _subway_info = _infra.get('지하철', '')
+        _has_subway = '지하철' in _subway_info or '역세권' in _subway_info or _subway_info.endswith('역')
+        if _has_subway or _bus_count >= 35:
+            _access_desc = f"{_subway_info + ' 역세권, ' if _has_subway else ''}버스정류장 {_bus_count}개소로 대중교통망 우수"
+        elif _bus_count >= 20:
+            _access_desc = f"버스정류장 {_bus_count}개소 확보된 표준 수준 교통망"
+        elif _bus_count >= 10:
+            _access_desc = f"버스정류장 {_bus_count}개소로 교통망이 다소 협소한 편"
+        else:
+            _access_desc = f"버스정류장 {_bus_count}개소로 대중교통 접근성이 열위한 편"
+        _access_desc += " / 10타석 주차면은 '현장 실측' 요망"
+
+        # 공간 적합성 지표: 실제 채점에 사용된 타석당 평수 구간을 그대로 근거 문구에 반영
+        _pyeong_per_room = site['area_pyeong'] / max(1, site['rooms'])
+        if _pyeong_per_room >= 12.0:
+            _space_desc = f"타석당 {_pyeong_per_room:.1f}평, 여유로운 플래그십 규모"
+        elif _pyeong_per_room >= 10.0:
+            _space_desc = f"타석당 {_pyeong_per_room:.1f}평, 표준 배치 규모"
+        elif _pyeong_per_room >= 8.0:
+            _space_desc = f"타석당 {_pyeong_per_room:.1f}평, 다소 협소한 배치"
+        else:
+            _space_desc = f"타석당 {_pyeong_per_room:.1f}평, 초협소 배치로 별도 검토 필요"
+        _space_desc += " / 유효 층고 2.8m 이상은 현장 실측 필수"
+
+        indicators = [
+            ("시니어 인구 밀집도", score['scores']['senior_population'], 25, f"{pop_source_tag}: 반경 3km 내 50대 이상 시니어 {demo['senior_50_plus']:,}명 ({demo['senior_ratio']}%) 밀집", not demo.get('is_estimated', False)),
+            ("접근성 및 주차 인프라", score['scores']['accessibility_parking'], 25, _access_desc + " (※ 건물 자체 주차·엘리베이터 아닌 상권 대중교통 통계 기준)", False),
+            ("공간 적합성 및 층고", score['scores']['space_efficiency'], 15, _space_desc if score.get('space_is_verified', True) else "룸/평수 미입력으로 표준값 대신 미검증 중립 점수 적용 (현장 실측 필요)", score.get('space_is_verified', True)),
+            ("경쟁 매장 여유도", score['scores']['supply_gap'], 15, f"{comm.get('competitor_summary', '반경 3km 내 대형 플래그십 매장 공급 부족')}", score.get('gap_is_verified', False)),
+            ("지역 소비력 및 여가지출", score['scores']['commercial_spending'], 20, f"MYPARK 지역등급 추정: 골프용품 성장 1위(+{comm['growth_rate']}%) 및 스크린골프 상위 20% 월 {comm['top_20_sales']//10000:,}만원 상권", True),
+        ]
+
+        # ===== 렛저 스타일 레이아웃: 좌측 반전 히어로 셀(종합 등급) + 우측 5대 지표 막대 목록 =====
+        content_top = 500
+        content_bottom = 48
+        summary_strip_h = 56
+        bars_top = content_top
+        bars_bottom = content_bottom + summary_strip_h + 8
+
+        hero_x, hero_w = 40, 220
+        bars_x = hero_x + hero_w + 20
+        bars_right = self.width - 40
+        bars_w = bars_right - bars_x
+
+        # 히어로 셀 (반전 배경: 종합 등급)
+        c.setFillColor(self.c_mck_navy)
+        c.rect(hero_x, bars_bottom, hero_w, bars_top - bars_bottom, fill=1, stroke=0)
+        c.setFillColor(self.c_white)
+        c.setFont(FONT_BOLD, 9)
+        c.drawCentredString(hero_x + hero_w/2, bars_top - 34, "종합 입지 판정")
+        c.setFont(FONT_BOLD, 60)
+        c.drawCentredString(hero_x + hero_w/2, bars_top - 108, score['grade'])
+        c.setFont(FONT_BOLD, 13)
+        c.drawCentredString(hero_x + hero_w/2, bars_top - 130, f"{score['total_score']}점 / 100점")
+        c.setStrokeColor(self.c_mck_teal)
+        c.setLineWidth(1.2)
+        c.line(hero_x + 28, bars_top - 146, hero_x + hero_w - 28, bars_top - 146)
+        c.setFont(FONT_BOLD, 10.5)
+        c.setFillColor(self.c_mck_teal)
+        desc_lines_hero = self._wrap_text_to_width(c, score['grade_desc'], FONT_BOLD, 10.5, hero_w - 32, max_lines=2)
+        hy = bars_top - 168
+        for hl in desc_lines_hero:
+            c.drawCentredString(hero_x + hero_w/2, hy, hl)
+            hy -= 15
+
+        # 우측: 5대 지표를 렛저 스타일 막대 목록으로 표시 (레이더 차트 대신 실제 점수 구간을 그대로 시각화)
+        row_h = (bars_top - bars_bottom) / len(indicators)
+        for i, (iname, iscore, imax, idesc, iverified) in enumerate(indicators):
+            row_top = bars_top - i * row_h
+            row_bottom = row_top - row_h
+            if i > 0:
+                c.setStrokeColor(self.c_line)
+                c.setLineWidth(0.5)
+                c.line(bars_x, row_top, bars_right, row_top)
+
+            bar_color = self.c_mck_teal if iverified else HexColor('#9AA5B1')
+            badge_text = "실측·확인" if iverified else "추정·미검증"
+
+            c.setFont(FONT_BOLD, 10.5)
+            c.setFillColor(self.c_mck_navy)
+            c.drawString(bars_x, row_top - 18, iname)
+            badge_w = c.stringWidth(badge_text, FONT_BOLD, 7) + 10
+            badge_x = bars_x + c.stringWidth(iname, FONT_BOLD, 10.5) + 10
+            c.setFillColor(bar_color)
+            c.roundRect(badge_x, row_top - 24, badge_w, 12, 2, fill=1, stroke=0)
+            c.setFont(FONT_BOLD, 7)
+            c.setFillColor(self.c_white)
+            c.drawCentredString(badge_x + badge_w / 2, row_top - 20.5, badge_text)
+            c.setFont(FONT_BOLD, 10.5)
+            c.setFillColor(bar_color)
+            c.drawRightString(bars_right, row_top - 18, f"{iscore}점 / {imax}점")
+
+            track_y = row_top - 30
+            track_h = 7
+            c.setFillColor(self.c_line)
+            c.roundRect(bars_x, track_y - track_h, bars_w, track_h, 2, fill=1, stroke=0)
+            fill_w = max(6, bars_w * (iscore / imax))
+            c.setFillColor(bar_color)
+            c.roundRect(bars_x, track_y - track_h, fill_w, track_h, 2, fill=1, stroke=0)
+
+            c.setFont(FONT_REGULAR, 8)
+            c.setFillColor(self.c_slate)
+            desc_lines = self._wrap_text_to_width(c, f"· 산출 근거: {idesc}", FONT_REGULAR, 8, bars_w, max_lines=2)
+            dy = track_y - track_h - 13
+            for dl in desc_lines:
+                c.drawString(bars_x, dy, dl)
+                dy -= 10
+
+        # 하단 요약 스트립 (전체 폭)
+        c.setFillColor(self.c_box_bg)
+        c.setStrokeColor(self.c_line)
+        c.rect(40, content_bottom, bars_right - 40, summary_strip_h, fill=1, stroke=1)
+        grade_summary_text = {
+            'S': "본 사업지는 50~70대 풍부한 시니어 거주 인구와 우수한 교통/접근성을 갖추어, 평일 주간 정기 예약 및 동호회 리그 중심의 높은 가동률 창출에 최적화된 입지입니다.",
+            'A': "본 사업지는 시니어 배후 수요와 접근성 등 핵심 조건을 대체로 충족하여, 평일 주간 정기 예약 중심의 안정적 가동률을 기대할 수 있는 입지입니다.",
+            'B': "본 사업지는 일부 지표에서 표준 기준을 충족하나 상대적으로 낮은 지표도 있어, 아래 세부 근거를 현장 실측과 함께 신중히 검토하시기를 권장합니다.",
+            'C': "본 사업지는 5대 지표 중 다수가 표준 기준에 미달하여, 출점 전 배후 수요·경쟁 환경에 대한 현장 재확인이 반드시 필요합니다.",
+        }
+        summary_text = grade_summary_text.get(score['grade'], grade_summary_text['B'])
+        c.setFont(FONT_REGULAR, 8.5)
+        c.setFillColor(self.c_charcoal)
+        summary_lines = self._wrap_text_to_width(c, summary_text, FONT_REGULAR, 8.5, bars_right - 40 - 32, max_lines=2)
+        gy = content_bottom + summary_strip_h - 16
+        for gl in summary_lines:
+            c.drawString(56, gy, gl)
+            gy -= 12
+        c.setFillColor(self.c_slate)
+        c.drawString(56, content_bottom + 6, "위 5개 지표의 상세 근거는 앞선 1~5장(인구·상권·업종·경쟁·사업지 개요)을 참조하십시오.")
+
+        self._draw_footer(c, f"MYPARK 5-Dimension Diamond Scoring Methodology ({score['total_score']}점 {score['grade']}등급)")
+        c.showPage()
+
 
         # ---------------------------------------------------------------------
         # Page 8: [신규] 7. 표준 투자 조건 및 사업 추진 유의사항

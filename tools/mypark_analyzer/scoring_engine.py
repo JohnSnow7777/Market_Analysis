@@ -34,12 +34,17 @@ class ScoringEngine:
         else:
             score_senior = 8.0
             
-        # 2. 접근성 및 주차 인프라 (25점 만점 - 대중교통 및 도로망 동적 평가)
+        # 2. 접근성 및 주차 인프라 (25점 만점)
+        # 주의: 이 점수는 '건물 자체'의 주차장·엘리베이터·진입로가 아니라 상권 단위
+        # 대중교통 통계(버스정류장 수/지하철 유무)만 반영한다. 건물 실측 주차 정보는
+        # 공공데이터로 확인 불가하여 채점에 포함하지 않으며, 라벨/보고서에는 이 지표가
+        # '상권 접근성'이지 '해당 건물 주차 여건'이 아님을 항상 함께 표기해야 한다.
         infra = commercial_data.get('infra', {})
         bus_count = infra.get('버스정류장', 30)
         subway_info = infra.get('지하철', '')
         has_subway = '지하철' in subway_info or '역세권' in subway_info or subway_info.endswith('역')
-        
+        parking_is_verified = False  # 건물 단위 실측 아님 — 항상 False, 보고서에 '상권 통계 기준' 명시용
+
         if has_subway or bus_count >= 35:
             score_parking = 23.0
         elif bus_count >= 20:
@@ -48,13 +53,20 @@ class ScoringEngine:
             score_parking = 17.5
         else:
             score_parking = 15.0
-            
-        # 3. 공간 적합성 및 층고 (15점 만점 - 타석당 전용면적 여유도 동적 평가)
+
+        # 3. 공간 적합성 및 층고 (15점 만점 - 타석당 전용면적 여유도)
+        # site_info['is_auto_estimated']가 True면 사용자가 실제 룸/평수를 입력하지
+        # 않아 시스템 기본값(10타석 120평 플래그십 표준)으로 채점된 것이므로, 실제
+        # 사업지 크기와 무관하게 최고 등급이 나올 수 있다. 이 경우 경쟁매장 여유도와
+        # 같은 패턴으로 '미검증' 중립 점수를 부여해 허위로 높은 점수를 막는다.
         rooms_cnt = max(1, site_info.get('rooms', 10))
         area_cnt = site_info.get('area_pyeong', 120)
         pyeong_per_room = area_cnt / float(rooms_cnt)
-        
-        if pyeong_per_room >= 12.0:   # 타석당 12평 이상 (쾌적한 플래그십)
+        space_is_verified = not site_info.get('is_auto_estimated', False)
+
+        if not space_is_verified:
+            score_space = 11.0  # 15점 만점 중 중립값 (미검증 표기)
+        elif pyeong_per_room >= 12.0:   # 타석당 12평 이상 (쾌적한 플래그십)
             score_space = 14.5
         elif pyeong_per_room >= 10.0: # 타석당 10~11.9평 (표준)
             score_space = 13.0
@@ -136,6 +148,8 @@ class ScoringEngine:
             'grade': grade,
             'grade_desc': grade_desc,
             'gap_is_verified': gap_is_verified,
+            'parking_is_verified': parking_is_verified,
+            'space_is_verified': space_is_verified,
             'payback_text': format_payback_text(inv['payback_months_moderate'], inv['total_capex']),
             'value_franchisee': value_franchisee,
             'value_landlord': value_landlord
