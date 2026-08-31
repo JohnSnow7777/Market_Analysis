@@ -892,7 +892,7 @@ class PDFGenerator:
         if not site.get('rent_is_estimated'):
             rent_tag = "입력하신 실측"
         elif site.get('rent_source_label'):
-            rent_tag = "한국부동산원 R-ONE 실측 기준 추정"
+            rent_tag = "한국부동산원(국토교통부 산하 공공기관) R-ONE 실측 기준 추정"
         else:
             rent_tag = "지역 시세 추정"
         c.drawString(56, 174, f"• 월 임대료 기준: {rent_tag} {site['monthly_rent']//10000:,}만원/월 반영")

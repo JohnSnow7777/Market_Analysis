@@ -754,6 +754,12 @@ class PPTXGenerator:
         p.font.size = Pt(11)
         p.font.color.rgb = self.c_mck_navy
         
+        if not site.get('rent_is_estimated'):
+            _rent_tag8 = "입력하신 실측"
+        elif site.get('rent_source_label'):
+            _rent_tag8 = "한국부동산원(국토교통부 산하 공공기관) R-ONE 실측 기준 추정"
+        else:
+            _rent_tag8 = "지역 시세 추정"
         items8_a = [
             f"• 시뮬레이터 장비: {site['rooms']}대 × 대당 {DEFAULT_SETTINGS['simulator_unit_price']//10000:,}만원 = {fmt_won_full(inv['simulator_cost'])}",
             f"• 인테리어 공사비: {site['area_pyeong']}평 × 평당 {DEFAULT_SETTINGS['interior_cost_per_pyeong']//10000:,}만원 = {fmt_won_full(inv['interior_cost'])}",
@@ -766,7 +772,7 @@ class PPTXGenerator:
             f"• 비교 모델 (직원 3인 채용): 인건비 월 {3*DEFAULT_SETTINGS['labor_cost_manager']//10000:,}만원 (회수기간 {fin['owner_operated']['staff3_payback_months']:.1f}개월)",
             f"• 게임비 요금: 1인 18홀 7,000원 (4인 1팀 28,000원)",
             f"• 3대 매출원: 게임비 회전 + 용품 판매(월 {fin['monthly_scenarios']['moderate']['goods_revenue']//10000:,}만) + 식음료(월 {fin['monthly_scenarios']['moderate']['beverage_revenue']//10000:,}만)",
-            f"• 월 임대료 기준: {'지역 시세 추정' if site.get('rent_is_estimated') else '입력하신 실측'} {site['monthly_rent']//10000:,}만원/월 반영"
+            f"• 월 임대료 기준: {_rent_tag8} {site['monthly_rent']//10000:,}만원/월 반영"
         ]
         for it in items8_a:
             p_it = tf8_ab.add_paragraph()
@@ -954,8 +960,14 @@ class PPTXGenerator:
         p.font.bold = True
         p.font.color.rgb = self.c_mck_navy
         
+        if not site.get('rent_is_estimated'):
+            _rent_basis10 = "입력하신 임대료"
+        elif site.get('rent_source_label'):
+            _rent_basis10 = "한국부동산원 R-ONE 실측 기준 추정"
+        else:
+            _rent_basis10 = "지역 시세 추정 임대료"
         cost_details = [
-            f"• 월 임대료: {site['monthly_rent']//10000:,}만원 (실제 사업지 임대료 반영)",
+            f"• 월 임대료: {site['monthly_rent']//10000:,}만원 ({_rent_basis10})",
             f"• 인건비 (점주 직접운영): {m_scen['moderate']['labor_cost']//10000:,}만원 ({site['staff_count']}인 상주 운영 체제)",
             f"• 매장 운영비/소모품: {DEFAULT_SETTINGS['store_ops_monthly']//10000:,}만원  |  통신/POS: {DEFAULT_SETTINGS['pos_telecom_monthly']//10000:,}만원  |  마케팅비: {DEFAULT_SETTINGS['marketing_monthly']//10000:,}만원",
             f"• 변동비: 원가 {(m_scen['moderate']['cost_goods']+m_scen['moderate']['cost_beverage'])//10000:,}만원 + 카드수수료({DEFAULT_SETTINGS['card_fee_rate']*100:.1f}%) {m_scen['moderate']['card_fee']//10000:,}만원",
@@ -1196,7 +1208,7 @@ class PPTXGenerator:
         
         l_points = [
             ("1. 상가 내 구매력 높은 액티브 시니어 유동인구 앵커시설",
-             "• 월 4,500명 이상의 구매력 높은 50~70대 시니어 고객이 상가로 직접 유입\n"
+             f"• 보편 시나리오 기준 월 {m_scen['moderate']['monthly_users']:,}명 수준의 구매력 높은 50~70대 시니어 고객이 상가로 직접 유입\n"
              "• 4인 1팀 단체 이용 특성상 1층 카페, 음식점, 병의원 등 연계 소비 유발\n"
              "• 평일 낮 10~17시 상가 전체의 주간 공실 및 유휴 분위기를 완전히 반전"),
             ("2. 장기 안정적 우량 임차인 락인 (공실 리스크 영구 해소)",
