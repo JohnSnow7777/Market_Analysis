@@ -694,20 +694,22 @@ class PDFGenerator:
         # ---------------------------------------------------------------------
         self._draw_mckinsey_header(c, "6. 입지 적합성 종합 판정 (5-Dimension Diamond Scoring)", f"앞선 5개 항목 분석을 종합한 다이아몬드 스코어링 총점 {score['total_score']}점({score['grade']}등급) - {score['grade_desc']}")
 
-        # 접근성 지표: 실제 채점에 사용된 버스/지하철 데이터를 그대로 근거 문구에 반영 (점수와 문구가 서로 다른 결론을 말하지 않도록)
+        # 접근성 지표: infra(버스정류장 수 등)는 실측 API가 아니라 지역등급(4단계)별
+        # 고정값 테이블(commercial_data.py)에서 나온다 — 같은 등급이면 어느 주소든
+        # 동일한 숫자가 나오므로, 이 주소만의 실측치인 것처럼 문구를 쓰지 않는다.
         _infra = comm.get('infra', {})
         _bus_count = _infra.get('버스정류장', 30)
         _subway_info = _infra.get('지하철', '')
         _has_subway = '지하철' in _subway_info or '역세권' in _subway_info or _subway_info.endswith('역')
         if _has_subway or _bus_count >= 35:
-            _access_desc = f"{_subway_info + ' 역세권, ' if _has_subway else ''}버스정류장 {_bus_count}개소로 대중교통망 우수"
+            _access_desc = f"{comm.get('spending_grade', '')} 지역등급 기준 대중교통망 우수 추정(버스정류장 약 {_bus_count}개소 수준)"
         elif _bus_count >= 20:
-            _access_desc = f"버스정류장 {_bus_count}개소 확보된 표준 수준 교통망"
+            _access_desc = f"{comm.get('spending_grade', '')} 지역등급 기준 표준 수준 교통망 추정(버스정류장 약 {_bus_count}개소 수준)"
         elif _bus_count >= 10:
-            _access_desc = f"버스정류장 {_bus_count}개소로 교통망이 다소 협소한 편"
+            _access_desc = f"{comm.get('spending_grade', '')} 지역등급 기준 교통망 다소 협소 추정(버스정류장 약 {_bus_count}개소 수준)"
         else:
-            _access_desc = f"버스정류장 {_bus_count}개소로 대중교통 접근성이 열위한 편"
-        _access_desc += " / 10타석 주차면은 '현장 실측' 요망"
+            _access_desc = f"{comm.get('spending_grade', '')} 지역등급 기준 대중교통 접근성 열위 추정(버스정류장 약 {_bus_count}개소 수준)"
+        _access_desc += " / 실제 건물 주차면·지하철 도보거리는 '현장 실측' 필요"
 
         # 공간 적합성 지표: 실제 채점에 사용된 타석당 평수 구간을 그대로 근거 문구에 반영
         _pyeong_per_room = site['area_pyeong'] / max(1, site['rooms'])
@@ -726,7 +728,7 @@ class PDFGenerator:
             ("접근성 및 주차 인프라", score['scores']['accessibility_parking'], 25, _access_desc + " (※ 건물 자체 주차·엘리베이터 아닌 상권 대중교통 통계 기준)", False),
             ("공간 적합성 및 층고", score['scores']['space_efficiency'], 15, _space_desc if score.get('space_is_verified', True) else "룸/평수 미입력으로 표준값 대신 미검증 중립 점수 적용 (현장 실측 필요)", score.get('space_is_verified', True)),
             ("경쟁 매장 여유도", score['scores']['supply_gap'], 15, f"{comm.get('competitor_summary', '반경 3km 내 대형 플래그십 매장 공급 부족')}", score.get('gap_is_verified', False)),
-            ("지역 소비력 및 여가지출", score['scores']['commercial_spending'], 20, f"MYPARK 지역등급 추정: 골프용품 성장 1위(+{comm['growth_rate']}%) 및 스크린골프 상위 20% 월 {comm['top_20_sales']//10000:,}만원 상권", True),
+            ("지역 소비력 및 여가지출", score['scores']['commercial_spending'], 20, f"MYPARK 지역등급(4단계 분류) 추정치: 골프용품 성장 +{comm['growth_rate']}% 및 스크린골프 상위 20% 월 {comm['top_20_sales']//10000:,}만원 상권 (동일 등급 지역은 동일 수치 적용, 개별 카드매출 실측 아님)", False),
         ]
 
         # ===== 렛저 스타일 레이아웃: 좌측 반전 히어로 셀(종합 등급) + 우측 5대 지표 막대 목록 =====
