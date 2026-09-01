@@ -165,7 +165,8 @@ class PPTXGenerator:
 
         p4 = tf1.add_paragraph()
         p4.space_before = Pt(6)
-        p4.text = f"상권 분석 범위: {site['sido']} {site['sigungu']} {target_dong} 반경 3km 생활권  |  분석 기준: {data.get('created_at', '2026.08')}"
+        _scope_txt = f"{site['sigungu']} 전체 (관할 행정동 표본 분석)" if demo.get('district_wide_analysis') else f"{site['sido']} {site['sigungu']} {target_dong} 반경 3km 생활권"
+        p4.text = f"상권 분석 범위: {_scope_txt}  |  분석 기준: {data.get('created_at', '2026.08')}"
         p4.font.name = 'Malgun Gothic'
         p4.font.size = Pt(13)
         p4.font.color.rgb = RGBColor(0xC7, 0xCB, 0xC3)
@@ -191,7 +192,10 @@ class PPTXGenerator:
         # [PART 2 재구성: 재무 금액 배제, 순수 입지 평가 전진 배치]
         # ---------------------------------------------------------------------
         s3 = self.prs.slides.add_slide(self.blank_layout)
-        self._add_mckinsey_header(s3, "1. 3km 생활권 인구 및 타겟 연령 분석", f"사업지 반경 3km 내 {demo['total_pop']/10000:.1f}만 명({len(demo['dongs'])}개 행정동) 및 50대 이상 시니어 {demo['senior_50_plus']/10000:.1f}만 명({demo['senior_ratio']}%) 확보")
+        _dw3 = demo.get('district_wide_analysis', False)
+        _s3_title = "1. 구 전체 인구 및 타겟 연령 분석" if _dw3 else "1. 3km 생활권 인구 및 타겟 연령 분석"
+        _s3_scope = f"{site['sigungu']} 전체 관할" if _dw3 else "사업지 반경 3km 내"
+        self._add_mckinsey_header(s3, _s3_title, f"{_s3_scope} {demo['total_pop']/10000:.1f}만 명({len(demo['dongs'])}개 행정동) 및 50대 이상 시니어 {demo['senior_50_plus']/10000:.1f}만 명({demo['senior_ratio']}%) 확보")
         
         # 좌측 행정동별 인구 테이블
         rows2 = min(len(demo['dongs']) + 2, 8)

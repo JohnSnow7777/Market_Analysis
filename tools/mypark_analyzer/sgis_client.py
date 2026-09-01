@@ -75,6 +75,40 @@ def _find_region_cd(access_token, parent_cd, target_name):
     return None
 
 
+def list_dongs_in_sigungu(access_token, sido, sigungu, limit=8):
+    """시도/시군구 산하 실제 행정동 목록을 조회. 실패 시 None.
+
+    사용자가 동을 특정하지 않고 '구/군' 단위만 입력했을 때, 가짜 동
+    이름("사업권역1동" 등)을 지어내는 대신 SGIS에 실제로 존재하는
+    행정동 이름과 adm_cd를 그대로 써서 대표 동을 고르는 데 쓴다.
+    반환: [{'name': str, 'adm_cd': str}, ...] 또는 None.
+    """
+    if not (sido and sigungu):
+        return None
+    try:
+        sido_cd = _find_region_cd(access_token, None, sido)
+        if not sido_cd:
+            return None
+        sigungu_short = sigungu.split()[-1] if ' ' in sigungu else sigungu
+        sigungu_cd = _find_region_cd(access_token, sido_cd, sigungu_short)
+        if not sigungu_cd:
+            return None
+        data = _get('addr/stage.json', {'accessToken': access_token, 'cd': sigungu_cd})
+        rows = data.get('result', [])
+        if not isinstance(rows, list) or not rows:
+            return None
+        out = []
+        for row in rows:
+            name = row.get('addr_name')
+            cd = row.get('cd')
+            if name and cd and name.endswith(('동', '읍', '면')):
+                out.append({'name': name, 'adm_cd': cd})
+        return out[:limit] if out else None
+    except Exception as e:
+        print(f"[SGIS DONG LIST FAIL] sido={sido} sigungu={sigungu}: {e}")
+        return None
+
+
 def resolve_adm_cd(access_token, sido, sigungu, dong):
     """시도/시군구/읍면동 텍스트명을 SGIS 행정동코드(adm_cd)로 변환. 실패 시 None."""
     if not (sido and sigungu and dong):

@@ -187,7 +187,8 @@ class PDFGenerator:
         c.setFont(FONT_REGULAR, 12)
         notes_str = f"  |  특이사항: {site['special_notes']}" if site.get('special_notes') else ""
         c.drawString(60, self.height - 230, f"• 대상 사업지: {site['full_address']}{notes_str}")
-        c.drawString(60, self.height - 255, f"• 상권 분석 대상: {site['sido']} {site['sigungu']} {target_dong} 반경 3km 생활권")
+        _cover_scope = f"{site['sigungu']} 전체 (관할 행정동 표본 분석)" if demo.get('district_wide_analysis') else f"{site['sido']} {site['sigungu']} {target_dong} 반경 3km 생활권"
+        c.drawString(60, self.height - 255, f"• 상권 분석 대상: {_cover_scope}")
         c.drawString(60, self.height - 280, f"• 출점 모델: {site['rooms']}타석 ({site['area_pyeong']}평형)  |  분석 기준일: {data.get('created_at', '2026.08')}")
 
         c.setFillColor(self.c_white)
@@ -201,7 +202,9 @@ class PDFGenerator:
         # ---------------------------------------------------------------------
         # Page 3: 2. 배후 인구 및 타겟 연령 분석
         # ---------------------------------------------------------------------
-        self._draw_mckinsey_header(c, "1. 3km 생활권 인구 및 타겟 연령 분석", f"반경 3km 내 50대 이상 시니어 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%)의 핵심 소비 수요 확보")
+        is_district_wide = demo.get('district_wide_analysis', False)
+        _sec1_sub = f"관할 구 전체 표본 기준 50대 이상 시니어 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%)의 핵심 소비 수요 확보" if is_district_wide else f"반경 3km 내 50대 이상 시니어 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%)의 핵심 소비 수요 확보"
+        self._draw_mckinsey_header(c, "1. 구 전체 인구 및 타겟 연령 분석" if is_district_wide else "1. 3km 생활권 인구 및 타겟 연령 분석", _sec1_sub)
 
         tbl_bottom = 268
         tbl_top = 500
@@ -216,7 +219,7 @@ class PDFGenerator:
         c.rect(40, tbl_top - head_h, 425, head_h, fill=1, stroke=0)
         c.setFont(FONT_BOLD, 10)
         c.setFillColor(self.c_white)
-        c.drawString(56, tbl_top - 19, f"{target_dong} 반경 3km 행정동별 인구 집계 ({pop_source_tag})")
+        c.drawString(56, tbl_top - 19, (f"{site['sigungu']} 전체 관할 행정동 인구 집계 ({pop_source_tag})" if is_district_wide else f"{target_dong} 반경 3km 행정동별 인구 집계 ({pop_source_tag})"))
 
         col_y = tbl_top - head_h - 20
         c.setFont(FONT_BOLD, 8)

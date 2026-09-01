@@ -117,14 +117,32 @@ class DemographicsEngine:
         is_city = tier == TIER_METRO
         is_mid_small = tier == TIER_MID_CITY
 
+        # 2-1. 동을 특정하지 않은 "OO구 전체" 요청: 가짜 동 이름("인접동 A" 등)을
+        # 지어내는 대신 SGIS 행정구역 API로 그 구에 실제 존재하는 행정동 목록을
+        # 가져와 대표 표본으로 쓴다. 실패 시(키 없음/API 오류)에만 최후 수단으로
+        # 예전의 추정 placeholder 이름을 쓴다.
+        district_wide_analysis = False
+        sgis_real_dongs = None
+        sgis_token = None
         if not target_dongs:
             target_dongs_is_fallback = True
-            clean_dong = dong.replace('동', '') if dong else '사업권역'
-            center_dong = f"{clean_dong}동"
-            target_dongs = [
-                f"{clean_dong}1동", f"{clean_dong}2동", f"{clean_dong}본동",
-                "인접동 A", "인접동 B", "인접동 C"
-            ]
+            sgis_token = sgis_client.get_access_token()
+            if sgis_token:
+                real_dongs = sgis_client.list_dongs_in_sigungu(sgis_token, sido, sigungu, limit=6)
+                if real_dongs:
+                    sgis_real_dongs = real_dongs
+                    target_dongs = [d['name'] for d in real_dongs]
+                    center_dong = real_dongs[0]['name']
+                    target_dongs_is_fallback = False
+                    district_wide_analysis = True
+
+            if not sgis_real_dongs:
+                clean_dong = dong.replace('동', '') if dong else '사업권역'
+                center_dong = f"{clean_dong}동"
+                target_dongs = [
+                    f"{clean_dong}1동", f"{clean_dong}2동", f"{clean_dong}본동",
+                    "인접동 A", "인접동 B", "인접동 C"
+                ]
 
         # 3. 반경 3km 인접 행정동 인구 정밀 집계
         # 추정 생성 동(실측 DB 미등록)의 인구·비중이 전부 동일하게 찍히지 않도록 슬롯별 편차 적용
@@ -136,9 +154,42 @@ class DemographicsEngine:
         tot_pop = 0
         tot_senior_50 = 0
         tot_senior_f = 0
+        sgis_used = False
 
         for idx, dname in enumerate(target_dongs):
-            if dname in DONG_POPULATION_DB:
+            # 구 전체 요청으로 얻은 실제 행정동은, 가능하면 이름뿐 아니라
+            # SGIS 실제 인구도 함께 써서 "이름만 진짜, 숫자는 지어낸" 상태를 피한다.
+            # 연령대 비중(시니어%)까지는 SGIS 응답 필드가 검증되지 않아 지역 체급
+            # 추정치를 그대로 곱하는 절충을 쓴다(기존 3-1 단일 조회 로직과 동일 원칙).
+            real_dong_pop = None
+            if sgis_real_dongs and sgis_token:
+                pop_result = sgis_client.get_population_by_age(sgis_token, sgis_real_dongs[idx]['adm_cd'])
+                if pop_result and pop_result.get('total', 0) > 0:
+                    real_dong_pop = pop_result['total']
+
+            if real_dong_pop:
+                if is_metro:
+                    s_ratio = 0.385
+                elif is_city:
+                    s_ratio = 0.395
+                elif is_mid_small:
+                    s_ratio = 0.435
+                else:
+                    s_ratio = 0.485
+                d_tot = real_dong_pop
+                d_m = int(d_tot * 0.483)
+                d_f = d_tot - d_m
+                s_50 = int(d_tot * s_ratio)
+                s_f = int(s_50 * 0.525)
+                d_senior_ratio = round(s_50 / d_tot * 100.0, 1) if d_tot > 0 else 0.0
+                dong_list.append({'dong': dname, 'male': d_m, 'female': d_f, 'total': d_tot, 'senior_50': s_50, 'senior_ratio': d_senior_ratio, 'is_estimated': False})
+                tot_male += d_m
+                tot_female += d_f
+                tot_pop += d_tot
+                tot_senior_50 += s_50
+                tot_senior_f += s_f
+                sgis_used = True
+            elif dname in DONG_POPULATION_DB:
                 info = DONG_POPULATION_DB[dname]
                 d_senior_ratio = round(info['senior_50'] / info['total'] * 100.0, 1) if info['total'] > 0 else 0.0
                 dong_list.append({
@@ -147,7 +198,8 @@ class DemographicsEngine:
                     'female': info['female'],
                     'total': info['total'],
                     'senior_50': info['senior_50'],
-                    'senior_ratio': d_senior_ratio
+                    'senior_ratio': d_senior_ratio,
+                    'is_estimated': False
                 })
                 tot_male += info['male']
                 tot_female += info['female']
@@ -177,7 +229,7 @@ class DemographicsEngine:
                 s_50 = int(d_tot * dong_s_ratio)
                 s_f = int(s_50 * 0.525)
                 d_senior_ratio = round(s_50 / d_tot * 100.0, 1) if d_tot > 0 else 0.0
-                dong_list.append({'dong': dname, 'male': d_m, 'female': d_f, 'total': d_tot, 'senior_50': s_50, 'senior_ratio': d_senior_ratio})
+                dong_list.append({'dong': dname, 'male': d_m, 'female': d_f, 'total': d_tot, 'senior_50': s_50, 'senior_ratio': d_senior_ratio, 'is_estimated': True})
                 tot_male += d_m
                 tot_female += d_f
                 tot_pop += d_tot
@@ -189,13 +241,15 @@ class DemographicsEngine:
         # 3-1. SGIS 실제 인구 통계로 보정 시도 (키 없음/실패 시 완전히 무시하고 기존 추정치 유지)
         # 주의: SGIS에서 검증 확인된 건 '실제 총인구'뿐이라, 시니어 비중(%)은 기존 추정치를
         # 그대로 곱해 적용한다 — 분모(총인구)만 실측으로 교체하는 정직한 절충.
-        sgis_used = False
-        sgis_pop = sgis_client.fetch_real_population(sido, sigungu, dong)
-        if sgis_pop and sgis_pop.get('total', 0) > 0:
-            real_total = sgis_pop['total']
-            tot_senior_50 = int(round(real_total * senior_ratio / 100.0))
-            tot_pop = real_total
-            sgis_used = True
+        # (구 전체 요청은 위 동별 루프에서 이미 실제 인구를 합산했으므로 여기서는 dong이
+        # 특정된 경우에만 단일 조회를 추가로 시도한다 — sgis_used를 덮어쓰지 않는다.)
+        if dong:
+            sgis_pop = sgis_client.fetch_real_population(sido, sigungu, dong)
+            if sgis_pop and sgis_pop.get('total', 0) > 0:
+                real_total = sgis_pop['total']
+                tot_senior_50 = int(round(real_total * senior_ratio / 100.0))
+                tot_pop = real_total
+                sgis_used = True
 
         # 4. 연령별 매트릭스 비례 계산 (50대 이상 정밀 세분화)
         age_dist = [
@@ -236,10 +290,17 @@ class DemographicsEngine:
             data_source_text = 'KOSIS 국가통계포털 (실측 DB 매핑)'
         else:
             data_source_text = 'KOSIS 시군구 통계 기반 3km 추정 모델'
-        
+
+        if district_wide_analysis:
+            dong_names_joined = ', '.join(d['dong'] for d in dong_list)
+            region_name = f"{sido} {sigungu} 전체 (관할 행정동 {len(dong_list)}개 표본: {dong_names_joined})"
+        else:
+            region_name = f"{sido} {sigungu} {center_dong} 일원 (반경 3km 생활권)"
+
         return {
             'center_dong': center_dong,
-            'region_name': f"{sido} {sigungu} {center_dong} 일원 (반경 3km 생활권)",
+            'district_wide_analysis': district_wide_analysis,
+            'region_name': region_name,
             'total_pop': tot_pop,
             'male_pop': tot_male,
             'female_pop': tot_female,

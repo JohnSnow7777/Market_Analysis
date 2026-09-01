@@ -441,8 +441,14 @@ class CompetitorEngine:
         full_addr = address
 
         # 1. 전국 전수 실측 DB에서 주소/구/동 일치 매장 매칭
+        # 주의: "서구"/"중구"/"남구" 등은 전국 여러 시·도에 동명 행정구역이 있어
+        # sigungu만 부분일치로 비교하면 시/도가 다른 매장이 섞여 들어온다
+        # (예: 광주광역시 서구 검색인데 경기도 고양시 일산서구가 매칭됨).
+        # sido가 DB에 있으면 반드시 일치해야 매칭 후보로 인정한다.
         matched_stores = []
         for store in VERIFIED_NATIONAL_PARK_GOLF_DB:
+            if store.get('sido') and s_sido and store['sido'] != s_sido:
+                continue
             score = 0
             if store['sigungu'] in s_sigungu or s_sigungu in store['sigungu']:
                 score += 3
