@@ -138,34 +138,62 @@ def fetch_district_population(sido, sigungu):
         if not district or district.get('total', 0) <= 0:
             return None
 
-        # 동별 내역 (실패해도 구 전체 총인구는 그대로 쓸 수 있도록 별도 try)
-        dongs = []
+        # 관할 행정동 목록/개수는 addr/stage.json에서 받는다. 이 경로는 실제 키로
+        # 응답 형식을 확인한 적이 있어 신뢰할 수 있고, "구 전체 N개 동"의 N을
+        # 정확히 세는 것이 채점 보정(생활권 환산)의 전제라 반드시 확보해야 한다.
+        dong_names = []
+        try:
+            stage = _get('addr/stage.json', {'accessToken': token, 'cd': sigungu_cd}, timeout=6)
+            rows = stage.get('result', [])
+            if isinstance(rows, list):
+                for row in rows:
+                    nm = row.get('addr_name')
+                    cd = row.get('cd')
+                    if nm and cd and str(nm).endswith(('동', '읍', '면')):
+                        dong_names.append({'name': str(nm), 'adm_cd': cd})
+        except Exception as e:
+            print(f"[SGIS DONG NAMES FAIL] {sigungu_cd}: {e}")
+
+        # 동별 인구 내역(선택). 응답 필드명이 확인되지 않아 실패할 수 있으므로
+        # 실패해도 구 총인구/동 개수에는 영향이 없도록 완전히 분리한다.
+        pop_by_cd = {}
         try:
             data = _get('stats/searchpopulation.json', {
                 'accessToken': token,
                 'adm_cd': sigungu_cd,
                 'low_search': '1',
                 'year': district['year'],
-            })
+            }, timeout=8)
             rows = data.get('result', [])
             if isinstance(rows, list):
                 for row in rows:
-                    name = row.get('adm_nm') or row.get('addr_name')
-                    cd = row.get('adm_cd') or row.get('cd')
-                    tot = row.get('tot_ppltn')
-                    if not (name and tot):
+                    if not isinstance(row, dict):
                         continue
-                    # adm_nm은 "광주광역시 서구 광천동"처럼 전체 경로로 오는 경우가 있다
-                    short_name = str(name).split()[-1]
-                    dongs.append({'name': short_name, 'adm_cd': cd, 'total': int(tot)})
+                    cd = row.get('adm_cd') or row.get('cd')
+                    tot = row.get('tot_ppltn') or row.get('population')
+                    if cd and tot:
+                        try:
+                            pop_by_cd[str(cd)] = int(float(tot))
+                        except (TypeError, ValueError):
+                            continue
+            if not pop_by_cd:
+                print(f"[SGIS LOW_SEARCH SHAPE] rows={str(rows)[:300]}")
         except Exception as e:
             print(f"[SGIS DONG BREAKDOWN FAIL] {sigungu_cd}: {e}")
 
+        dongs = []
+        for d in dong_names:
+            tot = pop_by_cd.get(str(d['adm_cd']))
+            if tot:
+                dongs.append({'name': d['name'], 'adm_cd': d['adm_cd'], 'total': tot})
         dongs.sort(key=lambda d: d['total'], reverse=True)
+
         return {
             'total': district['total'],
             'sigungu_cd': sigungu_cd,
             'year': district['year'],
+            'dong_count': len(dong_names),
+            'dong_names': [d['name'] for d in dong_names],
             'dongs': dongs,
         }
     except Exception as e:

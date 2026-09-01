@@ -125,14 +125,17 @@ class DemographicsEngine:
         district_wide_analysis = False
         district_pop = None
         district_dong_count = 0
+        district_dong_names = []
         if not target_dongs:
             target_dongs_is_fallback = True
             district_pop = sgis_client.fetch_district_population(sido, sigungu)
             if district_pop and district_pop.get('total', 0) > 0:
                 district_wide_analysis = True
                 target_dongs_is_fallback = False
-                district_dong_count = len(district_pop.get('dongs', []))
-                center_dong = district_pop['dongs'][0]['name'] if district_pop.get('dongs') else sigungu
+                # 동 개수는 addr/stage 기준(신뢰 가능). 인구 내역(dongs)은 없을 수 있다.
+                district_dong_count = district_pop.get('dong_count', 0)
+                district_dong_names = district_pop.get('dong_names', [])
+                center_dong = district_dong_names[0] if district_dong_names else sigungu
                 target_dongs = []
 
             if not district_wide_analysis:
@@ -296,6 +299,7 @@ class DemographicsEngine:
             'center_dong': center_dong,
             'district_wide_analysis': district_wide_analysis,
             'district_dong_count': district_dong_count,
+            'district_dong_names': district_dong_names,
             'region_name': region_name,
             # 채점용 배후 시니어 인구.
             # 매장 1곳이 실제로 끌어올 수 있는 범위는 구 전체가 아니라 생활권(약 3km,

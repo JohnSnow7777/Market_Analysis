@@ -219,10 +219,13 @@ class PDFGenerator:
         c.rect(40, tbl_top - head_h, 425, head_h, fill=1, stroke=0)
         c.setFont(FONT_BOLD, 10)
         c.setFillColor(self.c_white)
+        _dcnt = demo.get('district_dong_count', 0)
+        _has_dong_rows = bool(demo.get('dongs'))
         if is_district_wide:
-            _dcnt = demo.get('district_dong_count', len(demo['dongs']))
-            _shown = min(6, len(demo['dongs']))
-            _tbl_title = f"{site['sigungu']} 전체 {_dcnt}개 행정동 중 인구 상위 {_shown}개 ({pop_source_tag})"
+            if _has_dong_rows:
+                _tbl_title = f"{site['sigungu']} 전체 {_dcnt}개 행정동 중 인구 상위 {min(6, len(demo['dongs']))}개 ({pop_source_tag})"
+            else:
+                _tbl_title = f"{site['sigungu']} 전체 {_dcnt}개 행정동 통합 인구 ({pop_source_tag})"
         else:
             _tbl_title = f"{target_dong} 반경 3km 행정동별 인구 집계 ({pop_source_tag})"
         c.drawString(56, tbl_top - 19, _tbl_title)
@@ -237,6 +240,24 @@ class PDFGenerator:
         c.setStrokeColor(self.c_line)
         c.setLineWidth(0.8)
         c.line(56, col_y - 8, 429, col_y - 8)
+
+        # 동별 인구 내역을 못 받은 구 전체 분석에서는 빈 표를 남기지 않고,
+        # 실제 관할 행정동 이름을 그대로 나열해 집계 범위를 보여준다.
+        if is_district_wide and not _has_dong_rows:
+            _names = demo.get('district_dong_names', [])
+            c.setFont(FONT_REGULAR, 8.5)
+            c.setFillColor(self.c_charcoal)
+            _ny = col_y - 26
+            for _ln in self._wrap_text_to_width(c, "집계 대상 행정동: " + ', '.join(_names), FONT_REGULAR, 8.5, 373, max_lines=5):
+                c.drawString(56, _ny, _ln)
+                _ny -= 13
+            c.setFont(FONT_BOLD, 9)
+            c.setFillColor(self.c_mck_navy)
+            c.drawString(56, _ny - 8, f"{site['sigungu']} 전체 인구")
+            c.drawRightString(230, _ny - 8, f"{demo['total_pop']:,}명")
+            c.drawRightString(330, _ny - 8, f"{demo['senior_50_plus']:,}명")
+            c.setFillColor(self.c_mck_teal)
+            c.drawRightString(429, _ny - 8, f"{demo['senior_ratio']}%")
 
         row_h1 = min(24, (col_y - 8 - (tbl_bottom + 12)) / max(1, len(demo['dongs'][:6])))
         y_d = col_y - 8 - row_h1 + 7
@@ -259,11 +280,10 @@ class PDFGenerator:
 
         # 구 전체 분석에서는 위 6개 행이 구 전체 합계가 아니므로, 합계 기준이
         # 무엇인지 표 안에 명시해 오해(6개 동 = 구 전체)를 막는다.
-        if is_district_wide:
+        if is_district_wide and _has_dong_rows:
             c.setFont(FONT_BOLD, 8)
             c.setFillColor(self.c_mck_navy)
-            _dcnt2 = demo.get('district_dong_count', len(demo['dongs']))
-            c.drawString(56, tbl_bottom + 9, f"{site['sigungu']} 전체 {_dcnt2}개 행정동 합계")
+            c.drawString(56, tbl_bottom + 9, f"{site['sigungu']} 전체 {_dcnt}개 행정동 합계")
             c.drawRightString(230, tbl_bottom + 9, f"{demo['total_pop']:,}명")
             c.drawRightString(330, tbl_bottom + 9, f"{demo['senior_50_plus']:,}명")
             c.setFillColor(self.c_mck_teal)
