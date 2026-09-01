@@ -188,7 +188,7 @@ class PDFGenerator:
         notes_str = f"  |  특이사항: {site['special_notes']}" if site.get('special_notes') else ""
         c.drawString(60, self.height - 230, f"• 대상 사업지: {site['full_address']}{notes_str}")
         c.drawString(60, self.height - 255, f"• 상권 분석 대상: {site['sido']} {site['sigungu']} {target_dong} 반경 3km 생활권")
-        c.drawString(60, self.height - 280, f"• 표준 출점 모델: 10타석 ({site['area_pyeong']}평형)  |  분석 기준일: {data.get('created_at', '2026.08')}")
+        c.drawString(60, self.height - 280, f"• 출점 모델: {site['rooms']}타석 ({site['area_pyeong']}평형)  |  분석 기준일: {data.get('created_at', '2026.08')}")
 
         c.setFillColor(self.c_white)
         c.setFont(FONT_BOLD, 11)
@@ -370,7 +370,7 @@ class PDFGenerator:
         c.drawString(511, ry, "• 시장 특성: 시설 규모와 쾌적성에 따른 매출 양극화 뚜렷")
         ry -= 20
         c.setFillColor(self.c_mck_teal)
-        c.drawString(511, ry, "★ 마이파크 포지셔닝: 10타석 최신식 플래그십으로 상위 20% 시장 흡수")
+        c.drawString(511, ry, f"★ 마이파크 포지셔닝: {site['rooms']}타석 최신식 플래그십으로 상위 20% 시장 흡수")
         ry -= 30
 
         c.setStrokeColor(self.c_line)
@@ -639,13 +639,13 @@ class PDFGenerator:
         # ---------------------------------------------------------------------
         # Page 7: 6. 사업지 개요 및 현장 출점 요건 (4대 건축·인프라 체크리스트)
         # ---------------------------------------------------------------------
-        self._draw_mckinsey_header(c, "5. 사업지 개요 및 현장 출점 요건", f"10타석 {site['area_pyeong']}평 규모 출점을 위한 4대 건축·인프라 현장 실측 기준")
+        self._draw_mckinsey_header(c, "5. 사업지 개요 및 현장 출점 요건", f"{site['rooms']}타석 {site['area_pyeong']}평 규모 출점을 위한 4대 건축·인프라 현장 실측 기준")
         
         space_card_lines = [f"• 대상 주소: {site['full_address']}"]
         if site.get('special_notes'):
             space_card_lines.append(f"• 고객 특이사항: {site['special_notes']}")
         space_card_lines += [
-            f"• 권장 면적: 전용 {site['area_pyeong']}평 (10타석 + 카페/락커룸 최적 배치)",
+            f"• 권장 면적: 전용 {site['area_pyeong']}평 ({site['rooms']}타석 + 카페/락커룸 최적 배치)",
             f"• 층고 기준: {site['clear_height_spec']}",
             f"• 보/배관 간섭: 센서 투사 영역 및 스윙 궤적 내 장애물 사전 실측 필수",
             f"• 권장 층수: 고객 접근성 높은 지상 2~3층 권장 (쾌적한 지하 1층 가능)",
@@ -673,7 +673,7 @@ class PDFGenerator:
                 f"• 적합 용도: {site['zoning_spec']}",
                 f"• 지자체 체육시설: 체육시설의 설치·이용에 관한 법률 인허가 검토",
                 f"• 소방 기준: 스프링클러, 비상유도등, 비상탈출구 완비 점검",
-                f"• 전기 용량: 10타석 시뮬레이터 동시 가동 대비 30kW 이상 인입",
+                f"• 전기 용량: {site['rooms']}타석 시뮬레이터 동시 가동 대비 {max(25, site['rooms']*3)}kW 이상 인입",
                 f"• 정화조 용량: 일 최대 150명 이상 동시 이용 기준 충족 점검",
                 f"• 행정 절차: 관할 구청 건축과 및 체육진흥과 용도 사전 협의"
             ]),
@@ -937,7 +937,7 @@ class PDFGenerator:
         y_after = draw_wrapped_bullets(414, [
             "• 위 수치는 표준 모델 기준 추정치이며, 실제 임대료·공사비는 현장 견적에 따라 달라질 수 있습니다.",
             "• 건물 내 보/배관 간섭 및 유효 층고(2.8m 이상 확보) 여부를 사전 실측하십시오.",
-            "• 10타석 동시 가동에 필요한 전기 인입 용량(30kW 이상)을 확인하십시오.",
+            f"• {site['rooms']}타석 동시 가동에 필요한 전기 인입 용량({max(25, site['rooms']*3)}kW 이상)을 확인하십시오.",
         ])
 
         c.setFont(FONT_BOLD, 9.5)

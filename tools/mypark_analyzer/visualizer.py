@@ -329,7 +329,7 @@ class Visualizer:
         return output_path
 
     @staticmethod
-    def generate_profit_forecast_chart(forecast_data, output_path):
+    def generate_profit_forecast_chart(forecast_data, output_path, rooms=10):
         years = [f"{item['year']}년차" for item in forecast_data['moderate']]
         mod_rev = [item['total_revenue'] / 100000000 for item in forecast_data['moderate']]
         mod_op = [item['operating_profit'] / 100000000 for item in forecast_data['moderate']]
@@ -358,7 +358,7 @@ class Visualizer:
                         ha='center', va='bottom', fontsize=8.5, fontweight='bold', color='#1F5A44')
                         
         ax.set_ylabel('금액 (억원)', fontsize=9, fontweight='bold', color='#6B6F76')
-        ax.set_title('마이파크 10타석 5개년 손익 예측 (연 2% 성장률 반영)', fontsize=11.5, fontweight='bold', pad=14, color='#14181F')
+        ax.set_title(f'마이파크 {rooms}타석 5개년 손익 예측 (연 2% 성장률 반영)', fontsize=11.5, fontweight='bold', pad=14, color='#14181F')
         ax.set_xticks(x)
         ax.set_xticklabels(years, fontsize=9, fontweight='bold', color='#14181F')
         ax.grid(True, linestyle='-', alpha=0.3, axis='y', color='#D3D1CB', lw=0.8)

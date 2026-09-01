@@ -57,7 +57,7 @@ class MyParkReportGenerator:
 
         Visualizer.generate_sales_trend_chart(commercial, chart_sales)
         Visualizer.generate_radar_score_chart(scores, chart_radar)
-        Visualizer.generate_profit_forecast_chart(financials['forecast_5year'], chart_profit)
+        Visualizer.generate_profit_forecast_chart(financials['forecast_5year'], chart_profit, rooms=site_info['rooms'])
         Visualizer.generate_radius_map(site_info, competitors, map_radius)
         Visualizer.generate_industry_growth_chart(commercial, chart_growth)
         Visualizer.generate_cost_waterfall_chart(financials['monthly_scenarios']['moderate'], chart_waterfall)

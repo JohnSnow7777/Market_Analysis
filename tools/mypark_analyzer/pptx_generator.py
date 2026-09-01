@@ -311,7 +311,7 @@ class PPTXGenerator:
         p.font.color.rgb = self.c_mck_navy
         p_sub = tf4_1.add_paragraph()
         p_sub.space_before = Pt(4)
-        p_sub.text = f"• 상위 20% 매출: {top20_str} /월 (대형 최신 매장)\n• 하위 20% 매출: {bot20_str} /월 (노후 소형 매장)\n★ 마이파크 10타석 플래그십은 상위 20% 시장 점유"
+        p_sub.text = f"• 상위 20% 매출: {top20_str} /월 (대형 최신 매장)\n• 하위 20% 매출: {bot20_str} /월 (노후 소형 매장)\n★ 마이파크 {site['rooms']}타석 플래그십은 상위 20% 시장 점유"
         p_sub.font.size = Pt(8.8)
         p_sub.font.color.rgb = self.c_charcoal
         
@@ -545,11 +545,11 @@ class PPTXGenerator:
         # Slide 7: 6. 사업지 개요 및 현장 출점 요건 (4대 건축·인프라 체크리스트)
         # ---------------------------------------------------------------------
         s7 = self.prs.slides.add_slide(self.blank_layout)
-        self._add_mckinsey_header(s7, "5. 사업지 개요 및 현장 출점 요건", f"10타석 {site['area_pyeong']}평 규모 출점을 위한 4대 건축·인프라 현장 실측 기준")
+        self._add_mckinsey_header(s7, "5. 사업지 개요 및 현장 출점 요건", f"{site['rooms']}타석 {site['area_pyeong']}평 규모 출점을 위한 4대 건축·인프라 현장 실측 기준")
         
         base_bullets = [
             f"• 대상 주소: {site['full_address']}",
-            f"• 권장 면적: 전용 {site['area_pyeong']}평 (10타석 + 카페/락커룸 최적 배치)",
+            f"• 권장 면적: 전용 {site['area_pyeong']}평 ({site['rooms']}타석 + 카페/락커룸 최적 배치)",
             f"• 층고 기준: {site['clear_height_spec']}",
             f"• 보/배관 간섭: 센서 투사 영역 및 스윙 궤적 내 장애물 사전 실측 필수",
             f"• 권장 층수: 고객 접근성 높은 지상 2~3층 권장 (쾌적한 지하 1층 가능)",
@@ -580,7 +580,7 @@ class PPTXGenerator:
                 f"• 적합 용도: {site['zoning_spec']}",
                 f"• 지자체 체육시설: 체육시설의 설치·이용에 관한 법률 인허가 검토",
                 f"• 소방 기준: 스프링클러, 비상유도등, 비상탈출구 완비 점검",
-                f"• 전기 용량: 10타석 시뮬레이터 동시 가동 대비 30kW 이상 인입",
+                f"• 전기 용량: {site['rooms']}타석 시뮬레이터 동시 가동 대비 {max(25, site['rooms']*3)}kW 이상 인입",
                 f"• 정화조 용량: 일 최대 150명 이상 동시 이용 기준 충족 점검",
                 f"• 행정 절차: 관할 구청 건축과 및 체육진흥과 용도 사전 협의"
             ]),
@@ -1147,8 +1147,8 @@ class PPTXGenerator:
              f"• 일반 스크린골프 손님이 전무한 '평일 낮 10시~오후 5시' 유휴 시간대를 독점\n"
              f"• 반경 3km 내 {demo['senior_50_plus']/10000:.1f}만 50대 이상 시니어 및 여성 주부 동호회 4인 1팀 정기 리그 가동\n"
              f"• 비수기 및 날씨 영향을 받지 않는 사계절 정기 예약 중심 안정적 가동 안정성 확보"),
-            ("2. 10타석 플래그십 상위 20% 시장 선점",
-             f"• 지역 내 소규모 매장 대비 10타석 대규모 플래그십 시설 경쟁력 압도\n"
+            (f"2. {site['rooms']}타석 플래그십 상위 20% 시장 선점",
+             f"• 지역 내 소규모 매장 대비 {site['rooms']}타석 대규모 플래그십 시설 경쟁력 압도\n"
              f"• MYPARK 지역등급 추정 상위 20% 월매출 {comm['top_20_sales']//10000:,}만원 시장을 단독 선점 점유\n"
              f"• 카페형 휴게 라운지 및 파크골프 용품 샵 결합으로 객단가 및 체류시간 극대화"),
             ("3. 빠른 원금 회수 및 압도적 고수익성",
