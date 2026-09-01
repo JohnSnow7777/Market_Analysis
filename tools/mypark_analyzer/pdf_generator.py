@@ -8,6 +8,7 @@ from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from .config import DEFAULT_SETTINGS, fmt_eok, fmt_won_full, fmt_months
+from .finance_engine import FinanceEngine
 
 # -----------------------------------------------------------------------------
 # TTF 폰트 등록
@@ -740,7 +741,7 @@ class PDFGenerator:
         indicators = [
             ("시니어 인구 밀집도", score['scores']['senior_population'], 25, f"{pop_source_tag}: 반경 3km 내 50대 이상 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%) / 본 매장 운영에 필요한 단골 약 {score.get('senior_customers_needed', 1200):,}명은 배후 시니어의 {score.get('senior_penetration', 0)}% 수준", not demo.get('is_estimated', False)),
             ("접근성 및 주차 인프라", score['scores']['accessibility_parking'], 25, _access_desc + " (※ 건물 자체 주차·엘리베이터 아닌 상권 대중교통 통계 기준)", False),
-            ("공간 적합성 및 층고", score['scores']['space_efficiency'], 15, _space_desc if score.get('space_is_verified', True) else "룸/평수 미입력으로 표준값 대신 미검증 중립 점수 적용 (현장 실측 필요)", score.get('space_is_verified', True)),
+            ("공간 적합성 및 층고", score['scores']['space_efficiency'], 15, _space_desc if score.get('space_is_verified', True) else "룸/평수 미입력으로 표준값 대신 중립 점수 적용 (현장 실측 시 정밀 산정)", score.get('space_is_verified', True)),
             ("경쟁 매장 여유도", score['scores']['supply_gap'], 15, f"{comm.get('competitor_summary', '반경 3km 내 대형 플래그십 매장 공급 부족')}", score.get('gap_is_verified', False)),
             ("지역 소비력 및 여가지출", score['scores']['commercial_spending'], 20, f"MYPARK 지역등급(4단계 분류) 추정치: 골프용품 성장 +{comm['growth_rate']}% 및 스크린골프 상위 20% 월 {comm['top_20_sales']//10000:,}만원 상권 (동일 등급 지역은 동일 수치 적용, 개별 카드매출 실측 아님)", False),
         ]
@@ -789,7 +790,7 @@ class PDFGenerator:
                 c.line(bars_x, row_top, bars_right, row_top)
 
             bar_color = self.c_mck_teal if iverified else HexColor('#9AA5B1')
-            badge_text = "실측·확인" if iverified else "추정·미검증"
+            badge_text = "실측·확인" if iverified else "추정·정밀분석 권장"
 
             c.setFont(FONT_BOLD, 10.5)
             c.setFillColor(self.c_mck_navy)
@@ -886,12 +887,15 @@ class PDFGenerator:
         c.drawString(56, 252, "● 표준 운영 방식 및 인건비 모델")
         c.setFont(FONT_REGULAR, 9)
         c.setFillColor(self.c_charcoal)
-        c.drawString(56, 230, f"• 표준 모델 (점주 {site['staff_count']}인 상주 운영): 인건비 월 {site['staff_count']*DEFAULT_SETTINGS['labor_cost_manager']//10000:,}만원 (수익률 극대화)")
+        c.drawString(56, 230, f"• 표준 모델 (점주 {site['staff_count']}인 상주 운영): 인건비 월 {site['staff_count']*DEFAULT_SETTINGS['labor_cost_manager']//10000:,}만원 (운영 형태별 조정 가능한 대표값)")
         c.drawString(56, 210, f"• 비교 모델 (직원 3인 채용 운영): 인건비 월 {3*DEFAULT_SETTINGS['labor_cost_manager']//10000:,}만원 (회수기간 {fin['owner_operated']['staff3_payback_months']:.1f}개월)")
         c.drawString(56, 190, f"• 게임비 요금: 1인 18홀 7,000원 (4인 1팀 28,000원)")
         c.drawString(56, 170, f"• 3대 매출원: 게임비 회전 + 용품 판매(월 {scenarios['moderate']['goods_revenue']//10000:,}만) + 식음료(월 {scenarios['moderate']['beverage_revenue']//10000:,}만)")
         rent_tag = "입력하신 실측" if not site.get('rent_is_estimated') else "지역 시세 추정"
-        c.drawString(56, 150, f"• 월 임대료 기준: {rent_tag} {site['monthly_rent']//10000:,}만원/월 반영")
+        c.drawString(56, 150, f"• 월 임대료 기준(임차인): {rent_tag} {site['monthly_rent']//10000:,}만원/월 반영")
+        _owner_s = FinanceEngine.calculate_monthly_scenario(site['rooms'], 0, site['staff_count'], 'moderate')
+        _owner_pb = inv['total_capex'] / _owner_s['operating_profit'] if _owner_s['operating_profit'] > 0 else 0
+        c.drawString(56, 130, f"• 건물주(자가 소유) 시 참고: 임대료 없이 운영 시 보편적 시나리오 회수기간 약 {_owner_pb:.1f}개월")
 
         c.setFont(FONT_REGULAR, 8.5)
         c.setFillColor(self.c_slate)
@@ -1106,7 +1110,7 @@ class PDFGenerator:
         c.drawString(56, 194, f"• 점주 직접 운영 모델 (표준): 월 순영업이익 {scenarios['moderate']['operating_profit']//10000:,}만원 (연간 {scenarios['moderate']['operating_profit']*12//10000:,}만원 / 이익률 {scenarios['moderate']['profit_margin']}%)")
         c.drawString(56, 168, f"• 직원 채용 모델 (매니저 1인 + 알바 2인): 월 순영업이익 {fin['owner_operated']['staff3_operating_profit']//10000:,}만원 (연간 {fin['owner_operated']['staff3_operating_profit']*12//10000:,}만원)")
         c.drawString(56, 142, "• 낮은 변동비 구조: 일반 음식점/카페와 달리 원재료비 비중이 극히 낮아 매출 증가 시 순이익이 급격히 증가하는 고마진 레버리지")
-        c.drawString(56, 116, "• 고정비 방어력: 월 고정비가 낮아 비수기나 상권 초기 단계에서도 안정적인 흑자 기조 유지")
+        c.drawString(56, 116, "• 고정비 방어력: 월 고정비가 낮아 비수기나 상권 초기 단계에서도 안정적 순영업이익 기반 유지")
 
         self._draw_footer(c, "MYPARK Cost Structure & Operating Profit Analysis")
         c.showPage()

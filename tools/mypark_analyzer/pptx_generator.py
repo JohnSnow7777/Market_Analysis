@@ -7,6 +7,7 @@ from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.enum.shapes import MSO_SHAPE
 from .config import DEFAULT_SETTINGS, fmt_eok, fmt_won_full, fmt_months
+from .finance_engine import FinanceEngine
 
 
 class PPTXGenerator:
@@ -642,7 +643,7 @@ class PPTXGenerator:
         # 적용한 것이므로 산출근거 문구도 그 사실을 그대로 반영한다.
         _pyeong_per_room = site['area_pyeong'] / max(1, site['rooms'])
         if not score.get('space_is_verified', True):
-            _space_desc = "룸/평수 미입력으로 표준값 대신 미검증 중립 점수 적용 (현장 실측 필요)"
+            _space_desc = "룸/평수 미입력으로 표준값 대신 중립 점수 적용 (현장 실측 시 정밀 산정)"
         elif _pyeong_per_room >= 12.0:
             _space_desc = f"{site['area_pyeong']}평 {site['rooms']}타석 (타석당 {_pyeong_per_room:.1f}평), 여유로운 플래그십 규모"
         elif _pyeong_per_room >= 10.0:
@@ -666,7 +667,7 @@ class PPTXGenerator:
         ]
         for idx, (iname, iscore, imax, idesc, iverified) in enumerate(indicators):
             badge_color = self.c_mck_teal if iverified else RGBColor(0x9A, 0xA5, 0xB1)
-            badge_text = "실측·확인" if iverified else "추정·미검증"
+            badge_text = "실측·확인" if iverified else "추정·정밀분석 권장"
             p = tf2.add_paragraph() if idx > 0 else tf2.paragraphs[0]
             p.space_before = Pt(6)
             r1 = p.add_run()
@@ -764,12 +765,15 @@ class PPTXGenerator:
             f"★ 총 초기 투자금: {fmt_won_full(inv['total_capex'])} ({fmt_eok(inv['total_capex'])})",
             "",
             "● 표준 운영 방식 및 인건비 모델",
-            f"• 표준 모델 (점주 {site['staff_count']}인 상주): 인건비 월 {site['staff_count']*DEFAULT_SETTINGS['labor_cost_manager']//10000:,}만원 (수익률 극대화)",
+            f"• 표준 모델 (점주 {site['staff_count']}인 상주): 인건비 월 {site['staff_count']*DEFAULT_SETTINGS['labor_cost_manager']//10000:,}만원 — 부부 공동운영 등 실제 운영 형태에 따라 조정 가능한 대표값",
             f"• 비교 모델 (직원 3인 채용): 인건비 월 {3*DEFAULT_SETTINGS['labor_cost_manager']//10000:,}만원 (회수기간 {fin['owner_operated']['staff3_payback_months']:.1f}개월)",
             f"• 게임비 요금: 1인 18홀 7,000원 (4인 1팀 28,000원)",
             f"• 3대 매출원: 게임비 회전 + 용품 판매(월 {fin['monthly_scenarios']['moderate']['goods_revenue']//10000:,}만) + 식음료(월 {fin['monthly_scenarios']['moderate']['beverage_revenue']//10000:,}만)",
-            f"• 월 임대료 기준: {_rent_tag8} {site['monthly_rent']//10000:,}만원/월 반영"
+            f"• 월 임대료 기준(임차인): {_rent_tag8} {site['monthly_rent']//10000:,}만원/월 반영",
         ]
+        _owner_s8 = FinanceEngine.calculate_monthly_scenario(site['rooms'], 0, site['staff_count'], 'moderate')
+        _owner_pb8 = inv['total_capex'] / _owner_s8['operating_profit'] if _owner_s8['operating_profit'] > 0 else 0
+        items8_a.append(f"• 건물주(자가 소유) 시 참고: 임대료 없이 운영 시 보편적 시나리오 회수기간 약 {_owner_pb8:.1f}개월")
         for it in items8_a:
             p_it = tf8_ab.add_paragraph()
             p_it.space_before = Pt(3)
@@ -994,7 +998,7 @@ class PPTXGenerator:
             f"• 점주 직접 운영 모델 (표준): 월 순영업이익 {m_scen['moderate']['operating_profit']//10000:,}만원 (연간 {m_scen['moderate']['operating_profit']*12//10000:,}만원 / 이익률 {m_scen['moderate']['profit_margin']}%)",
             f"• 직원 채용 모델 (매니저 1인 + 알바 2인): 월 순영업이익 {fin['owner_operated']['staff3_operating_profit']//10000:,}만원 (연간 {fin['owner_operated']['staff3_operating_profit']*12//10000:,}만원)",
             "• 낮은 변동비 구조: 일반 음식점/카페와 달리 원재료비 비중이 극히 낮아 매출 증가 시 순이익이 급격히 증가하는 고마진 레버리지",
-            "• 고정비 방어력: 월 고정비가 낮아 비수기나 상권 초기 단계에서도 안정적인 흑자 기조 유지"
+            "• 고정비 방어력: 월 고정비가 낮아 비수기나 상권 초기 단계에서도 안정적 순영업이익 기반 유지"
         ]
         for mc in models_comp:
             p_m = tf10_2.add_paragraph()
