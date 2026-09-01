@@ -758,8 +758,9 @@ class PPTXGenerator:
         items8_a = [
             f"• 시뮬레이터 장비: {site['rooms']}대 × 대당 {DEFAULT_SETTINGS['simulator_unit_price']//10000:,}만원 = {fmt_won_full(inv['simulator_cost'])}",
             f"• 인테리어 공사비: {site['area_pyeong']}평 × 평당 {DEFAULT_SETTINGS['interior_cost_per_pyeong']//10000:,}만원 = {fmt_won_full(inv['interior_cost'])}",
-            f"• 부대설비 (냉난방/간판/가구/초도용품): {fmt_won_full(inv['other_facilities'])}",
-            f"  - 냉난방기(1,200만) / 간판(500만) / 가구(300만) / 초도용품(500만)",
+            f"• 부대설비 (간판/가구/초도용품): {fmt_won_full(inv['other_facilities'])}",
+            f"  - 간판({DEFAULT_SETTINGS['signage_cost']//10000:,}만) / 가구({DEFAULT_SETTINGS['furniture_cost']//10000:,}만) / 초도용품({DEFAULT_SETTINGS['supplies_cost']//10000:,}만)",
+            f"• 냉난방 설비 (선택): 기존 상가 설비 승계 시 추가 비용 없음, 신규 설치 시 약 {inv['hvac_cost_optional']//10000:,}만원 별도",
             f"★ 총 초기 투자금: {fmt_won_full(inv['total_capex'])} ({fmt_eok(inv['total_capex'])})",
             "",
             "● 표준 운영 방식 및 인건비 모델",

@@ -8,15 +8,17 @@ class FinanceEngine:
     @staticmethod
     def calculate_investment(rooms=10, area_pyeong=120):
         simulator_cost = rooms * DEFAULT_SETTINGS['simulator_unit_price'] # 1.5억
-        interior_cost = area_pyeong * DEFAULT_SETTINGS['interior_cost_per_pyeong'] # 1.44억
-        hvac_cost = DEFAULT_SETTINGS['hvac_cost'] # 1200만
-        signage_cost = DEFAULT_SETTINGS['signage_cost'] # 500만
-        furniture_cost = DEFAULT_SETTINGS['furniture_cost'] # 300만
-        supplies_cost = DEFAULT_SETTINGS['supplies_cost'] # 500만
-        other_facilities = hvac_cost + signage_cost + furniture_cost + supplies_cost # 2500만
-        
-        total_capex = simulator_cost + interior_cost + other_facilities # 3.19억
-        
+        interior_cost = area_pyeong * DEFAULT_SETTINGS['interior_cost_per_pyeong']
+        # 냉난방 설비는 기존 상가 설비 승계 여부에 따라 유무가 갈리는 선택 항목이라
+        # 총 투자금 확정치에는 포함하지 않고, 참고용 별도 안내로만 제공한다.
+        hvac_cost_optional = DEFAULT_SETTINGS['hvac_cost']
+        signage_cost = DEFAULT_SETTINGS['signage_cost']
+        furniture_cost = DEFAULT_SETTINGS['furniture_cost']
+        supplies_cost = DEFAULT_SETTINGS['supplies_cost']
+        other_facilities = signage_cost + furniture_cost + supplies_cost
+
+        total_capex = simulator_cost + interior_cost + other_facilities
+
         return {
             'rooms': rooms,
             'area_pyeong': area_pyeong,
@@ -24,7 +26,7 @@ class FinanceEngine:
             'simulator_cost': simulator_cost,
             'interior_cost_per_pyeong': DEFAULT_SETTINGS['interior_cost_per_pyeong'],
             'interior_cost': interior_cost,
-            'hvac_cost': hvac_cost,
+            'hvac_cost_optional': hvac_cost_optional,
             'signage_cost': signage_cost,
             'furniture_cost': furniture_cost,
             'supplies_cost': supplies_cost,
@@ -113,23 +115,15 @@ class FinanceEngine:
     @staticmethod
     def get_full_financial_analysis(rooms=10, monthly_rent=4600000, area_pyeong=120, staff_count=1, demographics=None, commercial=None):
         inv = FinanceEngine.calculate_investment(rooms, area_pyeong)
-        
-        senior_pop = demographics.get('senior_50_plus', 72400) if demographics else 72400
-        comm_sales = commercial.get('monthly_avg_sales', 20500000) if commercial else 20500000
-        
-        if senior_pop >= 65000 and comm_sales >= 22000000:
-            reg_mult = 1.05
-        elif senior_pop >= 45000:
-            reg_mult = 1.00
-        elif senior_pop >= 25000:
-            reg_mult = 0.85
-        else:
-            reg_mult = 0.72
 
+        # [2026-09-01] 지역수요배율(reg_mult) 제거: 보수적 시나리오(3회전) 자체가
+        # 이미 최소 가정인데, 여기에 시니어 인구 기준 배율(최저 0.72배)을 추가로
+        # 곱해 같은 '수요가 약함'을 이중으로 할인하던 문제가 있었다. 시나리오
+        # 3단계(보수/보편/긍정) 하나만으로 수요 범위를 표현한다.
         scenarios = {
-            'conservative': FinanceEngine.calculate_monthly_scenario(rooms, monthly_rent, staff_count, 'conservative', reg_mult),
-            'moderate': FinanceEngine.calculate_monthly_scenario(rooms, monthly_rent, staff_count, 'moderate', reg_mult),
-            'optimistic': FinanceEngine.calculate_monthly_scenario(rooms, monthly_rent, staff_count, 'optimistic', reg_mult),
+            'conservative': FinanceEngine.calculate_monthly_scenario(rooms, monthly_rent, staff_count, 'conservative'),
+            'moderate': FinanceEngine.calculate_monthly_scenario(rooms, monthly_rent, staff_count, 'moderate'),
+            'optimistic': FinanceEngine.calculate_monthly_scenario(rooms, monthly_rent, staff_count, 'optimistic'),
         }
         
         # 월 고정비 (점주 1인 상주 250만 + 임대료 + 운영비 180만 + 마케팅 50만)

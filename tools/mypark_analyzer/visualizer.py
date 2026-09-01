@@ -316,7 +316,7 @@ class Visualizer:
         ax.text(len(names) - 0.4, 12 + max(months) * 0.02, '1년', fontsize=8.5, color='#B23A2E', fontweight='bold')
 
         ax.set_ylabel('투자금 회수 기간 (개월)', fontsize=9, fontweight='bold', color='#6B6F76')
-        ax.set_title(f"시나리오별 투자금(3.19억원) 회수 기간 비교", fontsize=11.5, fontweight='bold', pad=14, loc='left', color='#14181F')
+        ax.set_title(f"시나리오별 투자금({inv['total_capex']/100000000:.3g}억원) 회수 기간 비교", fontsize=11.5, fontweight='bold', pad=14, loc='left', color='#14181F')
         ax.grid(True, linestyle='-', alpha=0.3, axis='y', color='#D3D1CB', lw=0.8)
         for spine in ax.spines.values():
             spine.set_color('#D3D1CB')

@@ -23,11 +23,11 @@ DEFAULT_SETTINGS = {
     
     # 초기 투자비 (SSOT: 3.19억원)
     'simulator_unit_price': 15000000,   # 대당 1,500만원
-    'interior_cost_per_pyeong': 1200000,# 평당 120만원
+    'interior_cost_per_pyeong': 1000000,# 평당 100만원
     'hvac_cost': 12000000,              # 냉난방기 4대 1,200만원
     'signage_cost': 5000000,            # 간판/싸인물 500만원
     'furniture_cost': 3000000,          # 가구/집기 300만원
-    'supplies_cost': 5000000,           # 초도용품 500만원
+    'supplies_cost': 3500000,           # 초도용품 350만원
     
     # 운영 비용
     'labor_cost_manager': 2500000,      # 실장(점주) 1인 250만원
