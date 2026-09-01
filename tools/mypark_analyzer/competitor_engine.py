@@ -433,12 +433,17 @@ class CompetitorEngine:
         return stores
 
     @staticmethod
-    def search_competitors(address, sigungu=None, dong=None):
+    def search_competitors(address, sigungu=None, dong=None, district_wide=False):
         resolved = AddressResolver.resolve(address)
         s_dong = dong or resolved.get('dong', '')
         s_sigungu = sigungu or resolved.get('sigungu', '')
         s_sido = resolved.get('sido', '')
         full_addr = address
+
+        # 구 전체 분석이면 특정 지점 3km가 아니라 구 전역을 덮는 반경으로 넓힌다.
+        # (자치구 면적은 대체로 10~50km² 수준이라 8km 반경이면 구 전역을 포함한다.)
+        search_radius = 8000 if district_wide else 3000
+        scope_label = f"{s_sigungu} 전역" if district_wide else "반경 3km 내"
 
         # 1. 전국 전수 실측 DB에서 주소/구/동 일치 매장 매칭
         # 주의: "서구"/"중구"/"남구" 등은 전국 여러 시·도에 동명 행정구역이 있어
@@ -466,7 +471,7 @@ class CompetitorEngine:
         is_self_location = any(k in full_addr for k in ['우경', '화신로272번길 11', '마실파크골프'])
 
         if final_stores:
-            summary_txt = f"반경 3km 내 실측 전문 매장 {len(final_stores)}곳이 운영 중이며, {final_stores[0]['name'].split()[0]} 등 주요 매장의 현황을 확인했습니다."
+            summary_txt = f"{scope_label} 실측 전문 매장 {len(final_stores)}곳이 운영 중이며, {final_stores[0]['name'].split()[0]} 등 주요 매장의 현황을 확인했습니다."
             if is_self_location:
                 summary_txt = f"현재 이 주소에서 운영 중인 '{final_stores[0]['name']}' 매장을 대상으로, 리뉴얼 및 상권 경쟁력 강화 관점에서 분석했습니다."
             return {
@@ -482,7 +487,7 @@ class CompetitorEngine:
         # 1-1. 실측 DB에 없으면 소상공인시장진흥공단 공공데이터로 우선 검색
         # (공공데이터라 카카오와 달리 대량조회·저장이 자유롭고, 39개 필드의 업종코드가
         #  포함돼 있어 4번 항목인 '창업 영향 업종 분석'에도 같은 호출을 재사용한다.)
-        sbiz_stores = CompetitorEngine.search_sbiz_competitors(resolved['full_address'])
+        sbiz_stores = CompetitorEngine.search_sbiz_competitors(resolved['full_address'], radius=search_radius)
         if sbiz_stores is not None:
             if sbiz_stores:
                 return {
@@ -492,14 +497,14 @@ class CompetitorEngine:
                     'verified_count': len(sbiz_stores),
                     'is_verified': True,
                     'is_blue_ocean': False,
-                    'summary': f"공공데이터(소상공인시장진흥공단) 기준 반경 3km 내 골프/스크린골프 관련 업소 {len(sbiz_stores)}곳 확인"
+                    'summary': f"공공데이터(소상공인시장진흥공단) 기준 {scope_label} 골프/스크린골프 관련 업소 {len(sbiz_stores)}곳 확인"
                 }
             # 소상공인 DB에서 0건이어도 곧바로 블루오션 확정하지 않고 카카오로 한 번 더 교차확인한다
             # (공공데이터 갱신 주기가 있어 최근 개업 매장이 아직 안 잡혔을 수 있음)
         sbiz_confirmed_zero = (sbiz_stores == [])
 
         # 2-1. 소상공인 DB 미설정/0건이면 카카오 로컬 API로 실시간 검색 시도 (KAKAO_REST_API_KEY 설정 시)
-        live_stores = CompetitorEngine.search_live_multi_source_competitors(resolved['full_address'])
+        live_stores = CompetitorEngine.search_live_multi_source_competitors(resolved['full_address'], radius=search_radius)
         if live_stores is None and sbiz_confirmed_zero:
             # 카카오는 미설정/실패했지만 소상공인 공공데이터가 이미 0건을 확정했으므로
             # 이 확정치를 그대로 채택한다 (가상 시나리오로 대체하지 않음)
@@ -510,7 +515,7 @@ class CompetitorEngine:
                 'verified_count': 0,
                 'is_verified': True,
                 'is_blue_ocean': True,
-                'summary': "공공데이터(소상공인시장진흥공단) 기준 반경 3km 내 골프/스크린골프 관련 업소 미등록 확인 (마이파크 1호점 선점 최적지)"
+                'summary': f"공공데이터(소상공인시장진흥공단) 기준 {scope_label} 골프/스크린골프 관련 업소 미등록 확인 (마이파크 1호점 선점 최적지)"
             }
         if live_stores is not None:
             if live_stores:
@@ -521,7 +526,7 @@ class CompetitorEngine:
                     'verified_count': len(live_stores),
                     'is_verified': True,
                     'is_blue_ocean': False,
-                    'summary': f"카카오·TMap·네이버 지도 데이터를 교차 확인한 결과, 반경 3km 내 {len(live_stores)}곳의 관련 업체가 확인되었습니다."
+                    'summary': f"카카오·TMap·네이버 지도 데이터를 교차 확인한 결과, {scope_label} {len(live_stores)}곳의 관련 업체가 확인되었습니다."
                 }
             return {
                 'region_key': 'blue_ocean',
@@ -530,7 +535,7 @@ class CompetitorEngine:
                 'verified_count': 0,
                 'is_verified': True,
                 'is_blue_ocean': True,
-                'summary': "카카오·TMap·네이버 지도 데이터를 교차 확인한 결과, 반경 3km 내 상업용 전문 스크린 파크골프 매장이 확인되지 않아 1호점 선점에 유리한 입지로 판단됩니다."
+                'summary': f"카카오·TMap·네이버 지도 데이터를 교차 확인한 결과, {scope_label} 상업용 전문 스크린 파크골프 매장이 확인되지 않아 1호점 선점에 유리한 입지로 판단됩니다."
             }
 
         # 3. 실측 DB 미등록 + 실시간 API 전부 미설정인 경우:
@@ -576,5 +581,5 @@ class CompetitorEngine:
             'verified_count': None,
             'is_verified': False,
             'is_blue_ocean': False,
-            'summary': "반경 3km 내 실측 데이터 및 실시간 검색 결과가 없어, 아래 4곳은 참고용으로 작성한 예시 시나리오입니다."
+            'summary': f"{scope_label} 실측 데이터 및 실시간 검색 결과가 없어, 아래 4곳은 참고용으로 작성한 예시 시나리오입니다."
         }

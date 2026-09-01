@@ -19,7 +19,10 @@ class ScoringEngine:
     @staticmethod
     def evaluate_site(demographics, commercial_data, site_info, financials):
         senior_ratio = demographics.get('senior_ratio', 38.4)
-        senior_pop = demographics.get('senior_50_plus', 72400)
+        # 채점에는 '구 전체 인구'가 아니라 매장이 실제로 끌어올 수 있는 생활권 인구를
+        # 쓴다 (demographics.catchment_senior_50). 구 전체 분석에서 구 인구를 그대로
+        # 쓰면 주소를 모호하게 적을수록 점수가 오르는 왜곡이 생긴다.
+        senior_pop = demographics.get('catchment_senior_50') or demographics.get('senior_50_plus', 72400)
         monthly_sales = commercial_data.get('monthly_avg_sales', 20500000)
         
         # 1. 시니어 인구 밀집도 (25점 만점)
@@ -146,7 +149,7 @@ class ScoringEngine:
         sc = financials['monthly_scenarios']['moderate']
         
         value_franchisee = (
-            f"1. 평일 주간 높은 가동률 확보: 반경 3km 내 50대 이상 시니어 {senior_pop:,}명({senior_ratio}%) 및 "
+            f"1. 평일 주간 높은 가동률 확보: {'구 내 대표 생활권' if demographics.get('district_wide_analysis') else '반경 3km 내'} 50대 이상 시니어 {senior_pop:,}명({senior_ratio}%) 및 "
             f"주부 동호회를 타겟팅하여 평일 낮 10~17시 정기 모임 중심의 안정적 가동률을 확보합니다.\n"
             f"2. {rooms_cnt}타석 시설 경쟁력: 기존 소규모 매장 대비 {rooms_cnt}타석 쾌적한 시설과 단체 모임 수용력으로 고객 선호도를 극대화합니다.\n"
             f"3. 안정적 수익성 및 빠른 원금 회수: 보편적 가동 기준 월 순영업이익 약 {sc['operating_profit']//10000:,}만원(영업이익률 {sc['profit_margin']}%)을 달성하여 "

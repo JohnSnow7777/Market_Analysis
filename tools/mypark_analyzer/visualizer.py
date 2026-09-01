@@ -82,22 +82,31 @@ class Visualizer:
         return output_path
 
     @staticmethod
-    def generate_radius_map(site_info, competitors_data, output_path):
-        """맥킨지 스타일 정밀 반경 3km 상권 분석 지도"""
+    def generate_radius_map(site_info, competitors_data, output_path, district_wide=False):
+        """맥킨지 스타일 상권 분석 지도.
+
+        district_wide=True(구 전체 분석)면 특정 지점이 없으므로 '사업지 핀 + 3km'가
+        아니라 구 전역 범위를 나타내는 지도로 라벨과 반경을 바꾼다.
+        """
         fig, ax = plt.subplots(figsize=(6.2, 5.4), dpi=200)
         fig.patch.set_facecolor('#FFFFFF')
         ax.set_facecolor('#FFFFFF')
-        
+
+        outer_r = 3.0
         # 3km / 1.5km 반경 영역 (맥킨지 틸/네이비 틴트)
-        circle_3km = plt.Circle((0, 0), 3.0, facecolor='#14181F', fill=True, alpha=0.08, linestyle='-', linewidth=1.2, edgecolor='#14181F')
+        circle_3km = plt.Circle((0, 0), outer_r, facecolor='#14181F', fill=True, alpha=0.08, linestyle='-', linewidth=1.2, edgecolor='#14181F')
         circle_1km = plt.Circle((0, 0), 1.5, facecolor='#1F5A44', fill=True, alpha=0.06, linestyle='--', linewidth=1.0, edgecolor='#1F5A44')
         ax.add_patch(circle_3km)
         ax.add_patch(circle_1km)
         
         # 중심 사업지 핀
         ax.plot(0, 0, marker='*', markersize=18, color='#B23A2E', markeredgecolor='#FFFFFF', markeredgewidth=1.2, zorder=6)
-        b_name = site_info.get('building_name', '사업지')
-        s_dong = site_info.get('dong', '서현동')
+        if district_wide:
+            b_name = f"{site_info.get('sigungu', '')} 전역"
+            s_dong = "구 전체 상권 분석"
+        else:
+            b_name = site_info.get('building_name', '사업지')
+            s_dong = site_info.get('dong', '서현동')
         ax.text(0, -0.48, f"★ {b_name}\n({s_dong})",
                 ha='center', va='top', fontsize=9, fontweight='bold', color='#14181F', zorder=7,
                 bbox=dict(boxstyle='square,pad=0.35', facecolor='#FFFFFF', edgecolor='#B23A2E', lw=1.2, alpha=0.95))
@@ -123,15 +132,20 @@ class Visualizer:
                 ax.text(x, y + y_off, label_txt, ha='center', va=va_pos, fontsize=8, fontweight='bold', color='#14181F', zorder=7,
                         bbox=dict(boxstyle='square,pad=0.25', facecolor='#EBEAE5', edgecolor='#D3D1CB', lw=0.8, alpha=0.95))
         
-        ax.text(0, 3.2, "반경 3km (차량 10분 생활권)", ha='center', fontsize=8.5, color='#6B6F76', fontweight='bold')
-        ax.text(0, 1.6, "1.5km", ha='center', fontsize=7.5, color='#6B6F76')
+        if district_wide:
+            ax.text(0, 3.2, f"{site_info.get('sigungu', '')} 전역 (관할 행정동 전체)", ha='center', fontsize=8.5, color='#6B6F76', fontweight='bold')
+            ax.text(0, 1.6, "중심 상권", ha='center', fontsize=7.5, color='#6B6F76')
+        else:
+            ax.text(0, 3.2, "반경 3km (차량 10분 생활권)", ha='center', fontsize=8.5, color='#6B6F76', fontweight='bold')
+            ax.text(0, 1.6, "1.5km", ha='center', fontsize=7.5, color='#6B6F76')
         
         ax.set_xlim(-4.2, 4.2)
         ax.set_ylim(-4.2, 4.2)
         ax.set_aspect('equal')
         ax.axis('off')
         
-        plt.title("스크린 파크골프 상권 분석 지도 (반경 3km)", fontsize=11.5, fontweight='bold', pad=12, color='#14181F')
+        _map_title = f"스크린 파크골프 상권 분석 지도 ({site_info.get('sigungu', '')} 전역)" if district_wide else "스크린 파크골프 상권 분석 지도 (반경 3km)"
+        plt.title(_map_title, fontsize=11.5, fontweight='bold', pad=12, color='#14181F')
         
         addr_text = f"■ 대상지: {site_info['full_address']}"
         fig.text(0.5, 0.02, addr_text, ha='center', fontsize=8.5, fontweight='bold', color='#14181F',

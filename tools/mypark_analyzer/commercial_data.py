@@ -10,7 +10,7 @@ class CommercialEngine:
     """지역별 실측 상권 소비력 및 매출 분석기"""
 
     @staticmethod
-    def get_commercial_analysis(address):
+    def get_commercial_analysis(address, district_wide=False):
         resolved = AddressResolver.resolve(address)
         full_addr = address
         sigungu = resolved.get('sigungu', '')
@@ -145,7 +145,8 @@ class CommercialEngine:
         if os.environ.get(sbiz_client.SBIZ_API_KEY_ENV):
             x, y = CompetitorEngine.geocode_address(full_addr)
             if x is not None:
-                real_industry_mix = sbiz_client.industry_mix(x, y)
+                # 구 전체 분석이면 특정 지점 3km가 아니라 구 전역을 덮는 반경을 쓴다
+                real_industry_mix = sbiz_client.industry_mix(x, y, radius=8000 if district_wide else 3000)
 
         return {
             'monthly_avg_sales': monthly_avg,

@@ -219,7 +219,13 @@ class PDFGenerator:
         c.rect(40, tbl_top - head_h, 425, head_h, fill=1, stroke=0)
         c.setFont(FONT_BOLD, 10)
         c.setFillColor(self.c_white)
-        c.drawString(56, tbl_top - 19, (f"{site['sigungu']} 전체 관할 행정동 인구 집계 ({pop_source_tag})" if is_district_wide else f"{target_dong} 반경 3km 행정동별 인구 집계 ({pop_source_tag})"))
+        if is_district_wide:
+            _dcnt = demo.get('district_dong_count', len(demo['dongs']))
+            _shown = min(6, len(demo['dongs']))
+            _tbl_title = f"{site['sigungu']} 전체 {_dcnt}개 행정동 중 인구 상위 {_shown}개 ({pop_source_tag})"
+        else:
+            _tbl_title = f"{target_dong} 반경 3km 행정동별 인구 집계 ({pop_source_tag})"
+        c.drawString(56, tbl_top - 19, _tbl_title)
 
         col_y = tbl_top - head_h - 20
         c.setFont(FONT_BOLD, 8)
@@ -250,6 +256,18 @@ class PDFGenerator:
             c.setFont(FONT_BOLD, 8.5)
             c.drawRightString(429, y_d, f"{d.get('senior_ratio', demo['senior_ratio'])}%")
             y_d -= row_h1
+
+        # 구 전체 분석에서는 위 6개 행이 구 전체 합계가 아니므로, 합계 기준이
+        # 무엇인지 표 안에 명시해 오해(6개 동 = 구 전체)를 막는다.
+        if is_district_wide:
+            c.setFont(FONT_BOLD, 8)
+            c.setFillColor(self.c_mck_navy)
+            _dcnt2 = demo.get('district_dong_count', len(demo['dongs']))
+            c.drawString(56, tbl_bottom + 9, f"{site['sigungu']} 전체 {_dcnt2}개 행정동 합계")
+            c.drawRightString(230, tbl_bottom + 9, f"{demo['total_pop']:,}명")
+            c.drawRightString(330, tbl_bottom + 9, f"{demo['senior_50_plus']:,}명")
+            c.setFillColor(self.c_mck_teal)
+            c.drawRightString(429, tbl_bottom + 9, f"{demo['senior_ratio']}%")
 
         # 우측: 연령대 분포 매트릭스 (렛저 테이블)
         box2_right = self.width - 40
@@ -309,8 +327,9 @@ class PDFGenerator:
         _senior_total = max(1, demo['senior_50_plus'])
         _60s_share = demo['pop_60s'] / _senior_total * 100
         _70s_share = demo['pop_70_plus'] / _senior_total * 100
+        _insight_scope_txt = "구 전체 관할 행정동" if is_district_wide else "반경 3km 내"
         _insight_bullets = [
-            f"• 타겟 집적도: 반경 3km 내 50대 이상 인구 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%) 확보로 안정적 고객 풀 형성",
+            f"• 타겟 집적도: {_insight_scope_txt} 50대 이상 인구 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%) 확보로 안정적 고객 풀 형성",
             f"• 60대 주력 고객군 {_60s_share:.0f}%: 은퇴 후 평일 낮 시간 여유가 있는 60대가 전체 시니어 중 {_60s_share:.0f}%를 차지하여 평일 낮 가동률 극대화",
             f"• 70대 실버 헬스케어 수요 {_70s_share:.0f}%: 관절 부담이 없는 파크골프 특성상 부부 동반 및 시니어 커뮤니티 공간으로 정착",
             "• 일반 스크린골프 대비 회전율 우위: 야간 직장인 편중 매장과 달리 주간 7시간 집중 가동으로 일일 높은 회전수 확보",
@@ -331,7 +350,7 @@ class PDFGenerator:
         c.rect(40, _ins_bottom, self.width - 80, _ins_h, fill=1, stroke=1)
         c.setFont(FONT_BOLD, 10.5)
         c.setFillColor(self.c_mck_navy)
-        c.drawString(56, _ins_top - 26, "■ 3km 생활권 시니어 인구 분석 시사점")
+        c.drawString(56, _ins_top - 26, "■ 구 전체 시니어 인구 분석 시사점" if is_district_wide else "■ 3km 생활권 시니어 인구 분석 시사점")
 
         c.setFont(FONT_REGULAR, 9)
         c.setFillColor(self.c_charcoal)
@@ -742,7 +761,7 @@ class PDFGenerator:
         _space_desc += " / 유효 층고 2.8m 이상은 현장 실측 필수"
 
         indicators = [
-            ("시니어 인구 밀집도", score['scores']['senior_population'], 25, f"{pop_source_tag}: 반경 3km 내 50대 이상 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%) / 본 매장 운영에 필요한 단골 약 {score.get('senior_customers_needed', 1200):,}명은 배후 시니어의 {score.get('senior_penetration', 0)}% 수준", not demo.get('is_estimated', False)),
+            ("시니어 인구 밀집도", score['scores']['senior_population'], 25, f"{pop_source_tag}: {'구 전체' if is_district_wide else '반경 3km 내'} 50대 이상 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%) / 본 매장 운영에 필요한 단골 약 {score.get('senior_customers_needed', 1200):,}명은 배후 시니어의 {score.get('senior_penetration', 0)}% 수준", not demo.get('is_estimated', False)),
             ("접근성 및 주차 인프라", score['scores']['accessibility_parking'], 25, _access_desc + " (※ 건물 자체 주차·엘리베이터 아닌 상권 대중교통 통계 기준)", False),
             ("공간 적합성 및 층고", score['scores']['space_efficiency'], 15, _space_desc if score.get('space_is_verified', True) else "룸/평수 미입력으로 표준값 대신 중립 점수 적용 (현장 실측 시 정밀 산정)", score.get('space_is_verified', True)),
             ("경쟁 매장 여유도", score['scores']['supply_gap'], 15, f"{comm.get('competitor_summary', '반경 3km 내 대형 플래그십 매장 공급 부족')}", score.get('gap_is_verified', False)),

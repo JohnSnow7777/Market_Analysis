@@ -109,6 +109,70 @@ def list_dongs_in_sigungu(access_token, sido, sigungu, limit=8):
         return None
 
 
+def fetch_district_population(sido, sigungu):
+    """시군구(구/군) 단위 실제 인구를 SGIS에서 조회. 실패 시 None.
+
+    "광주광역시 서구"처럼 동을 특정하지 않은 구 전체 분석용. 동을 하나씩
+    N번 조회하는 대신 searchpopulation을 시군구 코드로 두 번만 호출한다:
+      - low_search='0' -> 그 구 자체의 총인구 (구 전체 합계의 정답)
+      - low_search='1' -> 산하 행정동별 인구 (표에 보여줄 내역)
+    구 전체 합계는 반드시 low_search='0' 값을 쓴다. 동별 목록은 표시용이며,
+    일부 동이 누락돼도 합계가 틀어지지 않도록 분리해서 관리한다.
+
+    반환: {'total': int, 'sigungu_cd': str, 'year': str,
+           'dongs': [{'name': str, 'adm_cd': str, 'total': int}, ...]} 또는 None
+    """
+    token = get_access_token()
+    if not token or not (sido and sigungu):
+        return None
+    try:
+        sido_cd = _find_region_cd(token, None, sido)
+        if not sido_cd:
+            return None
+        sigungu_short = sigungu.split()[-1] if ' ' in sigungu else sigungu
+        sigungu_cd = _find_region_cd(token, sido_cd, sigungu_short)
+        if not sigungu_cd:
+            return None
+
+        district = get_population_by_age(token, sigungu_cd)
+        if not district or district.get('total', 0) <= 0:
+            return None
+
+        # 동별 내역 (실패해도 구 전체 총인구는 그대로 쓸 수 있도록 별도 try)
+        dongs = []
+        try:
+            data = _get('stats/searchpopulation.json', {
+                'accessToken': token,
+                'adm_cd': sigungu_cd,
+                'low_search': '1',
+                'year': district['year'],
+            })
+            rows = data.get('result', [])
+            if isinstance(rows, list):
+                for row in rows:
+                    name = row.get('adm_nm') or row.get('addr_name')
+                    cd = row.get('adm_cd') or row.get('cd')
+                    tot = row.get('tot_ppltn')
+                    if not (name and tot):
+                        continue
+                    # adm_nm은 "광주광역시 서구 광천동"처럼 전체 경로로 오는 경우가 있다
+                    short_name = str(name).split()[-1]
+                    dongs.append({'name': short_name, 'adm_cd': cd, 'total': int(tot)})
+        except Exception as e:
+            print(f"[SGIS DONG BREAKDOWN FAIL] {sigungu_cd}: {e}")
+
+        dongs.sort(key=lambda d: d['total'], reverse=True)
+        return {
+            'total': district['total'],
+            'sigungu_cd': sigungu_cd,
+            'year': district['year'],
+            'dongs': dongs,
+        }
+    except Exception as e:
+        print(f"[SGIS DISTRICT POP FAIL] {sido} {sigungu}: {e}")
+        return None
+
+
 def resolve_adm_cd(access_token, sido, sigungu, dong):
     """시도/시군구/읍면동 텍스트명을 SGIS 행정동코드(adm_cd)로 변환. 실패 시 None."""
     if not (sido and sigungu and dong):

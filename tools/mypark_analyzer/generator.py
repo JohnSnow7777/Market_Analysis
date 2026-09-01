@@ -22,8 +22,11 @@ class MyParkReportGenerator:
         resolved = AddressResolver.resolve(address)
         site_info = GeoEngine.analyze_site(address, building_name, area_pyeong, rooms, monthly_rent, staff_count, special_notes)
         demographics = DemographicsEngine.get_demographics(address)
-        commercial = CommercialDataEngine.get_commercial_trends(address)
-        competitors = CompetitorEngine.search_competitors(address, site_info['sigungu'], site_info['dong'])
+        _district_wide = demographics.get('district_wide_analysis', False)
+        commercial = CommercialDataEngine.get_commercial_trends(address, district_wide=_district_wide)
+        competitors = CompetitorEngine.search_competitors(
+            address, site_info['sigungu'], site_info['dong'],
+            district_wide=_district_wide)
         commercial['competitors'] = competitors['stores']
         commercial['competitor_summary'] = competitors['summary']
         commercial['is_blue_ocean'] = competitors['is_blue_ocean']
@@ -58,7 +61,7 @@ class MyParkReportGenerator:
         Visualizer.generate_sales_trend_chart(commercial, chart_sales)
         Visualizer.generate_radar_score_chart(scores, chart_radar)
         Visualizer.generate_profit_forecast_chart(financials['forecast_5year'], chart_profit, rooms=site_info['rooms'])
-        Visualizer.generate_radius_map(site_info, competitors, map_radius)
+        Visualizer.generate_radius_map(site_info, competitors, map_radius, district_wide=_district_wide)
         Visualizer.generate_industry_growth_chart(commercial, chart_growth)
         Visualizer.generate_cost_waterfall_chart(financials['monthly_scenarios']['moderate'], chart_waterfall)
         Visualizer.generate_bep_chart(financials, chart_bep)
