@@ -73,6 +73,13 @@ class MyParkReportGenerator:
             'bep_chart': chart_bep
         }
         
+        # 건물주(자가 소유, 임대료 없음) 참고 시나리오 — 웹/PDF/PPTX가 동일한 값을
+        # 쓰도록 여기서 한 번만 계산해 bundle에 포함한다.
+        owner_only_scenario = FinanceEngine.calculate_monthly_scenario(
+            site_info['rooms'], 0, site_info['staff_count'], 'moderate')
+        owner_only_op = owner_only_scenario['operating_profit']
+        owner_only_payback = (financials['investment']['total_capex'] / owner_only_op) if owner_only_op > 0 else None
+
         bundle = {
             'site': site_info,
             'demographics': demographics,
@@ -82,14 +89,15 @@ class MyParkReportGenerator:
             'scores': scores,
             'score': scores,
             'charts': charts,
-            'created_at': datetime.now().strftime("%Y. %m. %d")
+            'created_at': datetime.now().strftime("%Y. %m. %d"),
+            'owner_only_payback_months': round(owner_only_payback, 1) if owner_only_payback else None
         }
-        
+
         safe_name = site_info['building_name'].replace(' ', '_').replace('/', '_')
         date_str = datetime.now().strftime("%y%m%d")
         now = datetime.now()
         date_kor = f"{now.strftime('%y')}년{now.month}월{now.day}일"
-        
+
         pptx_path = os.path.join(self.output_dir, f"{date_str}_마이파크_{safe_name}_상권및사업분석_{date_kor}.pptx")
         pdf_path = os.path.join(self.output_dir, f"{date_str}_마이파크_{safe_name}_상권및사업분석_{date_kor}.pdf")
 
@@ -105,5 +113,6 @@ class MyParkReportGenerator:
             'payback_months': financials['investment']['payback_months_moderate'],
             'payback_text': scores['payback_text'],
             'operating_profit_moderate': financials['monthly_scenarios']['moderate']['operating_profit'],
-            'total_revenue_moderate': financials['monthly_scenarios']['moderate']['total_revenue']
+            'total_revenue_moderate': financials['monthly_scenarios']['moderate']['total_revenue'],
+            'owner_only_payback_months': round(owner_only_payback, 1) if owner_only_payback else None
         }

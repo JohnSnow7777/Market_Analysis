@@ -543,7 +543,7 @@
         <header>
             <div class="header-content">
                 <h1>⛳ 마이파크(MYPARK) 스크린 파크골프 상권 & 사업성 분석</h1>
-                <p>주소 입력 시 KOSIS 실측 인구 + 공공 빅데이터 + 5개년 손익 예측 <strong>원클릭 자동 분석</strong></p>
+                <p>주소 입력 시 KOSIS(SGIS) 실측 인구 + 소상공인시장진흥공단·국토교통부 공공데이터 + 카카오·네이버 실시간 지도 + 5개년 손익 예측 <strong>원클릭 자동 분석</strong></p>
             </div>
             <div class="header-badge">플래그십 표준 모델 (10타석 120평)</div>
         </header>
@@ -555,7 +555,7 @@
                 </div>
 
                 <div class="info-tip">
-                    💡 <strong>주소만 입력하시면 KOSIS 실측 데이터로 즉시 분석됩니다!</strong><br>
+                    💡 <strong>주소만 입력하시면 KOSIS(SGIS) 실측 인구·소상공인시장진흥공단 상가정보·카카오/네이버 실시간 경쟁매장 데이터로 즉시 분석됩니다!</strong><br>
                     타석수/임대료/면적을 모르실 경우 마이파크 플래그십 표준 모델(10타석, 120평, 지역 시세 임대료)로 자동 산정됩니다.
                 </div>
 
@@ -998,7 +998,7 @@
             document.getElementById('repCommSub').innerText = `${site.sigungu || ''} 상권 소비력 등급: ${comm.spending_grade}`;
             document.getElementById('repCommList').innerHTML = `
                 <li>상위 20% 매장 월매출: 약 ${manWon(comm.top_20_sales)} (대형 최신 매장)</li>
-                <li>매출 성장률: 골프·레저용품 +${comm.growth_rate}% (전 업종 1위)</li>
+                <li>매출 성장률: ${(comm.top_growth_industries && comm.top_growth_industries[0]) ? comm.top_growth_industries[0].name + ' ' + comm.top_growth_industries[0].growth + ' (전 업종 1위)' : '골프·레저용품 +' + comm.growth_rate + '%'}</li>
                 <li>골프 인프라 밀집도: 전국 평균 대비 ${comm.golf_industry_density ? comm.golf_industry_density.multiple : '-'}배</li>
                 <li>데이터 출처: ${comm.base_source || 'MYPARK 지역등급 추정 모델'}${comm.is_estimated ? ' (추정치)' : ''}</li>`;
             document.getElementById('repTimeList').innerHTML = `
@@ -1007,7 +1007,8 @@
                 <li>4인 1팀 단체 이용 중심으로 식음료·용품 부가 매출 발생</li>`;
 
             // 3) 업종 성장률
-            document.getElementById('repGrowthSub').innerText = `골프용품 매출성장률 1위(+${comm.growth_rate}%) 업종`;
+            const topInd = (comm.top_growth_industries && comm.top_growth_industries[0]) || { name: '골프용품', growth: '+' + comm.growth_rate + '%' };
+            document.getElementById('repGrowthSub').innerText = `성장률 1위 업종: ${topInd.name}(${topInd.growth})`;
             document.getElementById('repGrowthTable').innerHTML = comm.top_growth_industries.map(it =>
                 `<tr><td>${it.rank}</td><td>${it.name}</td><td style="color:var(--emerald); font-weight:700;">${it.growth}</td><td>${it.status}</td></tr>`
             ).join('');
@@ -1074,14 +1075,16 @@
             document.getElementById('repCapexList').innerHTML = `
                 <li>시뮬레이터 장비: ${site.rooms}대 × 대당 ${manWon(inv.simulator_unit_price)} = ${manWon(inv.simulator_cost)}</li>
                 <li>인테리어 공사비: ${site.area_pyeong}평 × 평당 ${manWon(inv.interior_cost_per_pyeong)} = ${manWon(inv.interior_cost)}</li>
-                <li>부대설비 (냉난방/간판/가구/초도용품): ${manWon(inv.other_facilities)}</li>
+                <li>부대설비 (간판/가구/초도용품): ${manWon(inv.other_facilities)}</li>
+                <li>냉난방 설비 (선택): 기존 상가 설비 승계 시 추가 비용 없음, 신규 설치 시 약 ${manWon(inv.hvac_cost_optional)} 별도</li>
                 <li style="color:var(--emerald); font-weight:800; font-size:13.5px;">★ 총 초기 투자금: ${eokWon(inv.total_capex)}</li>`;
             const rentTag = site.rent_is_estimated ? '지역 시세 추정' : '입력하신 실측';
             document.getElementById('repOpModelList').innerHTML = `
                 <li>표준 모델 (점주 ${site.staff_count}인 상주 운영): 인건비 월 ${manWon(sc.moderate.labor_cost)}</li>
-                <li>비교 모델 (직원 3인 채용 운영): 인건비 월 750만원 (회수기간 ${fin.owner_operated.staff3_payback_months.toFixed(1)}개월)</li>
+                <li>비교 모델 (직원 3인 채용 운영): 인건비 월 ${manWon(sc.moderate.labor_cost / site.staff_count * 3)} (회수기간 ${fin.owner_operated.staff3_payback_months.toFixed(1)}개월)</li>
                 <li>게임비 요금: 1인 18홀 7,000원 (4인 1팀 28,000원)</li>
-                <li>월 임대료 기준: ${rentTag} ${manWon(site.monthly_rent)}/월 반영</li>`;
+                <li>월 임대료 기준(임차인): ${rentTag} ${manWon(site.monthly_rent)}/월 반영</li>
+                ${bundle.owner_only_payback_months ? `<li>건물주(자가 소유) 시 참고: 임대료 없이 운영 시 보편적 시나리오 회수기간 약 ${bundle.owner_only_payback_months}개월</li>` : ''}`;
             const compSummaryForCaveat = comm.competitor_summary || '';
             const methodologyTxt = compSummaryForCaveat.includes('예시 시나리오')
                 ? `본 보고서는 KOSIS 인구통계, MYPARK 지역등급 추정 모델, 표준 재무 모델에 기반한 추정 분석 자료입니다.`
@@ -1210,12 +1213,29 @@
             document.getElementById('specStaff').innerText = item.staff + "명";
             
             document.getElementById('valSenior').innerText = (item.seniorPop ? item.seniorPop.toLocaleString() : '72,400') + "명 (" + (item.seniorRatio || '38.4') + "%)";
-            document.getElementById('valProfit').innerHTML = (Math.floor(item.profit / 10000)).toLocaleString() + "만원/월";
-            document.getElementById('valProfitSub').innerHTML = "★ <strong>직접운영</strong>: " + (Math.floor(item.profit / 10000)).toLocaleString() + "만원 | 직원채용: " + (Math.floor((item.profit - 5000000) / 10000)).toLocaleString() + "만원";
-            document.getElementById('valBEP').innerHTML = '타석당 1일 1.1팀 (약 4명)';
-            document.getElementById('valBEPSub').innerHTML = '• 타석당 하루 1팀 이용 시 월 고정비 전액 커버 가능<br>• ★ <strong>직접운영</strong>: 일 1.08회전 | 직원채용: 일 1.62회전';
-            document.getElementById('valPayback').innerHTML = formatPaybackPeriod(item.payback) + ' <span style="font-size:12.5px; color:var(--royal-blue); font-weight:normal;">(' + item.payback + '개월)</span>';
-            document.getElementById('valPaybackSub').innerHTML = '★ <strong>직접운영</strong>: ' + item.payback + '개월 | 직원채용: 약 ' + (Math.round((319000000 / Math.max(1, item.profit - 5000000)) * 10) / 10) + '개월';
+
+            // 히스토리 저장 시점의 실제 bundle(원본 분석 결과)이 있으면 그 실측값을 그대로
+            // 복원한다. bundle이 없는(예전 저장분) 경우에만 profit 기반 근사치로 대체한다.
+            const hBundle = item.bundle;
+            if (hBundle && hBundle.financials) {
+                const hFin = hBundle.financials;
+                const hInv = hFin.investment;
+                const hOwn = hFin.owner_operated;
+                document.getElementById('valProfit').innerHTML = (Math.floor(item.profit / 10000)).toLocaleString() + "만원/월";
+                document.getElementById('valProfitSub').innerHTML = "★ <strong>직접운영</strong>: " + (Math.floor(item.profit / 10000)).toLocaleString() + "만원 | 직원채용: " + (Math.floor(hOwn.staff3_operating_profit / 10000)).toLocaleString() + "만원";
+                const hFixedCostMan = Math.floor(hOwn.fixed_cost / 10000);
+                document.getElementById('valBEP').innerHTML = '타석당 1일 ' + hInv.bep_turns_per_room + '팀 (약 4명)';
+                document.getElementById('valBEPSub').innerHTML = '• 타석당 하루 1팀 이용 시 월 고정비(' + hFixedCostMan.toLocaleString() + '만원) 전액 커버 가능<br>• ★ <strong>직접운영</strong>: 일 ' + hInv.bep_turns_per_room + '회전 | 직원채용: 일 ' + hOwn.staff3_bep_turns + '회전';
+                document.getElementById('valPayback').innerHTML = formatPaybackPeriod(item.payback) + ' <span style="font-size:12.5px; color:var(--royal-blue); font-weight:normal;">(' + item.payback + '개월)</span>';
+                document.getElementById('valPaybackSub').innerHTML = '★ <strong>직접운영</strong>: ' + item.payback + '개월 | 직원채용: ' + hOwn.staff3_payback_months + '개월 (' + (hInv.total_capex / 100000000).toFixed(3) + '억 회수)';
+            } else {
+                document.getElementById('valProfit').innerHTML = (Math.floor(item.profit / 10000)).toLocaleString() + "만원/월";
+                document.getElementById('valProfitSub').innerHTML = "★ <strong>직접운영</strong>: " + (Math.floor(item.profit / 10000)).toLocaleString() + "만원 | 직원채용: " + (Math.floor((item.profit - 5000000) / 10000)).toLocaleString() + "만원";
+                document.getElementById('valBEP').innerHTML = '이전 저장 기록: 상세 회전율 데이터 없음';
+                document.getElementById('valBEPSub').innerHTML = '• 재분석 시 정확한 손익분기점을 확인할 수 있습니다.';
+                document.getElementById('valPayback').innerHTML = formatPaybackPeriod(item.payback) + ' <span style="font-size:12.5px; color:var(--royal-blue); font-weight:normal;">(' + item.payback + '개월)</span>';
+                document.getElementById('valPaybackSub').innerHTML = '★ <strong>직접운영</strong>: ' + item.payback + '개월 (직원채용 비교는 재분석 후 확인 가능)';
+            }
 
             if (item.pdfBase64) {
                 document.getElementById('btnPdf').href = 'data:application/pdf;base64,' + item.pdfBase64;
@@ -1372,7 +1392,7 @@
                 
                 // 3. 회수기간 (직접운영 12.3개월 vs 직원채용 15.3개월)
                 document.getElementById('valPayback').innerHTML = formatPaybackPeriod(res.payback_months) + ' <span style="font-size:12.5px; color:var(--royal-blue); font-weight:normal;">(' + res.payback_months + '개월)</span>';
-                document.getElementById('valPaybackSub').innerHTML = '★ <strong>직접운영</strong>: ' + res.payback_months + '개월 | 직원채용: ' + ownData.staff3_payback_months + '개월 (3.19억 회수)';
+                document.getElementById('valPaybackSub').innerHTML = '★ <strong>직접운영</strong>: ' + res.payback_months + '개월 | 직원채용: ' + ownData.staff3_payback_months + '개월 (' + (invData.total_capex / 100000000).toFixed(3) + '억 회수)';
                 
                 // 5대 지표 시각화 바인딩
                 const dims = (res.bundle && res.bundle.scores && res.bundle.scores.scores) ? res.bundle.scores.scores : (res.bundle && res.bundle.score && res.bundle.score.scores ? res.bundle.score.scores : {});
