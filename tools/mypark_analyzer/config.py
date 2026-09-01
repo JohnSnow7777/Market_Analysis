@@ -106,28 +106,3 @@ def classify_region_tier(address, sigungu=''):
             return TIER_MID_CITY
 
     return TIER_MID_CITY
-
-
-SCENARIO_CONFIG = {
-    'conservative': {
-        'name': '보수적 시나리오 (3회전)',
-        'turns': 3.0,
-        'daily_users': 100,             # 1일 100명 (월 3,000명)
-        'goods_daily': 25000,           # 일 용품 2.5만 (월 75만)
-        'description': '상권 초기 진입 및 평일 주간 위주 가동',
-    },
-    'moderate': {
-        'name': '보편적 시나리오 (4회전)',
-        'turns': 4.0,
-        'daily_users': 133,             # 1일 133명 (월 4,000명)
-        'goods_daily': 40000,           # 일 용품 4.0만 (월 120만)
-        'description': '평일 주간 정기 모임 정착 및 안정적 단골 확보',
-    },
-    'optimistic': {
-        'name': '긍정적 시나리오 (5회전)',
-        'turns': 5.0,
-        'daily_users': 167,             # 1일 167명 (월 5,000명)
-        'goods_daily': 50000,           # 일 용품 5.0만 (월 150만)
-        'description': '지역 랜드마크 매장 선점 및 주말/야간 활성화',
-    }
-}
