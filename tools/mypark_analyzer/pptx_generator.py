@@ -165,7 +165,7 @@ class PPTXGenerator:
 
         p4 = tf1.add_paragraph()
         p4.space_before = Pt(6)
-        _scope_txt = f"{site['sigungu']} 전체 (관할 행정동 표본 분석)" if demo.get('district_wide_analysis') else f"{site['sido']} {site['sigungu']} {target_dong} 반경 3km 생활권"
+        _scope_txt = f"{site['sigungu']} 전체 (관할 행정동 {demo.get('district_dong_count', 0)}개 전수)" if demo.get('district_wide_analysis') else f"{site['sido']} {site['sigungu']} {target_dong} 반경 3km 생활권"
         p4.text = f"상권 분석 범위: {_scope_txt}  |  분석 기준: {data.get('created_at', '2026.08')}"
         p4.font.name = 'Malgun Gothic'
         p4.font.size = Pt(13)
