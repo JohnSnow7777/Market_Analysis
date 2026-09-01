@@ -889,12 +889,7 @@ class PDFGenerator:
         c.drawString(56, 234, f"• 비교 모델 (직원 3인 채용 운영): 인건비 월 {3*DEFAULT_SETTINGS['labor_cost_manager']//10000:,}만원 (회수기간 {fin['owner_operated']['staff3_payback_months']:.1f}개월)")
         c.drawString(56, 214, f"• 게임비 요금: 1인 18홀 7,000원 (4인 1팀 28,000원)")
         c.drawString(56, 194, f"• 3대 매출원: 게임비 회전 + 용품 판매(월 {scenarios['moderate']['goods_revenue']//10000:,}만) + 식음료(월 {scenarios['moderate']['beverage_revenue']//10000:,}만)")
-        if not site.get('rent_is_estimated'):
-            rent_tag = "입력하신 실측"
-        elif site.get('rent_source_label'):
-            rent_tag = "한국부동산원(국토교통부 산하 공공기관) R-ONE 실측 기준 추정"
-        else:
-            rent_tag = "지역 시세 추정"
+        rent_tag = "입력하신 실측" if not site.get('rent_is_estimated') else "지역 시세 추정"
         c.drawString(56, 174, f"• 월 임대료 기준: {rent_tag} {site['monthly_rent']//10000:,}만원/월 반영")
 
         c.setFont(FONT_REGULAR, 8.5)
@@ -1078,12 +1073,7 @@ class PDFGenerator:
         c.setFont(FONT_REGULAR, 8.5)
         c.setFillColor(self.c_charcoal)
         ry10 = chart_top10 - head_h10 - 22
-        if not site.get('rent_is_estimated'):
-            rent_basis = "입력하신 임대료"
-        elif site.get('rent_source_label'):
-            rent_basis = "한국부동산원 R-ONE 실측 기준 추정"
-        else:
-            rent_basis = "지역 시세 추정 임대료"
+        rent_basis = "입력하신 임대료" if not site.get('rent_is_estimated') else "지역 시세 추정 임대료"
         c.drawString(511, ry10, f"• 월 임대료: {site['monthly_rent']//10000:,}만원 ({rent_basis})")
         ry10 -= 20
         c.drawString(511, ry10, f"• 인건비 (점주 직접운영): {scenarios['moderate']['labor_cost']//10000:,}만원 ({site['staff_count']}인 상주 운영)")
@@ -1145,11 +1135,13 @@ class PDFGenerator:
         ry11 = chart_top11 - head_h11 - 22
         if inv.get('conservative_viable', True):
             c.drawString(511, ry11, f"• 보수적 시나리오: 월 순익 {scenarios['conservative']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_conservative']:.1f}개월")
+            ry11 -= 20
         else:
-            c.setFillColor(self.c_red)
-            c.drawString(511, ry11, f"• 보수적 시나리오(3회전): 월 {abs(scenarios['conservative']['operating_profit'])//10000:,}만원 적자 (최소 4회전 이상 가동 필요)")
-            c.setFillColor(self.c_charcoal)
-        ry11 -= 20
+            con_lines = self._wrap_text_to_width(c, "보수적 시나리오(3회전)는 추가 매출 확보 전략이 필요한 구간이며, 최소 4회전 이상 가동 시 안정적 순익 구조로 전환됩니다", FONT_REGULAR, 8.5, right_col_w - 16, max_lines=2)
+            for cl in con_lines:
+                c.drawString(511, ry11, f"• {cl}" if cl == con_lines[0] else f"  {cl}")
+                ry11 -= 13
+            ry11 -= 7
         c.drawString(511, ry11, f"• 보편적 시나리오: 월 순익 {scenarios['moderate']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_moderate']:.1f}개월 ({fmt_months(inv['payback_months_moderate'])})")
         ry11 -= 20
         c.drawString(511, ry11, f"• 긍정적 시나리오: 월 순익 {scenarios['optimistic']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_optimistic']:.1f}개월")
@@ -1190,7 +1182,7 @@ class PDFGenerator:
         c.drawString(56, 225, f"■ 투자금 회수기간 단축 레버 ({_lv_base_label} 시나리오 기준 민감도 분석)")
 
         _lv_rows = [
-            (f"가동률 상향 ({_lv_turn_label})", f"{_lv_base_pb:.1f}개월", f"{_lv_turn_pb:.1f}개월", f"-{_lv_base_pb - _lv_turn_pb:.1f}개월", "동호회 정기예약·평일 낮 단체 유치가 가장 강력한 레버"),
+            (f"가동률 상향 ({_lv_turn_label})", f"{_lv_base_pb:.1f}개월", f"{_lv_turn_pb:.1f}개월", f"-{_lv_base_pb - _lv_turn_pb:.1f}개월", "본사 오픈 초기 홍보·커뮤니티 형성 지원 + 동호회 정기예약 유치가 가장 강력한 레버"),
             ("인테리어 단가 조정 (평당 -30만원)", f"{_lv_base_pb:.1f}개월", f"{_lv_int_pb:.1f}개월", f"-{_lv_base_pb - _lv_int_pb:.1f}개월", "기존 상가 시설 승계·부분 시공으로 초기 투자비 절감"),
             ("임대료 협상 (월 -100만원)", f"{_lv_base_pb:.1f}개월", f"{_lv_rent_pb:.1f}개월", f"-{_lv_base_pb - _lv_rent_pb:.1f}개월", "장기계약·렌트프리 조건 협상 시 매월 순익에 직접 반영"),
         ]

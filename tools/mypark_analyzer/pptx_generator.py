@@ -754,12 +754,7 @@ class PPTXGenerator:
         p.font.size = Pt(11)
         p.font.color.rgb = self.c_mck_navy
         
-        if not site.get('rent_is_estimated'):
-            _rent_tag8 = "입력하신 실측"
-        elif site.get('rent_source_label'):
-            _rent_tag8 = "한국부동산원(국토교통부 산하 공공기관) R-ONE 실측 기준 추정"
-        else:
-            _rent_tag8 = "지역 시세 추정"
+        _rent_tag8 = "입력하신 실측" if not site.get('rent_is_estimated') else "지역 시세 추정"
         items8_a = [
             f"• 시뮬레이터 장비: {site['rooms']}대 × 대당 {DEFAULT_SETTINGS['simulator_unit_price']//10000:,}만원 = {fmt_won_full(inv['simulator_cost'])}",
             f"• 인테리어 공사비: {site['area_pyeong']}평 × 평당 {DEFAULT_SETTINGS['interior_cost_per_pyeong']//10000:,}만원 = {fmt_won_full(inv['interior_cost'])}",
@@ -960,12 +955,7 @@ class PPTXGenerator:
         p.font.bold = True
         p.font.color.rgb = self.c_mck_navy
         
-        if not site.get('rent_is_estimated'):
-            _rent_basis10 = "입력하신 임대료"
-        elif site.get('rent_source_label'):
-            _rent_basis10 = "한국부동산원 R-ONE 실측 기준 추정"
-        else:
-            _rent_basis10 = "지역 시세 추정 임대료"
+        _rent_basis10 = "입력하신 임대료" if not site.get('rent_is_estimated') else "지역 시세 추정 임대료"
         cost_details = [
             f"• 월 임대료: {site['monthly_rent']//10000:,}만원 ({_rent_basis10})",
             f"• 인건비 (점주 직접운영): {m_scen['moderate']['labor_cost']//10000:,}만원 ({site['staff_count']}인 상주 운영 체제)",
@@ -1039,7 +1029,7 @@ class PPTXGenerator:
         if inv.get('conservative_viable', True):
             _bep_con_line = f"• 보수적 시나리오: 월 순익 {m_scen['conservative']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_conservative']:.1f}개월"
         else:
-            _bep_con_line = f"• 보수적 시나리오(3회전): 월 {abs(m_scen['conservative']['operating_profit'])//10000:,}만원 적자 (최소 4회전 이상 가동 필요)"
+            _bep_con_line = "• 보수적 시나리오(3회전)는 추가 매출 확보 전략이 필요한 구간이며, 최소 4회전 이상 가동 시 안정적 순익 구조로 전환됩니다"
         bep_sim = [
             _bep_con_line,
             f"• 보편적 시나리오: 월 순익 {m_scen['moderate']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_moderate']:.1f}개월 (약 {fmt_months(inv['payback_months_moderate'])})",
@@ -1073,10 +1063,11 @@ class PPTXGenerator:
         p.font.color.rgb = self.c_mck_navy
         
         risks = [
-            "• 초저위험 구조: 타석당 1일 1회전(4명)만 가동되어도 손익분기점을 초과하여 적자 발생 확률이 극히 희박",
+            f"• 안정적 손익 구조: 타석당 하루 {inv['bep_turns_per_room']}회전(1일 {inv['bep_daily_users']}명) 이상 가동 시 고정비 전액 커버",
             f"• 빠른 자본 회수: 보편 가동 기준 약 {inv['payback_months_moderate']:.1f}개월({fmt_months(inv['payback_months_moderate'])}) 만에 초기 투자금 {fmt_eok(inv['total_capex'])} 전액 회수",
             "• 자산 가치 보존: 시뮬레이터 장비 및 쾌적한 인테리어 시설은 향후 지속적인 현금 흐름을 창출하는 핵심 실물 자산",
-            "• 안정적 단골 락인: 지역 시니어 동호회 정기 예약 시스템 구축으로 경기 변동에 영향을 받지 않는 방어적 사업 모델"
+            "• 안정적 단골 락인: 지역 시니어 동호회 정기 예약 시스템 구축으로 경기 변동에 영향을 받지 않는 방어적 사업 모델",
+            "• 본사 오픈 지원: 마이파크 본사가 오픈 초기 홍보 및 지역 커뮤니티 형성을 함께 지원해 조기 가동률 확보를 돕습니다"
         ]
         for rk in risks:
             p_r = tf11_2.add_paragraph()

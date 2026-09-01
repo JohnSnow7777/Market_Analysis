@@ -2,7 +2,6 @@
 """지리 정보 및 건축/입지 물리적 적합성 분석 모듈 (현장 실측 체크리스트 기반)"""
 from .config import DEFAULT_SETTINGS
 from .address_resolver import AddressResolver
-from . import reb_client
 
 class GeoEngine:
     """주소 정밀 지오코딩 및 건축 출점 기준 분석"""
@@ -17,24 +16,17 @@ class GeoEngine:
             recommended_area = int(auto_rooms * 10.0 + 20)
         auto_area = int(area_pyeong) if (area_pyeong and int(area_pyeong) > 0) else recommended_area
 
-        # 평당 월 임대료: 한국부동산원 R-ONE 소규모 상가 임대동향 실측 우선,
-        # 키 없음/매칭 실패 시에만 기존 4단계 권역 추정표로 폴백한다.
-        resolved = AddressResolver.resolve(address)
-        reb_rent = reb_client.get_small_store_rent(resolved.get('sido', ''), resolved.get('sigungu', ''), resolved.get('dong', ''))
+        # 권역별 평당 월 임대료 시세 추정
         rent_source_label = None
-        if reb_rent:
-            rent_per_pyeong = reb_rent['rent_per_pyeong']
-            rent_source_label = f"한국부동산원 R-ONE {reb_rent['quarter_label']} 소규모 상가 임대동향({reb_rent['region_label']}) 실측"
-        else:
+        rent_per_pyeong = 45000
+        if any(k in address for k in ['강남', '서초', '송파', '용산', '마포', '영등포']):
+            rent_per_pyeong = 70000
+        elif any(k in address for k in ['분당', '판교', '서현', '정자', '성남', '일산', '고양', '송도', '연수', '수지', '용인', '수원', '영통', '광교', '하남', '동탄', '안양', '평촌']):
             rent_per_pyeong = 45000
-            if any(k in address for k in ['강남', '서초', '송파', '용산', '마포', '영등포']):
-                rent_per_pyeong = 70000
-            elif any(k in address for k in ['분당', '판교', '서현', '정자', '성남', '일산', '고양', '송도', '연수', '수지', '용인', '수원', '영통', '광교', '하남', '동탄', '안양', '평촌']):
-                rent_per_pyeong = 45000
-            elif any(k in address for k in ['부산', '대구', '대전', '광주', '울산', '세종']):
-                rent_per_pyeong = 38000
-            else:
-                rent_per_pyeong = 32000
+        elif any(k in address for k in ['부산', '대구', '대전', '광주', '울산', '세종']):
+            rent_per_pyeong = 38000
+        else:
+            rent_per_pyeong = 32000
 
         estimated_rent = int(auto_area * rent_per_pyeong)
         estimated_rent = round(estimated_rent, -5)
