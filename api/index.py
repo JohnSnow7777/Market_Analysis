@@ -15,6 +15,23 @@ from tools.mypark_analyzer.address_resolver import AddressNotResolvedError
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
+        # [실험] Vercel Python 런타임이 응답을 조각으로 흘려보낼 수 있는지 확인.
+        # 가능하면 보고서 생성 진행 상황을 실시간으로 내려줄 수 있고,
+        # 불가능하면 다른 방식을 택해야 한다. 확인 후 제거 예정.
+        if 'stream=1' in (self.path or ''):
+            import time as _t
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/event-stream; charset=utf-8')
+            self.send_header('Cache-Control', 'no-cache')
+            self.send_header('X-Accel-Buffering', 'no')
+            self.end_headers()
+            for i in range(1, 4):
+                self.wfile.write(("data: step%d t=%.2f\n\n" % (i, _t.time())).encode("utf-8"))
+                self.wfile.flush()
+                _t.sleep(2)
+            self.wfile.write(b"data: done\n\n")
+            self.wfile.flush()
+            return
         self.send_response(200)
         self.send_header('Content-Type', 'application/json; charset=utf-8')
         self.end_headers()

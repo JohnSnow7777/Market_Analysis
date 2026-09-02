@@ -18,6 +18,7 @@ import os
 import json
 import urllib.request
 import urllib.parse
+from concurrent.futures import ThreadPoolExecutor
 
 APT_LIST_URL = "https://apis.data.go.kr/1613000/AptListService4/getSigunguAptList4"
 APT_INFO_URL = "https://apis.data.go.kr/1613000/AptBasisInfoServiceV5/getAphusBassInfoV5"
@@ -111,11 +112,14 @@ def fetch_apt_summary(sigungu_code, dong_name):
     sample = target[:MAX_DETAIL_COMPLEXES]
     households = []
     years = []
-    for it in sample:
-        kapt_code = it.get('kaptCode')
-        if not kapt_code:
-            continue
-        info = get_apt_basis(kapt_code)
+    # 단지 상세는 단지마다 1회씩 조회해야 하는데, 순차로 돌면 15회가 그대로
+    # 쌓여 실측 10~11초(전체 응답의 3분의 1 이상)를 차지했다. 서로 독립적인
+    # 조회라 병렬로 보낸다. 실패한 단지는 기존처럼 조용히 건너뛴다.
+    with ThreadPoolExecutor(max_workers=8) as _ex:
+        _infos = list(_ex.map(
+            lambda it: (it, get_apt_basis(it.get('kaptCode')) if it.get('kaptCode') else None),
+            sample))
+    for it, info in _infos:
         if not info:
             continue
         hc = info.get('kaptdaCnt') or info.get('hoCnt')
