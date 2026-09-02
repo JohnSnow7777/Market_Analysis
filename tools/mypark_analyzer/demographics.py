@@ -418,6 +418,9 @@ class DemographicsEngine:
             # 경쟁사/업종 검색 반경을 임의 상수로 두지 않고 실제 구역 크기에서
             # 역산하기 위한 값. 면적을 못 구하면 None(호출부가 기본값 사용).
             'district_area_km2': (district_pop or {}).get('area_km2'),
+            # [임시 진단] SGIS 인구통계 응답의 실제 필드명을 확인하기 위한 항목.
+            # 면적(인구밀도) 필드를 찾으면 제거한다.
+            '_sgis_raw_keys': (district_pop or {}).get('raw_keys'),
             'district_radius_m': _district_radius_m,
             'region_name': region_name,
             # 채점용 배후 시니어 인구.

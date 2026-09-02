@@ -379,6 +379,8 @@ def fetch_district_population(sido, sigungu):
             # 요청했는데 '성남시 분당구'가 잡힘) 호출부가 라벨을 실제 값에 맞춰
             # 고칠 수 있게 그대로 돌려준다 — 요청한 이름으로 표기하면 허위가 된다.
             'matched_region_name': (matched_name or '').strip(),
+            # [임시 진단] 응답 필드명 확인용. 면적 계산 방식을 확정하면 제거한다.
+            'raw_keys': sorted((district.get('raw') or {}).keys()),
         }
     except Exception as e:
         print(f"[SGIS DISTRICT POP FAIL] {sido} {sigungu}: {e}")
