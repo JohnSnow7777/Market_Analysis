@@ -143,6 +143,7 @@ class DemographicsEngine:
         # (광주 서구는 18개 동인데 6개만 합치면 실제의 30% 수준이 된다).
         # 그래서 구 전체 총인구는 SGIS의 시군구 단위 집계값을 그대로 쓰고,
         # 동별 표는 그 안에서 인구가 큰 순서대로 보여주는 '내역'으로만 쓴다.
+        _sgis_t0 = __import__('time').time()
         district_wide_analysis = False
         district_pop = None
         district_dong_count = 0
@@ -310,6 +311,7 @@ class DemographicsEngine:
                 tot_senior_50 += s_50
                 tot_senior_f += s_f
 
+        _sgis_elapsed = __import__('time').time() - _sgis_t0
         senior_ratio = round((tot_senior_50 / tot_pop * 100.0), 1) if tot_pop > 0 else 38.4
 
         # 구역 전체를 덮는 검색 반경을 실제 면적에서 역산한다(원 면적 = πr²).
@@ -375,6 +377,7 @@ class DemographicsEngine:
         ratio_60s = round(pop_60s / tot_pop * 100.0, 1) if tot_pop > 0 else 13.8
         ratio_70_plus = round(pop_70_plus / tot_pop * 100.0, 1) if tot_pop > 0 else 8.1
 
+        _apt_t0 = __import__('time').time()
         # 3-2. 국토부 공동주택(아파트) 단지 현황 — 개인정보 없는 단지 단위 공개정보
         # (키 없음/좌표변환 실패/API 미승인 시 조용히 생략, 기존 흐름에 영향 없음)
         apt_summary = None
@@ -385,6 +388,7 @@ class DemographicsEngine:
                 apt_summary = apt_client.fetch_apt_summary(b_code[:5], dong)
         except Exception:
             apt_summary = None
+        _apt_elapsed = __import__('time').time() - _apt_t0
 
         is_estimated_flag = (target_dongs_is_fallback or any(d.get('is_estimated', False) for d in dong_list))
         if sgis_used:
@@ -415,6 +419,8 @@ class DemographicsEngine:
             # 입력된 경우엔 시/도 이름. (site['sigungu']는 비어 있을 수 있어
             # PDF/PPTX가 이 값을 쓰도록 한다.)
             'district_scope_name': district_scope_name,
+            '_t_sgis': round(_sgis_elapsed, 2),
+            '_t_apt': round(_apt_elapsed, 2),
             # 생활권 추정을 썼는지와 그 전제(동 수) — 보고서 각주로 노출한다.
             'lifezone_estimated': lifezone_fallback,
             'lifezone_dong_count': LIFEZONE_DONG_COUNT,
