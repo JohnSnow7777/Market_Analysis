@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """마이파크 상권 및 사업분석 종합 생성기 파이프라인"""
 import os
+import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from .geo_engine import GeoEngine
@@ -22,9 +23,19 @@ class MyParkReportGenerator:
     def analyze_and_generate(self, address, building_name=None, rooms=None, monthly_rent=None, area_pyeong=None, staff_count=None, special_notes=None):
         # 확인되지 않은 주소로는 보고서를 만들지 않는다. 존재하지 않는 주소에도
         # 등급·회수기간이 붙은 완성 문서가 나가면 그 자체가 허위 자료가 된다.
+        _t = {}
+        _t0 = time.time()
+
+        def _lap(name, start):
+            _t[name] = round(time.time() - start, 2)
+            return time.time()
+
         resolved = validate_address(address)
+        _m = _lap('validate', _t0)
         site_info = GeoEngine.analyze_site(address, building_name, area_pyeong, rooms, monthly_rent, staff_count, special_notes)
+        _m = _lap('geo', _m)
         demographics = DemographicsEngine.get_demographics(address)
+        _m = _lap('demographics', _m)
         _district_wide = demographics.get('district_wide_analysis', False)
         _district_radius_m = demographics.get('district_radius_m')
         # 상권 분석과 경쟁사 검색은 서로 의존하지 않고 각각 외부 API를 여러 번
@@ -40,6 +51,7 @@ class MyParkReportGenerator:
                 _district_wide, _district_radius_m)
             commercial = _f_comm.result()
             competitors = _f_comp.result()
+        _m = _lap('commercial+competitors(병렬)', _m)
         commercial['competitors'] = competitors['stores']
         commercial['competitor_summary'] = competitors['summary']
         commercial['is_blue_ocean'] = competitors['is_blue_ocean']
@@ -71,7 +83,9 @@ class MyParkReportGenerator:
             commercial=commercial
         )
         
+        _m = _lap('financials', _m)
         scores = ScoringEngine.evaluate_site(demographics, commercial, site_info, financials)
+        _m = _lap('scoring', _m)
         
         # 차트 및 상권 지도 이미지 생성
         timestamp = datetime.now().strftime("%y%m%d_%H%M%S")
@@ -93,6 +107,7 @@ class MyParkReportGenerator:
         Visualizer.generate_cost_waterfall_chart(financials['monthly_scenarios']['moderate'], chart_waterfall)
         Visualizer.generate_bep_chart(financials, chart_bep)
 
+        _m = _lap('charts(7종)', _m)
         charts = {
             'sales_trend': chart_sales,
             'radar_score': chart_radar,
@@ -136,8 +151,14 @@ class MyParkReportGenerator:
         pptx_path = os.path.join(self.output_dir, f"{date_str}_마이파크_{safe_name}_상권및사업분석_{date_kor}.pptx")
         pdf_path = os.path.join(self.output_dir, f"{date_str}_마이파크_{safe_name}_상권및사업분석_{date_kor}.pdf")
 
+        _m2 = time.time()
         PPTXGenerator().generate(bundle, pptx_path)
+        _m2 = _lap('pptx', _m2)
         PDFGenerator().generate(bundle, pdf_path)
+        _lap('pdf', _m2)
+        _t['합계'] = round(time.time() - _t0, 2)
+        bundle['_timing'] = _t
+        print(f"[TIMING] {_t}")
 
         return {
             'pptx_path': pptx_path,
