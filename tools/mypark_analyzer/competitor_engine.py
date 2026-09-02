@@ -477,7 +477,8 @@ class CompetitorEngine:
             search_radius = max(3000, min(search_radius, 20000))  # 카카오 반경 상한 20km
         else:
             search_radius = 3000
-        scope_label = f"{s_sigungu} 전역" if district_wide else "반경 3km 내"
+        # 시/도만 입력된 경우 s_sigungu가 비어 있어 " 전역"처럼 앞이 빈 문구가 된다.
+        scope_label = (f"{s_sigungu or s_sido} 전역" if district_wide else "반경 3km 내")
 
         # 1. 전국 전수 실측 DB에서 주소/구/동 일치 매장 매칭
         # 주의: "서구"/"중구"/"남구" 등은 전국 여러 시·도에 동명 행정구역이 있어

@@ -88,9 +88,44 @@ RADIUS_3KM_DONG_MAP = {
     '범어동': ['수성범어1동', '수성범어2동', '만촌1동', '황금1동', '수성동1가'],
 }
 
+# RADIUS_3KM_DONG_MAP의 각 키가 실제로 어느 시/도·시군구의 동인지 명시한다.
+# 동 이름은 전국에 중복이 많아(예: '화정동'은 고양시와 광주 서구에 모두 존재)
+# 지역 확인 없이 매칭하면 다른 지역의 동 목록이 붙는다. 매칭 전 이 표로 교차 확인한다.
+RADIUS_3KM_REGION = {
+    '서현동': ('경기도', '성남시 분당구'), '수내동': ('경기도', '성남시 분당구'),
+    '이매동': ('경기도', '성남시 분당구'), '야탑동': ('경기도', '성남시 분당구'),
+    '정자동': ('경기도', '성남시 분당구'),
+    '화정동': ('경기도', '고양시 덕양구'), '행신동': ('경기도', '고양시 덕양구'),
+    '장항동': ('경기도', '고양시 일산동구'), '마두동': ('경기도', '고양시 일산동구'),
+    '풍동': ('경기도', '고양시 일산동구'),
+    '역삼동': ('서울특별시', '강남구'),
+    '송도동': ('인천광역시', '연수구'),
+    '옥암동': ('전라남도', '목포시'),
+    '우동': ('부산광역시', '해운대구'),
+    '범어동': ('대구광역시', '수성구'),
+}
+
 
 class DemographicsEngine:
     """KOSIS 인구 데이터 전국 반경 3km 정밀 지오펜싱 분석기"""
+
+    @staticmethod
+    def _dong_map_matches_region(map_key, sido, sigungu):
+        """RADIUS_3KM_DONG_MAP 항목이 입력 주소의 지역과 같은 곳인지 확인.
+
+        지역 정보가 등록돼 있지 않으면(표에 없는 키) 판단 근거가 없으므로
+        보수적으로 False를 돌려 잘못된 지역 매칭을 막는다.
+        """
+        region = RADIUS_3KM_REGION.get(map_key)
+        if not region:
+            return False
+        r_sido, r_sigungu = region
+        if sido and r_sido != sido:
+            return False
+        # 시군구는 '고양시 덕양구'처럼 두 토큰일 수 있어 부분 일치로 비교한다.
+        if sigungu and not (r_sigungu in sigungu or sigungu in r_sigungu):
+            return False
+        return True
 
     @staticmethod
     def get_demographics(address):
@@ -119,8 +154,14 @@ class DemographicsEngine:
         target_dongs_is_fallback = False
         center_dong = dong if dong else '해당지'
         
+        # 주의: RADIUS_3KM_DONG_MAP은 동 이름만 키로 갖고 있어 시/도를 구분하지 못한다.
+        # 예를 들어 '화정동'은 경기도 고양시와 광주광역시 서구에 모두 있어, 확인 없이
+        # 매칭하면 광주 주소인데 고양시 동 목록이 붙는다. 그래서 매핑된 동 목록이
+        # 실제로 이 시/군/구에 속하는지 DONG_POPULATION_DB의 지역 정보로 교차 확인한다.
         for k, dlist in RADIUS_3KM_DONG_MAP.items():
             if k in address or k in dong:
+                if not DemographicsEngine._dong_map_matches_region(k, sido, sigungu):
+                    continue
                 target_dongs = dlist
                 center_dong = k
                 break
@@ -143,7 +184,11 @@ class DemographicsEngine:
         district_scope_name = sigungu or sido
         lifezone_fallback = False
         lifezone_scope_label = ''
-        if not target_dongs:
+        # 구 전체 분석은 '사용자가 동을 특정하지 않은 경우'에만 적용한다.
+        # 동이 특정된 주소(지번 입력, 또는 도로명을 지오코딩해 동을 알아낸 경우)는
+        # 그 동을 중심으로 한 생활권 분석이 맞다. 이 구분을 하지 않으면
+        # "OO로 36" 같은 주소가 구 전체 보고서로 잘못 나간다.
+        if not target_dongs and not dong:
             target_dongs_is_fallback = True
             district_pop = sgis_client.fetch_district_population(sido, sigungu)
             if district_pop and district_pop.get('total', 0) > 0:
@@ -152,7 +197,11 @@ class DemographicsEngine:
                 # 동 개수는 addr/stage 기준(신뢰 가능). 인구 내역(dongs)은 없을 수 있다.
                 district_dong_count = district_pop.get('dong_count', 0)
                 district_dong_names = district_pop.get('dong_names', [])
-                district_scope_name = sigungu or sido
+                # SGIS가 실제로 집계한 구역명을 표기에 쓴다. 요청한 이름과 다르면
+                # (예: '성남시'로 조회했는데 '성남시 분당구'가 잡힌 경우) 요청한
+                # 이름으로 적으면 허위가 되므로 실제 집계된 구역명을 따른다.
+                _matched = (district_pop.get('matched_region_name') or '').strip()
+                district_scope_name = _matched or sigungu or sido
                 center_dong = district_dong_names[0] if district_dong_names else district_scope_name
                 target_dongs = []
 
@@ -168,6 +217,16 @@ class DemographicsEngine:
                 lifezone_fallback = True
                 lifezone_scope_label = f"{_scope} 생활권 (약 6개 행정동 규모 추정)"
                 target_dongs = []
+
+        if target_dongs is None:
+            # 동은 특정됐지만 3km 인접동 표에 등록되지 않은 지역(전국 대부분).
+            # 그 동만 단독으로 쓰면 생활권 규모를 크게 과소평가하므로, 동을 중심으로
+            # 한 생활권(약 6개 동 규모) 추정으로 처리하고 근거를 라벨에 밝힌다.
+            target_dongs_is_fallback = True
+            lifezone_fallback = True
+            lifezone_scope_label = f"{dong} 중심 생활권 (약 6개 행정동 규모 추정)"
+            center_dong = dong
+            target_dongs = []
 
         # 3. 반경 3km 인접 행정동 인구 정밀 집계
         # 추정 생성 동(실측 DB 미등록)의 인구·비중이 전부 동일하게 찍히지 않도록 슬롯별 편차 적용
@@ -299,13 +358,32 @@ class DemographicsEngine:
         # 그대로 곱해 적용한다 — 분모(총인구)만 실측으로 교체하는 정직한 절충.
         # (구 전체 요청은 위 동별 루프에서 이미 실제 인구를 합산했으므로 여기서는 dong이
         # 특정된 경우에만 단일 조회를 추가로 시도한다 — sgis_used를 덮어쓰지 않는다.)
-        if dong:
+        # 중요: fetch_real_population은 '그 동 하나'의 인구를 돌려준다. 분석 범위는
+        # 반경 3km 생활권(여러 동)이므로, 단일 동 값으로 총인구를 그대로 덮어쓰면
+        # 생활권 규모를 몇 배로 과소평가하게 된다(광주 화정동 15,521명 사례).
+        # 그래서 3km 인접동 목록이 실제로 있어 여러 동을 합산한 경우에는 덮어쓰지 않고,
+        # 생활권 추정으로 처리된 경우에만 그 동의 실측치를 '중심동 실측'으로 반영해
+        # 생활권 규모(약 6개 동)로 환산한다.
+        if dong and lifezone_fallback:
             sgis_pop = sgis_client.fetch_real_population(sido, sigungu, dong)
             if sgis_pop and sgis_pop.get('total', 0) > 0:
-                real_total = sgis_pop['total']
-                tot_senior_50 = int(round(real_total * senior_ratio / 100.0))
-                tot_pop = real_total
+                center_real = sgis_pop['total']
+                # 중심동 실측 인구를 기준으로 생활권(약 6개 동) 규모로 환산한다.
+                # 인접동이 중심동과 같은 규모라는 가정이라 정확도에 한계가 있어,
+                # 라벨에 '추정'임을 계속 명시한다.
+                lifezone_total = int(center_real * 6)
+                tot_pop = lifezone_total
+                tot_male = int(lifezone_total * 0.483)
+                tot_female = lifezone_total - tot_male
+                tot_senior_50 = int(round(lifezone_total * senior_ratio / 100.0))
+                tot_senior_f = int(tot_senior_50 * 0.525)
                 sgis_used = True
+                if dong_list:
+                    dong_list[0].update({
+                        'dong': f"{dong} 중심 생활권 (중심동 실측 {center_real:,}명 × 약 6개 동 규모)",
+                        'male': tot_male, 'female': tot_female,
+                        'total': tot_pop, 'senior_50': tot_senior_50,
+                    })
 
         # 4. 연령별 매트릭스 비례 계산 (50대 이상 정밀 세분화)
         age_dist = [
@@ -348,7 +426,8 @@ class DemographicsEngine:
             data_source_text = 'KOSIS 시군구 통계 기반 3km 추정 모델'
 
         if district_wide_analysis:
-            _scope_full = f"{sido} {sigungu}".strip() if sigungu else sido
+            # 실제 집계된 구역명(district_scope_name)을 그대로 쓴다.
+            _scope_full = district_scope_name if district_scope_name.startswith(sido) else f"{sido} {district_scope_name}".strip()
             region_name = f"{_scope_full} 전체 (관할 행정동 {district_dong_count}개 전수 집계)"
         elif lifezone_fallback:
             # 동이 특정되지 않은 상태의 추정. 구역명을 두 번 반복하지 않도록

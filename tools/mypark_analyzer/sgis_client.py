@@ -134,6 +134,38 @@ def _classify_sub_level(rows):
     return 'unknown'
 
 
+def _find_region_named(access_token, parent_cd, target_name):
+    """_find_region_cd와 같지만 (cd, 실제로 매칭된 지역명)을 함께 돌려준다.
+
+    '성남시'를 찾았는데 실제로는 '성남시 분당구'가 잡히는 식의 하위 구역 오매칭을
+    호출부가 감지해야 해서, 매칭된 이름을 그대로 알려준다.
+    """
+    try:
+        params = {'accessToken': access_token}
+        if parent_cd:
+            params['cd'] = parent_cd
+        data = _get('addr/stage.json', params)
+        rows = data.get('result', [])
+        if not isinstance(rows, list):
+            return None, None
+        clean_target = target_name.replace(' ', '')
+        for row in rows:
+            name = str(row.get('addr_name', '')).replace(' ', '')
+            if name == clean_target:
+                return row.get('cd'), str(row.get('addr_name', ''))
+        for row in rows:
+            name = str(row.get('addr_name', '')).replace(' ', '')
+            if len(clean_target) >= 2 and clean_target in name:
+                return row.get('cd'), str(row.get('addr_name', ''))
+        for row in rows:
+            name = str(row.get('addr_name', '')).replace(' ', '')
+            if len(name) >= 2 and (name[:2] == clean_target[:2]):
+                return row.get('cd'), str(row.get('addr_name', ''))
+    except Exception as e:
+        print(f"[SGIS STAGE FAIL] parent_cd={parent_cd} target={target_name}: {e}")
+    return None, None
+
+
 def _find_region_cd(access_token, parent_cd, target_name):
     """addr/stage.json 한 단계를 조회해 target_name과 일치하는 지역의 cd를 찾는다."""
     try:
@@ -145,9 +177,15 @@ def _find_region_cd(access_token, parent_cd, target_name):
         if not isinstance(rows, list):
             return None
         clean_target = target_name.replace(' ', '')
+        # 1순위: 정확히 일치. 부분 일치를 먼저 하면 '성남시'가 '성남시분당구'에
+        # 걸려 시 전체 대신 특정 구가 잡히므로, 완전 일치를 반드시 우선한다.
         for row in rows:
             name = str(row.get('addr_name', '')).replace(' ', '')
-            if name == clean_target or (len(clean_target) >= 2 and clean_target in name):
+            if name == clean_target:
+                return row.get('cd')
+        for row in rows:
+            name = str(row.get('addr_name', '')).replace(' ', '')
+            if len(clean_target) >= 2 and clean_target in name:
                 return row.get('cd')
         # 정확히 일치하는 게 없으면 부분 포함 재시도(예: '서현동' vs '서현제1동')
         for row in rows:
@@ -223,9 +261,10 @@ def fetch_district_population(sido, sigungu):
         sido_cd = _find_region_cd(token, None, sido)
         if not sido_cd:
             return None
+        matched_name = None
         if sigungu:
             sigungu_short = sigungu.split()[-1] if ' ' in sigungu else sigungu
-            sigungu_cd = _find_region_cd(token, sido_cd, sigungu_short)
+            sigungu_cd, matched_name = _find_region_named(token, sido_cd, sigungu_short)
             if not sigungu_cd:
                 return None
         else:
@@ -341,6 +380,10 @@ def fetch_district_population(sido, sigungu):
             'sub_level': sub_level,
             'gu_names': gu_names,
             'area_km2': area_km2,
+            # SGIS에서 실제로 매칭된 지역명. 요청한 이름과 다르면(예: '성남시'를
+            # 요청했는데 '성남시 분당구'가 잡힘) 호출부가 라벨을 실제 값에 맞춰
+            # 고칠 수 있게 그대로 돌려준다 — 요청한 이름으로 표기하면 허위가 된다.
+            'matched_region_name': (matched_name or '').strip(),
         }
     except Exception as e:
         print(f"[SGIS DISTRICT POP FAIL] {sido} {sigungu}: {e}")
