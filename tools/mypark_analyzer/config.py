@@ -77,32 +77,90 @@ TIER_METRO = 2        # 서울/광역시/수도권 주요시
 TIER_MID_CITY = 3     # 지방 중소도시 (시 단위)
 TIER_RURAL = 4        # 군 단위 / 외곽
 
-_PRIME_KEYWORDS = ['강남', '서초', '송파', '분당', '판교', '송도', '해운대', '수성구', '용산', '과천']
-_METRO_SIDO = ['서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종']
-_METRO_GYEONGGI = [
-    '고양', '덕양', '일산', '용인', '수지', '기흥', '수원', '영통', '광교', '성남', '중원', '수정',
-    '안양', '평촌', '동안', '만안', '부천', '광명', '하남', '동탄', '화성', '시흥', '김포', '남양주',
-    '의정부', '구리', '안산', '군포', '의왕', '오산', '파주', '평택',
-]
+# 최상위 소비 상권은 '이름'이 아니라 '어느 시/도의 어느 시군구'로 지정한다.
+# '강남'이라는 두 글자로 판정하면 경상남도 진주시 강남동이 서울 강남구 등급을
+# 받아 매출·임대료가 실제의 두 배 가까이 부풀려진다(실제 발생했던 오류).
+_PRIME_REGIONS = {
+    ('서울특별시', '강남구'), ('서울특별시', '서초구'), ('서울특별시', '송파구'),
+    ('서울특별시', '용산구'),
+    ('경기도', '성남시 분당구'), ('경기도', '과천시'),
+    ('인천광역시', '연수구'),      # 송도
+    ('부산광역시', '해운대구'),
+    ('대구광역시', '수성구'),
+}
+
+# 광역시·특별시는 시/도 자체로 판정한다(문자열 포함 검사 금지).
+_METRO_SIDO = {
+    '서울특별시', '부산광역시', '대구광역시', '인천광역시',
+    '광주광역시', '대전광역시', '울산광역시', '세종특별자치시',
+}
+
+# 경기도 내 주요 도시는 시군구의 '시' 이름으로 판정한다.
+# 주소 전체를 훑지 않으므로 '중원대로'(충주) 같은 도로명에 걸리지 않는다.
+_METRO_GYEONGGI_CITIES = {
+    '고양시', '용인시', '수원시', '성남시', '안양시', '부천시', '광명시', '하남시',
+    '화성시', '시흥시', '김포시', '남양주시', '의정부시', '구리시', '안산시',
+    '군포시', '의왕시', '오산시', '파주시', '평택시',
+}
 
 
-def classify_region_tier(address, sigungu=''):
-    """주소를 4단계 지역 등급으로 분류한다 (1=최상위 ~ 4=군 단위)."""
-    text = f"{address} {sigungu}"
+def _sigungu_city_token(sigungu):
+    """'고양시 덕양구' -> '고양시', '이천시' -> '이천시', '무안군' -> '무안군'."""
+    if not sigungu:
+        return ''
+    return sigungu.split()[0]
 
-    if any(k in text for k in _PRIME_KEYWORDS):
-        return TIER_PRIME
-    if any(k in text for k in _METRO_SIDO):
+
+def classify_region_tier(address, sigungu='', sido=''):
+    """주소를 4단계 지역 등급으로 분류한다 (1=최상위 ~ 4=군 단위).
+
+    판정은 주소 문자열 검색이 아니라 (시/도, 시군구)로 한다. 예전에는
+    `'강남' in 주소` 방식이라 진주시 강남동이 최상위 등급을 받고, 충주
+    중원대로가 '중원'에 걸려 광역시 등급을 받았다. 이 등급 하나가 매출·
+    소비력·인구계수·임대료까지 20개 넘는 수치를 좌우하므로 오분류의
+    파급이 크다.
+
+    sido/sigungu가 비어 있으면(구주소 호출부 호환) 주소에서 시/도만 안전하게
+    추정해 쓴다 — 이때도 부분 문자열로 동 이름을 뒤지지는 않는다.
+    """
+    sigungu = ' '.join((sigungu or '').split())
+    sido = (sido or '').strip()
+
+    if not sido and address:
+        # 주소 맨 앞 토큰이 시/도인 경우만 인정한다(주소 중간의 지명은 보지 않음).
+        first = address.split()[0] if address.split() else ''
+        for full in _METRO_SIDO:
+            if first and (first == full or full.startswith(first)) and len(first) >= 2:
+                sido = full
+                break
+        if not sido and first.startswith(('경기', '강원', '충청', '충북', '충남',
+                                          '전라', '전북', '전남', '경상', '경북',
+                                          '경남', '제주')):
+            sido = first
+
+    city_token = _sigungu_city_token(sigungu)
+
+    # 1) 군 단위를 가장 먼저 본다. 광역시 안에도 군이 있어(울산 울주군,
+    #    부산 기장군, 인천 강화군·옹진군) 시/도부터 보면 군이 광역시 등급을
+    #    받아버린다.
+    if city_token.endswith('군'):
+        return TIER_RURAL
+
+    # 2) 최상위 상권은 (시/도, 시군구) 조합이 정확히 일치할 때만.
+    for p_sido, p_sigungu in _PRIME_REGIONS:
+        if sido == p_sido and sigungu and (sigungu == p_sigungu or sigungu.split()[-1] == p_sigungu.split()[-1]):
+            return TIER_PRIME
+
+    # 3) 광역시·특별시
+    if sido in _METRO_SIDO:
         return TIER_METRO
-    if any(k in text for k in _METRO_GYEONGGI):
+
+    # 4) 경기도 주요시
+    if sido == '경기도' and city_token in _METRO_GYEONGGI_CITIES:
         return TIER_METRO
 
-    # 시/군 접미사로 판정 (키워드 목록에 없는 전국 모든 지역 대응)
-    for token in text.split():
-        if token.endswith('군'):
-            return TIER_RURAL
-    for token in text.split():
-        if token.endswith('시'):
-            return TIER_MID_CITY
+    if city_token.endswith('시'):
+        return TIER_MID_CITY
+    return TIER_MID_CITY
 
     return TIER_MID_CITY

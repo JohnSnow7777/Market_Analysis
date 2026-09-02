@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 """지리 정보 및 건축/입지 물리적 적합성 분석 모듈 (현장 실측 체크리스트 기반)"""
-from .config import DEFAULT_SETTINGS
+from .config import (DEFAULT_SETTINGS, classify_region_tier,
+                     TIER_PRIME, TIER_METRO, TIER_MID_CITY, TIER_RURAL)
 from .address_resolver import AddressResolver
 
 class GeoEngine:
     """주소 정밀 지오코딩 및 건축 출점 기준 분석"""
     
     @staticmethod
-    def estimate_smart_defaults(address, rooms=None, monthly_rent=None, area_pyeong=None, staff_count=None):
+    def estimate_smart_defaults(address, rooms=None, monthly_rent=None, area_pyeong=None, staff_count=None,
+                                sigungu='', sido=''):
         auto_rooms = int(rooms) if (rooms and int(rooms) > 0) else DEFAULT_SETTINGS['default_rooms']
         
         if auto_rooms == 10:
@@ -16,17 +18,21 @@ class GeoEngine:
             recommended_area = int(auto_rooms * 10.0 + 20)
         auto_area = int(area_pyeong) if (area_pyeong and int(area_pyeong) > 0) else recommended_area
 
-        # 권역별 평당 월 임대료 시세 추정
+        # 권역별 평당 월 임대료 시세 추정.
+        # 예전에는 여기서 주소 문자열을 자체 키워드 목록으로 훑었는데, 그 결과
+        # (1) 경남 진주시 강남동이 '강남'에 걸려 서울 도심 시세(7만원/평)를 받아
+        #     월 임대료가 실제의 두 배 이상으로 잡히고,
+        # (2) config의 지역등급과 목록이 서로 달라 같은 주소가 모듈마다 다른
+        #     등급을 갖는 문제가 있었다.
+        # 이제 지역등급 판정을 config 한 곳(SSoT)에서만 받아 쓴다.
         rent_source_label = None
-        rent_per_pyeong = 45000
-        if any(k in address for k in ['강남', '서초', '송파', '용산', '마포', '영등포']):
-            rent_per_pyeong = 70000
-        elif any(k in address for k in ['분당', '판교', '서현', '정자', '성남', '일산', '고양', '송도', '연수', '수지', '용인', '수원', '영통', '광교', '하남', '동탄', '안양', '평촌']):
-            rent_per_pyeong = 45000
-        elif any(k in address for k in ['부산', '대구', '대전', '광주', '울산', '세종']):
-            rent_per_pyeong = 38000
-        else:
-            rent_per_pyeong = 32000
+        _tier = classify_region_tier(address, sigungu, sido)
+        rent_per_pyeong = {
+            TIER_PRIME: 70000,
+            TIER_METRO: 45000,
+            TIER_MID_CITY: 38000,
+            TIER_RURAL: 32000,
+        }.get(_tier, 38000)
 
         estimated_rent = int(auto_area * rent_per_pyeong)
         estimated_rent = round(estimated_rent, -5)
@@ -50,7 +56,9 @@ class GeoEngine:
     @staticmethod
     def analyze_site(address, building_name=None, area_pyeong=None, rooms=None, monthly_rent=None, staff_count=None, special_notes=None):
         resolved = AddressResolver.resolve(address)
-        smart = GeoEngine.estimate_smart_defaults(address, rooms, monthly_rent, area_pyeong, staff_count)
+        smart = GeoEngine.estimate_smart_defaults(
+            address, rooms, monthly_rent, area_pyeong, staff_count,
+            sigungu=resolved.get('sigungu', ''), sido=resolved.get('sido', ''))
         
         b_name = building_name.strip() if (building_name and building_name.strip()) else f"{resolved['sigungu']} 매장"
         

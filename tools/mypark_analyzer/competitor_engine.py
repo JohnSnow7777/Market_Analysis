@@ -298,6 +298,33 @@ class CompetitorEngine:
         return CompetitorEngine._kakao_geocode_bcode(address, api_key)
 
     @staticmethod
+    def _filter_docs_by_region(docs, sido, sigungu):
+        """검색 결과를 주소 문자열 기준으로 해당 시/도·시군구만 남긴다.
+
+        좌표 반경 필터가 없는 소스(네이버 지역검색)는 전국 결과를 돌려주므로,
+        '서구'처럼 전국에 여러 개인 지명에서 다른 시/도 매장이 섞인다.
+        지역을 확인할 수 없는 항목은 보수적으로 제외한다 — 실제로는 맞는
+        매장이 빠질 수 있지만, 다른 지역 매장을 경쟁사로 싣는 것보다 낫다.
+        """
+        if not docs:
+            return docs
+        if not (sido or sigungu):
+            return []
+        sido_short = (sido or '').replace('특별시', '').replace('광역시', '').replace('특별자치시', '').replace('특별자치도', '').replace('도', '')
+        sigungu_last = sigungu.split()[-1] if sigungu else ''
+        kept = []
+        for d in docs:
+            addr = d.get('address') or ''
+            if not addr:
+                continue
+            if sido and not (sido in addr or (len(sido_short) >= 2 and sido_short in addr)):
+                continue
+            if sigungu_last and sigungu_last not in addr:
+                continue
+            kept.append(d)
+        return kept
+
+    @staticmethod
     def resolve_dong_by_geocode(address):
         """도로명 주소를 카카오 지오코딩해 실제 행정동/법정동 이름을 얻는다. 실패 시 None.
 
@@ -430,8 +457,18 @@ class CompetitorEngine:
             return docs if ok else None
 
         def _run_naver():
-            ok, docs = map_clients.naver_local_search('스크린파크골프', region_hint=address.split()[1] if len(address.split()) > 1 else '')
-            return docs if ok else None
+            # 네이버 지역검색은 좌표 반경 필터가 없어 키워드로만 지역을 좁힌다.
+            # 예전에는 주소의 두 번째 토큰('서구')만 힌트로 넘겨서, 광주 서구를
+            # 찾는데 인천·대구·대전·부산 서구 매장이 그대로 섞여 들어왔다.
+            # 그래서 (1) 시/도까지 포함한 온전한 지역명을 힌트로 주고,
+            #        (2) 돌아온 결과의 주소를 다시 지역 기준으로 걸러낸다.
+            _r = AddressResolver.resolve(address)
+            _hint = ' '.join(t for t in (_r.get('sido', ''), _r.get('sigungu', '')) if t)
+            ok, docs = map_clients.naver_local_search('스크린파크골프', region_hint=_hint)
+            if not ok:
+                return None
+            return CompetitorEngine._filter_docs_by_region(
+                docs, _r.get('sido', ''), _r.get('sigungu', ''))
 
         with ThreadPoolExecutor(max_workers=3) as executor:
             f_kakao = executor.submit(_run_kakao)
@@ -487,10 +524,17 @@ class CompetitorEngine:
         # sido가 DB에 있으면 반드시 일치해야 매칭 후보로 인정한다.
         matched_stores = []
         for store in VERIFIED_NATIONAL_PARK_GOLF_DB:
-            if store.get('sido') and s_sido and store['sido'] != s_sido:
+            # 시/도를 알 수 없으면 매칭 자체를 포기한다. 예전에는 s_sido가 비면
+            # 가드가 통째로 무력화돼, 동 이름 부분일치만으로 다른 지역 매장이
+            # 경쟁사로 확정됐다.
+            if not s_sido:
+                continue
+            if store.get('sido') and store['sido'] != s_sido:
                 continue
             score = 0
-            if store['sigungu'] in s_sigungu or s_sigungu in store['sigungu']:
+            # '남구'가 '강남구'에 포함되는 식의 오매칭을 막기 위해 자치구 이름
+            # 토큰이 정확히 같을 때만 인정한다.
+            if s_sigungu and store['sigungu'].split()[-1] == s_sigungu.split()[-1]:
                 score += 3
             if store['dong'] and (store['dong'] in full_addr or store['dong'] in s_dong):
                 score += 5
@@ -505,7 +549,10 @@ class CompetitorEngine:
         final_stores = [s[1] for s in matched_stores[:4]]
 
         # 2. 자가 매장 주소인지 판별 (예: 우경파크골프스크린)
-        is_self_location = any(k in full_addr for k in ['우경', '화신로272번길 11', '마실파크골프'])
+        # 자가 매장 판정은 두 글자('우경')만으로 하면 전국 아무 주소나 걸리므로
+        # 상호 전체 또는 번지까지 포함한 고유 문자열로만 확인한다.
+        is_self_location = any(k in full_addr for k in
+                               ['우경파크골프', '화신로272번길 11', '마실파크골프'])
 
         if final_stores:
             summary_txt = f"{scope_label} 실측 전문 매장 {len(final_stores)}곳이 운영 중이며, {final_stores[0]['name'].split()[0]} 등 주요 매장의 현황을 확인했습니다."

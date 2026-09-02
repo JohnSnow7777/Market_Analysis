@@ -102,19 +102,54 @@ def _is_dong_token(token):
     return token.endswith(DONG_SUFFIXES)
 
 
-def _match_known_mapping(clean, found_sido):
+def _match_known_mapping(clean, found_sido, found_sigungu=None):
+    """KNOWN_MAPPINGS를 지역 검증과 함께 조회한다. 확신이 없으면 None.
+
+    이 표의 키는 '화정', '정자', '대화'처럼 두 글자 조각이라 주소 어디에든
+    우연히 걸리기 쉽다. 그래서 다음 두 조건을 모두 만족할 때만 인정한다.
+
+      1) 입력에 시/도가 있으면 매핑의 시/도와 일치해야 한다.
+      2) 입력에 시/군/구가 있으면 매핑의 시/군/구와도 일치해야 한다.
+
+    2번이 없으면 같은 도 안의 다른 시에 남의 동이 붙는다
+    (예: '경기도 광주시 대화로 12' -> 고양시 일산서구 대화동,
+          '경기도 시흥시 정자로 5' -> 성남시 분당구 정자동).
+
+    시/도조차 파악되지 않은 입력에는 아예 적용하지 않는다. 두 글자 조각만
+    보고 시/도·시군구·동을 통째로 지어내면(예: '수원시 장안구 정자동' ->
+    성남시 분당구) 이후 모든 분석이 다른 지역 것이 되기 때문이다.
     """
-    KNOWN_MAPPINGS를 시/도 검증과 함께 조회한다.
-    입력에 시/도가 명시돼 있으면 매핑의 sido와 일치할 때만 인정한다.
-    (예전에는 '화정' 두 글자만 걸려도 광주 주소를 경기도로 덮어썼다.)
-    """
+    if not found_sido:
+        return None
+    best = None
     for k, v in KNOWN_MAPPINGS.items():
         if k not in clean:
             continue
-        if found_sido and v['sido'] != found_sido:
-            continue  # 시/도 불일치 → 다른 지역의 동명이지명이므로 무시
-        return v
-    return None
+        if v['sido'] != found_sido:
+            continue  # 시/도 불일치 → 동명이지명이므로 무시
+        if found_sigungu and not _same_sigungu(v['sigungu'], found_sigungu):
+            continue  # 같은 도 안의 다른 시/군/구 → 무시
+        # 더 긴 키가 더 구체적인 단서다('화신로' > '화정')
+        if best is None or len(k) > best[0]:
+            best = (len(k), v)
+    return best[1] if best else None
+
+
+def _same_sigungu(a, b):
+    """'고양시 덕양구' vs '덕양구'처럼 상위 시 표기 유무만 다른 경우를 같다고 본다."""
+    a = ' '.join((a or '').split())
+    b = ' '.join((b or '').split())
+    if not a or not b:
+        return False
+    if a == b:
+        return True
+    a_last, b_last = a.split()[-1], b.split()[-1]
+    if a_last != b_last:
+        return False
+    a_head, b_head = ' '.join(a.split()[:-1]), ' '.join(b.split()[:-1])
+    if a_head and b_head:
+        return a_head == b_head
+    return True
 
 
 class AddressResolver:
@@ -165,7 +200,7 @@ class AddressResolver:
             # 4. 도로명만 있는 경우에 한해 KNOWN_MAPPINGS의 실제 동을 보완한다.
             #    (시/군/구까지만 입력된 주소에는 적용하지 않는다 — dong='' 이 '구 전체 분석' 신호이기 때문)
             if not dong and road_name:
-                mapped = _match_known_mapping(clean, found_sido)
+                mapped = _match_known_mapping(clean, found_sido, sigungu)
                 if mapped:
                     dong = mapped['dong']
                     if not sigungu:
@@ -192,8 +227,12 @@ class AddressResolver:
                 'is_resolved': True
             }
 
-        # 6. 시/도가 없는 입력: 시/도 검증을 건너뛰고 별칭 매핑으로 보완 시도
-        mapped = _match_known_mapping(clean, None)
+        # 6. 시/도가 없는 입력.
+        # 두 글자 조각 매칭으로 지역을 추측하지 않는다 — '서구 화정동'을 고양시로,
+        # '정자동 152'를 분당으로 단정해버리면 이후 인구·경쟁사·재무가 전부 다른
+        # 지역 것이 된다. 시/도를 알 수 없으면 알 수 없다고 반환하고, 상위 단계가
+        # 지오코딩으로 확인하거나 추정임을 명시하도록 한다.
+        mapped = None
         if mapped:
             return {
                 'sido': mapped['sido'],

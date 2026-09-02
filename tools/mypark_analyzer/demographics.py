@@ -132,7 +132,7 @@ class DemographicsEngine:
             break
 
         # 2. 지역 체급별 디폴트 인구 계수 산정 (config.classify_region_tier 공용 SSOT)
-        tier = classify_region_tier(full_addr, sigungu)
+        tier = classify_region_tier(full_addr, sigungu, sido)
         is_metro = tier in (TIER_PRIME, TIER_METRO)
         is_city = tier == TIER_METRO
         is_mid_small = tier == TIER_MID_CITY

@@ -157,10 +157,7 @@ def _find_region_named(access_token, parent_cd, target_name):
             name = str(row.get('addr_name', '')).replace(' ', '')
             if len(clean_target) >= 2 and clean_target in name:
                 return row.get('cd'), str(row.get('addr_name', ''))
-        for row in rows:
-            name = str(row.get('addr_name', '')).replace(' ', '')
-            if len(name) >= 2 and (name[:2] == clean_target[:2]):
-                return row.get('cd'), str(row.get('addr_name', ''))
+
     except Exception as e:
         print(f"[SGIS STAGE FAIL] parent_cd={parent_cd} target={target_name}: {e}")
     return None, None
@@ -187,11 +184,9 @@ def _find_region_cd(access_token, parent_cd, target_name):
             name = str(row.get('addr_name', '')).replace(' ', '')
             if len(clean_target) >= 2 and clean_target in name:
                 return row.get('cd')
-        # 정확히 일치하는 게 없으면 부분 포함 재시도(예: '서현동' vs '서현제1동')
-        for row in rows:
-            name = str(row.get('addr_name', '')).replace(' ', '')
-            if len(name) >= 2 and (name[:2] == clean_target[:2]):
-                return row.get('cd')
+        # 앞 두 글자만 같은 지역을 반환하던 폴백은 제거했다. 요청한 동이 그 구에
+        # 없을 때(상류에서 잘못된 동 이름이 넘어온 경우) 엉뚱한 동의 실측 인구를
+        # 조용히 가져와 오염시키기 때문이다. 못 찾으면 못 찾았다고 하는 편이 낫다.
     except Exception as e:
         print(f"[SGIS STAGE FAIL] parent_cd={parent_cd} target={target_name}: {e}")
     return None

@@ -21,7 +21,7 @@ class CommercialEngine:
 
         # 지역별 실측 상권 매출 및 소비력 지수 차등화
         is_estimated_comm = False
-        tier = classify_region_tier(full_addr, sigungu)
+        tier = classify_region_tier(full_addr, sigungu, resolved.get('sido', ''))
         if tier == TIER_PRIME:
             monthly_avg = 24500000
             top_20_sales = 62510000
@@ -34,7 +34,10 @@ class CommercialEngine:
             density_ratio = 0.7
             nat_avg = 0.3
             multiple = 2.3
-            subway = f"{dong} 인근 지하철역"
+            # 특정 역 이름을 단정하지 않는다(역명·도보거리는 확인된 값이 아니다).
+            # 지역등급상 도시철도가 운행되는 권역이라는 사실만 밝히고, 정확한
+            # 도보거리는 현장 확인 대상임을 문구에 담는다.
+            subway = f"{dong} 일대 지하철 운행 권역 (역까지 도보거리는 현장 확인)"
             bus_stop_count = 52
             gov_count, edu_count, fin_count = 12, 22, 28
             residential_ratio, workplace_ratio = 82.0, 18.0
