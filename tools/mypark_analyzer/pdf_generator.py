@@ -1291,7 +1291,13 @@ class PDFGenerator:
                 c.drawString(511, ry11, f"• {cl}" if cl == con_lines[0] else f"  {cl}")
                 ry11 -= 13
             ry11 -= 7
-        c.drawString(511, ry11, f"• 보편적 시나리오: 월 순익 {scenarios['moderate']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_moderate']:.1f}개월 ({fmt_months(inv['payback_months_moderate'])})")
+        # fmt_months가 '9.3개월'을 그대로 돌려주는 경우 같은 값이 두 번 찍혀
+        # "약 9.3개월 (9.3개월)"이 됐다. 표기가 다를 때만 괄호를 덧붙인다.
+        _pb_m = inv['payback_months_moderate']
+        _pb_txt = fmt_months(_pb_m)
+        _pb_num = f"{_pb_m:.1f}개월"
+        _pb_disp = _pb_num if _pb_txt.replace(' ', '') == _pb_num.replace(' ', '') else f"{_pb_num} ({_pb_txt})"
+        c.drawString(511, ry11, f"• 보편적 시나리오: 월 순익 {scenarios['moderate']['operating_profit']//10000:,}만원 -> 회수기간 약 {_pb_disp}")
         ry11 -= 20
         c.drawString(511, ry11, f"• 긍정적 시나리오: 월 순익 {scenarios['optimistic']['operating_profit']//10000:,}만원 -> 회수기간 약 {inv['payback_months_optimistic']:.1f}개월")
         ry11 -= 34
@@ -1408,7 +1414,16 @@ class PDFGenerator:
             ("연간 총매출액", [f"{y['revenue']/100000000:.2f}억원" for y in fin['five_year']['years']], f"{fin['five_year']['total_5yr_revenue']//100000000:.1f}억원"),
             ("연간 총비용", [f"{y['cost']/100000000:.2f}억원" for y in fin['five_year']['years']], f"{fin['five_year']['total_5yr_cost']//100000000:.1f}억원"),
             ("연간 순영업익", [f"{y['profit']/100000000:.2f}억원" for y in fin['five_year']['years']], f"{fin['five_year']['total_5yr_profit']//100000000:.1f}억원"),
-            ("투자금 누적회수", [f"{fmt_eok(inv['total_capex'])} 회수완료" if fin['five_year']['years'][i]['cumulative_profit'] >= inv['total_capex'] else f"{fin['five_year']['years'][i]['cumulative_profit']/100000000:.2f}억원" for i in range(5)], f"회수율 {fin['five_year']['total_5yr_profit']/inv['total_capex']*100:.0f}%"),
+            # 회수 완료 후에도 매년 같은 문구('2.81억원 회수완료')를 반복하면
+            # 정보가 없다. 완료 이후에는 투자금을 넘어선 누적 순익을 보여준다.
+            ("투자금 누적회수", [
+                (f"{fmt_eok(inv['total_capex'])} 회수완료"
+                 if fin['five_year']['years'][i]['cumulative_profit'] >= inv['total_capex'] and i == 0
+                 else (f"회수 후 +{(fin['five_year']['years'][i]['cumulative_profit'] - inv['total_capex'])/100000000:.2f}억원"
+                       if fin['five_year']['years'][i]['cumulative_profit'] >= inv['total_capex']
+                       else f"{fin['five_year']['years'][i]['cumulative_profit']/100000000:.2f}억원"))
+                for i in range(5)],
+             f"회수율 {fin['five_year']['total_5yr_profit']/inv['total_capex']*100:.0f}%"),
         ]
         row_h12 = (col_y12 - 8 - (tbl_bottom12 + 12)) / len(rows_5y)
         y_5 = col_y12 - 8 - row_h12 + 18
