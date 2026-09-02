@@ -37,7 +37,21 @@ class MyParkReportGenerator:
         commercial['competitor_verified_count'] = competitors.get('verified_count')
         commercial['competitor_is_verified'] = competitors.get('is_verified', False)
         
+        # [2026-09-02] 손익 기준을 '건물주(자가 소유)'로 전환.
+        # 가맹 상담 대상의 다수가 건물을 보유한 점주라 임대료가 발생하지 않는다.
+        # 임대료를 기본 비용으로 깔면 실제 조건과 다른 보수적 수치가 대표값이
+        # 되므로, 건물주 기준을 본문으로 두고 임차 시나리오를 참고선으로 병기한다.
+        # 전제(임대료 미포함)는 보고서 전반에 명시해 임차 고객이 오해하지 않게 한다.
         financials = FinanceEngine.get_full_financial_analysis(
+            rooms=site_info['rooms'],
+            monthly_rent=0,
+            area_pyeong=site_info['area_pyeong'],
+            staff_count=site_info['staff_count'],
+            demographics=demographics,
+            commercial=commercial
+        )
+        # 참고선: 입력(또는 지역 시세 추정) 임대료를 반영한 임차인 기준
+        financials_tenant = FinanceEngine.get_full_financial_analysis(
             rooms=site_info['rooms'],
             monthly_rent=site_info['monthly_rent'],
             area_pyeong=site_info['area_pyeong'],
@@ -78,12 +92,11 @@ class MyParkReportGenerator:
             'bep_chart': chart_bep
         }
         
-        # 건물주(자가 소유, 임대료 없음) 참고 시나리오 — 웹/PDF/PPTX가 동일한 값을
-        # 쓰도록 여기서 한 번만 계산해 bundle에 포함한다.
-        owner_only_scenario = FinanceEngine.calculate_monthly_scenario(
-            site_info['rooms'], 0, site_info['staff_count'], 'moderate')
-        owner_only_op = owner_only_scenario['operating_profit']
-        owner_only_payback = (financials['investment']['total_capex'] / owner_only_op) if owner_only_op > 0 else None
+        # 임차인(임대료 지불) 참고 시나리오 — 웹/PDF/PPTX가 동일한 값을 쓰도록
+        # 여기서 한 번만 계산해 bundle에 포함한다. 본문은 건물주 기준이다.
+        _tenant_inv = financials_tenant['investment']
+        tenant_payback = _tenant_inv['payback_months_moderate']
+        tenant_bep_turns = _tenant_inv['bep_turns_per_room']
 
         bundle = {
             'site': site_info,
@@ -95,7 +108,13 @@ class MyParkReportGenerator:
             'score': scores,
             'charts': charts,
             'created_at': datetime.now().strftime("%Y. %m. %d"),
-            'owner_only_payback_months': round(owner_only_payback, 1) if owner_only_payback else None
+            # 손익 기준 표기용 — 보고서 전반에서 전제를 밝히는 데 쓴다.
+            'financial_basis': 'owner',
+            'financial_basis_label': '건물주(자가 소유, 임대료 미포함) 기준',
+            'financials_tenant': financials_tenant,
+            'tenant_payback_months': tenant_payback,
+            'tenant_bep_turns_per_room': tenant_bep_turns,
+            'tenant_monthly_rent': site_info['monthly_rent'],
         }
 
         safe_name = site_info['building_name'].replace(' ', '_').replace('/', '_')
@@ -119,5 +138,6 @@ class MyParkReportGenerator:
             'payback_text': scores['payback_text'],
             'operating_profit_moderate': financials['monthly_scenarios']['moderate']['operating_profit'],
             'total_revenue_moderate': financials['monthly_scenarios']['moderate']['total_revenue'],
-            'owner_only_payback_months': round(owner_only_payback, 1) if owner_only_payback else None
+            'financial_basis_label': '건물주(자가 소유, 임대료 미포함) 기준',
+            'tenant_payback_months': tenant_payback,
         }

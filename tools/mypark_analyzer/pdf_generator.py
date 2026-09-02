@@ -934,10 +934,10 @@ class PDFGenerator:
         c.drawString(56, 190, f"• 게임비 요금: 1인 18홀 7,000원 (4인 1팀 28,000원)")
         c.drawString(56, 170, f"• 3대 매출원: 게임비 회전 + 용품 판매(월 {scenarios['moderate']['goods_revenue']//10000:,}만) + 식음료(월 {scenarios['moderate']['beverage_revenue']//10000:,}만)")
         rent_tag = "입력하신 실측" if not site.get('rent_is_estimated') else "지역 시세 추정"
-        c.drawString(56, 150, f"• 월 임대료 기준(임차인): {rent_tag} {site['monthly_rent']//10000:,}만원/월 반영")
-        _owner_s = FinanceEngine.calculate_monthly_scenario(site['rooms'], 0, site['staff_count'], 'moderate')
-        _owner_pb = inv['total_capex'] / _owner_s['operating_profit'] if _owner_s['operating_profit'] > 0 else 0
-        c.drawString(56, 130, f"• 건물주(자가 소유) 시 참고: 임대료 없이 운영 시 보편적 시나리오 회수기간 약 {_owner_pb:.1f}개월")
+        c.drawString(56, 150, "• 본 분석 기준: 건물주(자가 소유) — 월 임대료가 발생하지 않는 조건으로 산출")
+        _tp = data.get('tenant_payback_months')
+        _tenant_txt = f"약 {_tp:.1f}개월" if _tp else "별도 산출"
+        c.drawString(56, 130, f"• 임차 운영 시 참고: {rent_tag} 임대료 {site['monthly_rent']//10000:,}만원/월 반영 시 회수기간 {_tenant_txt}")
 
         c.setFont(FONT_REGULAR, 8.5)
         c.setFillColor(self.c_slate)
@@ -1100,7 +1100,7 @@ class PDFGenerator:
         # ---------------------------------------------------------------------
         # Page 10: 9. 사업 타당성 분석 - 비용 구조 및 순영업이익
         # ---------------------------------------------------------------------
-        self._draw_mckinsey_header(c, "9. 사업 타당성 분석 - 비용 구조 및 순영업이익", f"월 고정비 {fin['owner_operated']['fixed_cost']//10000:,}만원(임대료 {site['monthly_rent']//10000:,}만+인건비 250만+운영비) 및 보편 월 순영업이익 {scenarios['moderate']['operating_profit']//10000:,}만원")
+        self._draw_mckinsey_header(c, "9. 사업 타당성 분석 - 비용 구조 및 순영업이익", f"건물주(자가 소유) 기준 월 고정비 {fin['owner_operated']['fixed_cost']//10000:,}만원(인건비 250만+운영비, 임대료 미포함) 및 보편 월 순영업이익 {scenarios['moderate']['operating_profit']//10000:,}만원")
 
         chart_bottom10, chart_top10 = 260, 500
         chart_h10 = chart_top10 - chart_bottom10
@@ -1121,7 +1121,7 @@ class PDFGenerator:
         c.setFillColor(self.c_charcoal)
         ry10 = chart_top10 - head_h10 - 22
         rent_basis = "입력하신 임대료" if not site.get('rent_is_estimated') else "지역 시세 추정 임대료"
-        c.drawString(511, ry10, f"• 월 임대료: {site['monthly_rent']//10000:,}만원 ({rent_basis})")
+        c.drawString(511, ry10, f"• 월 임대료: 0원 (건물주 자가 소유)  ※ 임차 시 {site['monthly_rent']//10000:,}만원 별도 반영")
         ry10 -= 20
         c.drawString(511, ry10, f"• 인건비 (점주 직접운영): {scenarios['moderate']['labor_cost']//10000:,}만원 ({site['staff_count']}인 상주 운영)")
         ry10 -= 20
@@ -1214,8 +1214,19 @@ class PDFGenerator:
         _lv_turn_op = scenarios['optimistic']['operating_profit'] if _lv_use_moderate else scenarios['moderate']['operating_profit']
         _lv_turn_pb = (_lv_capex / _lv_turn_op) if _lv_turn_op > 0 else 0
         _lv_turn_label = "4회전 → 5회전" if _lv_use_moderate else "3회전 → 4회전"
-        _lv_rent_op = _lv_base_op + 1000000
+        # 세 번째 레버는 운영 조건에 따라 의미가 달라진다.
+        # 건물주(임대료 0) 기준에서는 '임대료 협상'이 성립하지 않으므로,
+        # 대신 타석 가동시간 확대(주간 운영시간 연장)로 대체한다.
+        _lv_is_owner = (site.get('monthly_rent', 0) or 0) == 0 or data.get('financial_basis') == 'owner'
+        _lv_third_gain = 1000000
+        _lv_rent_op = _lv_base_op + _lv_third_gain
         _lv_rent_pb = (_lv_capex / _lv_rent_op) if _lv_rent_op > 0 else 0
+        if _lv_is_owner:
+            _lv_third_name = "운영시간 확대 (월 +100만원 순익)"
+            _lv_third_how = "평일 야간·주말 운영시간 연장으로 유휴 타석 가동률을 끌어올림"
+        else:
+            _lv_third_name = "임대료 협상 (월 -100만원)"
+            _lv_third_how = "장기계약·렌트프리 조건 협상 시 매월 순익에 직접 반영"
         _lv_int_capex = _lv_capex - int(site['area_pyeong'] * 300000)
         _lv_int_pb = (_lv_int_capex / _lv_base_op) if _lv_base_op > 0 else 0
 
@@ -1231,7 +1242,7 @@ class PDFGenerator:
         _lv_rows = [
             (f"가동률 상향 ({_lv_turn_label})", f"{_lv_base_pb:.1f}개월", f"{_lv_turn_pb:.1f}개월", f"-{_lv_base_pb - _lv_turn_pb:.1f}개월", "본사 오픈 초기 홍보·커뮤니티 형성 지원 + 동호회 정기예약 유치가 가장 강력한 레버"),
             ("인테리어 단가 조정 (평당 -30만원)", f"{_lv_base_pb:.1f}개월", f"{_lv_int_pb:.1f}개월", f"-{_lv_base_pb - _lv_int_pb:.1f}개월", "기존 상가 시설 승계·부분 시공으로 초기 투자비 절감"),
-            ("임대료 협상 (월 -100만원)", f"{_lv_base_pb:.1f}개월", f"{_lv_rent_pb:.1f}개월", f"-{_lv_base_pb - _lv_rent_pb:.1f}개월", "장기계약·렌트프리 조건 협상 시 매월 순익에 직접 반영"),
+            (_lv_third_name, f"{_lv_base_pb:.1f}개월", f"{_lv_rent_pb:.1f}개월", f"-{_lv_base_pb - _lv_rent_pb:.1f}개월", _lv_third_how),
         ]
         _lv_cols = [56, 268, 344, 424, 512]
         c.setFont(FONT_BOLD, 8.5)

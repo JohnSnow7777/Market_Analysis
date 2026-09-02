@@ -773,11 +773,11 @@ class PPTXGenerator:
             f"• 비교 모델 (직원 3인 채용): 인건비 월 {3*DEFAULT_SETTINGS['labor_cost_manager']//10000:,}만원 (회수기간 {fin['owner_operated']['staff3_payback_months']:.1f}개월)",
             f"• 게임비 요금: 1인 18홀 7,000원 (4인 1팀 28,000원)",
             f"• 3대 매출원: 게임비 회전 + 용품 판매(월 {fin['monthly_scenarios']['moderate']['goods_revenue']//10000:,}만) + 식음료(월 {fin['monthly_scenarios']['moderate']['beverage_revenue']//10000:,}만)",
-            f"• 월 임대료 기준(임차인): {_rent_tag8} {site['monthly_rent']//10000:,}만원/월 반영",
+            "• 본 분석 기준: 건물주(자가 소유) — 월 임대료가 발생하지 않는 조건으로 산출",
         ]
-        _owner_s8 = FinanceEngine.calculate_monthly_scenario(site['rooms'], 0, site['staff_count'], 'moderate')
-        _owner_pb8 = inv['total_capex'] / _owner_s8['operating_profit'] if _owner_s8['operating_profit'] > 0 else 0
-        items8_a.append(f"• 건물주(자가 소유) 시 참고: 임대료 없이 운영 시 보편적 시나리오 회수기간 약 {_owner_pb8:.1f}개월")
+        _tp8 = data.get('tenant_payback_months')
+        _tenant_txt8 = f"약 {_tp8:.1f}개월" if _tp8 else "별도 산출"
+        items8_a.append(f"• 임차 운영 시 참고: {_rent_tag8} 임대료 {site['monthly_rent']//10000:,}만원/월 반영 시 회수기간 {_tenant_txt8}")
         for it in items8_a:
             p_it = tf8_ab.add_paragraph()
             p_it.space_before = Pt(3)
@@ -946,7 +946,7 @@ class PPTXGenerator:
         # Slide 10: 9. 사업 타당성 분석 - 비용 구조 및 순영업이익
         # ---------------------------------------------------------------------
         s10 = self.prs.slides.add_slide(self.blank_layout)
-        self._add_mckinsey_header(s10, "9. 사업 타당성 분석 - 비용 구조 및 순영업이익", f"월 고정비 {fin['owner_operated']['fixed_cost']//10000:,}만원(임대료 {site['monthly_rent']//10000:,}만+인건비 250만+운영비) 및 보편 월 순영업이익 {m_scen['moderate']['operating_profit']//10000:,}만원")
+        self._add_mckinsey_header(s10, "9. 사업 타당성 분석 - 비용 구조 및 순영업이익", f"건물주(자가 소유) 기준 월 고정비 {fin['owner_operated']['fixed_cost']//10000:,}만원(인건비 250만+운영비, 임대료 미포함) 및 보편 월 순영업이익 {m_scen['moderate']['operating_profit']//10000:,}만원")
         
         if 'waterfall_cost' in charts and os.path.exists(charts['waterfall_cost']):
             s10.shapes.add_picture(charts['waterfall_cost'], Inches(0.6), Inches(1.45), width=Inches(5.9))
@@ -966,7 +966,7 @@ class PPTXGenerator:
         
         _rent_basis10 = "입력하신 임대료" if not site.get('rent_is_estimated') else "지역 시세 추정 임대료"
         cost_details = [
-            f"• 월 임대료: {site['monthly_rent']//10000:,}만원 ({_rent_basis10})",
+            f"• 월 임대료: 0원 (건물주 자가 소유 기준)  ※ 임차 시 {_rent_basis10} {site['monthly_rent']//10000:,}만원 별도",
             f"• 인건비 (점주 직접운영): {m_scen['moderate']['labor_cost']//10000:,}만원 ({site['staff_count']}인 상주 운영 체제)",
             f"• 매장 운영비/소모품: {DEFAULT_SETTINGS['store_ops_monthly']//10000:,}만원  |  통신/POS: {DEFAULT_SETTINGS['pos_telecom_monthly']//10000:,}만원  |  마케팅비: {DEFAULT_SETTINGS['marketing_monthly']//10000:,}만원",
             f"• 변동비: 원가 {(m_scen['moderate']['cost_goods']+m_scen['moderate']['cost_beverage'])//10000:,}만원 + 카드수수료({DEFAULT_SETTINGS['card_fee_rate']*100:.1f}%) {m_scen['moderate']['card_fee']//10000:,}만원",
@@ -1217,7 +1217,7 @@ class PPTXGenerator:
              "• 평일 낮 10~17시 상가 전체의 주간 공실 및 유휴 분위기를 완전히 반전"),
             ("2. 장기 안정적 우량 임차인 락인 (공실 리스크 영구 해소)",
              f"• 초기 설비 투자금 {fmt_eok(inv['total_capex'])}이 투입되는 실물 시설형 매장으로 5년 이상 장기 계약 유지\n"
-             f"• 월 임대료 {site['monthly_rent']//10000:,}만원의 체납 없는 안정적 수취 구조 완비\n"
+             f"• 임대 운영 시 월 {site['monthly_rent']//10000:,}만원 수준의 체납 없는 안정적 수취 구조 (자가 운영 시 해당 없음)\n"
              f"• 상가 공실률 해소 및 앵커 테넌트 유치에 따른 건물 전체의 자산 가치(Cap Rate) 동반 상승"),
             ("3. 쾌적한 무소음·무진동·비음주 청정 친환경 체육시설",
              "• 일반 주점/스크린골프(야간 음주/소음/흡연)와 달리 주간 친목형 청정 체육시설\n"
