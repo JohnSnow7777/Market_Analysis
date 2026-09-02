@@ -112,6 +112,37 @@ class PDFGenerator:
         c.setLineWidth(0.8)
         c.line(40, self.height - 74, self.width - 40, self.height - 74)
 
+    def _draw_page_summary(self, c, text):
+        """페이지 맨 아래에 그 페이지의 핵심을 한 줄로 강조 표시한다.
+
+        보고서가 12페이지라 각 장이 무엇을 말하는지 한눈에 잡히도록,
+        본문 아래·출처 위에 배경을 깐 요약 줄을 둔다. 폭을 넘으면 잘라서
+        레이아웃이 밀리지 않게 한다.
+        """
+        bar_x, bar_y, bar_h = 40, 40, 17
+        bar_w = self.width - 80
+        c.setFillColor(self.c_tint_blue)
+        c.setStrokeColor(self.c_mck_teal)
+        c.setLineWidth(0.8)
+        c.rect(bar_x, bar_y, bar_w, bar_h, fill=1, stroke=1)
+        c.setFillColor(self.c_mck_teal)
+        c.rect(bar_x, bar_y, 3.5, bar_h, fill=1, stroke=0)
+
+        label = "이 페이지 요약  "
+        c.setFont(FONT_BOLD, 8)
+        c.setFillColor(self.c_mck_navy)
+        c.drawString(bar_x + 12, bar_y + 5.5, label)
+        _lx = bar_x + 12 + pdfmetrics.stringWidth(label, FONT_BOLD, 8)
+        avail = (bar_x + bar_w) - _lx - 10
+        body = text or ""
+        while body and pdfmetrics.stringWidth(body, FONT_REGULAR, 8) > avail:
+            body = body[:-1]
+        if body != (text or ""):
+            body = body[:-1] + "…"
+        c.setFont(FONT_REGULAR, 8)
+        c.setFillColor(self.c_charcoal)
+        c.drawString(_lx, bar_y + 5.5, body)
+
     def _draw_footer(self, c, source_text="KOSIS & Small Enterprise Market Service Data"):
         c.setStrokeColor(self.c_line)
         c.setLineWidth(0.5)
@@ -441,6 +472,7 @@ class PDFGenerator:
             _src_note = "KOSIS National Statistics Portal (※ 행정동 추정 모델 적용)"
         else:
             _src_note = f"KOSIS National Statistics Portal ({demo.get('base_date', '2026.08')})"
+        self._draw_page_summary(c, f"{demo.get('district_scope_name') or site['sigungu']} 배후 50대 이상 {demo['senior_50_plus']:,}명(전체의 {demo['senior_ratio']}%) — 평일 낮 가동을 받쳐줄 시니어 수요가 확보된 상권입니다.")
         self._draw_footer(c, _src_note)
         c.showPage()
 
@@ -517,6 +549,7 @@ class PDFGenerator:
         c.drawString(56, 88, f"• 골프 연습장 이용 특성({_bm['usage_scope']}): 남성 {_bm['usage_male_ratio']}%, 40~50대 {_bm['usage_age_40_50_ratio']}%, 저녁 18~23시 {_bm['usage_evening_ratio']}% 집중")
         c.drawString(56, 70, "• 마이파크는 시니어·주간 중심이라 고객층과 이용 시간대가 서로 달라 보완 관계로 공존할 수 있습니다")
 
+        self._draw_page_summary(c, f"소비 등급 {comm['spending_grade']}, 평일 10~17시 매출 비중 {comm['time_distribution']['주간_10_17시_비중']}% — 주간 영업만으로 매출을 만들 수 있는 구조입니다.")
         self._draw_footer(c, f"MYPARK 지역등급 추정 모델 | 인접 업종 비교: {_bm['source']} ({_bm['base_month']} 기준)")
         c.showPage()
 
@@ -597,6 +630,7 @@ class PDFGenerator:
         c.drawString(56, 142, "• 일반 골프의 파크골프 전환: 일반 골프 비용/체력 부담을 느끼는 시니어층의 스크린 파크골프 유입 가속화")
         c.drawString(56, 116, "• 정착 단계: 시니어 여가 문화의 핵심 종목으로 자리 잡아 가는 성장 국면")
 
+        self._draw_page_summary(c, f"시니어 여가 수요 지수 1위 {_top_ind['name']}({_top_ind['growth']}), 골프 시설 집적도 전국 평균의 {comm['golf_industry_density']['multiple']}배 — 골프 수요층이 이미 형성된 지역입니다.")
         self._draw_footer(c, "MYPARK Regional Tier Estimation Model")
         c.showPage()
 
@@ -759,6 +793,7 @@ class PDFGenerator:
             _comp_source = "Live POI Search (Kakao/TMap/Naver Cross-Verified)"
         else:
             _comp_source = "MYPARK Verified National Store Database"
+        self._draw_page_summary(c, _comp_summary)
         self._draw_footer(c, _comp_source)
         c.showPage()
 
@@ -827,6 +862,7 @@ class PDFGenerator:
                     y_l -= 13
                 y_l -= 5
 
+        self._draw_page_summary(c, f"{site['rooms']}타석 {site['area_pyeong']}평 출점에 필요한 층고 2.8m·주차 {max(8, int(site['rooms'] * 1.2))}대·전기 {max(25, site['rooms'] * 3)}kW 등 현장에서 확인할 항목을 정리했습니다.")
         self._draw_footer(c, "Building Code & Field Inspection Checklist")
         c.showPage()
         # ---------------------------------------------------------------------
@@ -979,6 +1015,7 @@ class PDFGenerator:
         c.setFillColor(self.c_slate)
         c.drawString(56, content_bottom + 6, "위 5개 지표의 상세 근거는 앞선 1~5장(인구·상권·업종·경쟁·사업지 개요)을 참조하십시오.")
 
+        self._draw_page_summary(c, f"5개 지표 종합 {score['total_score']}점 {score['grade']}등급 — {score['grade_desc']}. 지표별 산출 근거는 위 표에 그대로 적었습니다.")
         self._draw_footer(c, f"MYPARK 5-Dimension Diamond Scoring Methodology ({score['total_score']}점 {score['grade']}등급)")
         c.showPage()
 
@@ -992,7 +1029,7 @@ class PDFGenerator:
         # 블록 A (좌측): 표준 투자 조건 (전제조건 명시)
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
-        c.rect(40, 48, 425, 452, fill=1, stroke=1)
+        c.rect(40, 62, 425, 438, fill=1, stroke=1)
 
         c.setFillColor(self.c_mck_navy)
         c.rect(40, 458, 425, 42, fill=1, stroke=0)
@@ -1124,6 +1161,7 @@ class PDFGenerator:
         c.setFont(FONT_REGULAR, 7.5)
         c.drawString(525, ay - 4, f"(기준: {site['rooms']}타석 {site['area_pyeong']}평 / 총투자금 {fmt_eok(inv['total_capex'])} / 점주 {site['staff_count']}인 상주 운영 모델)")
 
+        self._draw_page_summary(c, f"초기 투자금 {inv['total_capex']//10000:,}만원(장비·인테리어·부대설비) 기준이며, 냉난방과 임대료는 조건에 따라 달라지는 선택 항목입니다.")
         self._draw_footer(c, "MYPARK Standard Investment Criteria & Reference Notes")
         c.showPage()
 
@@ -1184,7 +1222,7 @@ class PDFGenerator:
 
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
-        c.rect(40, 48, full_box_w, 196, fill=1, stroke=1)
+        c.rect(40, 62, full_box_w, 182, fill=1, stroke=1)
         c.setFont(FONT_BOLD, 10.5)
         c.setFillColor(self.c_mck_navy)
         c.drawString(56, 222, "■ 매출 추정 산출 기준")
@@ -1196,6 +1234,7 @@ class PDFGenerator:
         c.drawString(56, 142, f"• 부가 매출 2종: 파크골프 클럽/공/장갑 등 용품 판매(월 {scenarios['moderate']['goods_revenue']//10000:,}만원) + 음료/간식(월 {scenarios['moderate']['beverage_revenue']//10000:,}만원)")
         c.drawString(56, 116, "• 투명성 원칙: 레슨비, 락커룸 렌탈료 등 근거 없는 부가 항목을 일체 배제한 보수적이고 정직한 추정치")
 
+        self._draw_page_summary(c, f"가동률에 따라 월매출 {scenarios['conservative']['total_revenue']//10000:,}만~{scenarios['optimistic']['total_revenue']//10000:,}만원 — 보편 기준 {scenarios['moderate']['total_revenue']//10000:,}만원을 기준선으로 봅니다.")
         self._draw_footer(c, "MYPARK Standard Financial Model (120 Pyeong, 10 Rooms)")
         c.showPage()
 
@@ -1244,7 +1283,7 @@ class PDFGenerator:
 
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
-        c.rect(40, 48, full_box_w, 196, fill=1, stroke=1)
+        c.rect(40, 62, full_box_w, 182, fill=1, stroke=1)
         c.setFont(FONT_BOLD, 10.5)
         c.setFillColor(self.c_mck_navy)
         c.drawString(56, 222, "■ 운영 모델별 순영업이익 비교")
@@ -1256,6 +1295,7 @@ class PDFGenerator:
         c.drawString(56, 142, "• 낮은 변동비 구조: 원재료비 비중이 매우 낮아 매출이 늘수록 순이익이 빠르게 커지는 고마진 구조")
         c.drawString(56, 116, "• 고정비 방어력: 월 고정비가 낮아 비수기나 상권 초기 단계에서도 안정적 순영업이익 기반 유지")
 
+        self._draw_page_summary(c, f"월 고정비 {fin['owner_operated']['fixed_cost']//10000:,}만원 대비 보편 순영업이익 {scenarios['moderate']['operating_profit']//10000:,}만원(이익률 {scenarios['moderate']['profit_margin']}%) — 변동비 비중이 낮은 구조입니다.")
         self._draw_footer(c, "MYPARK Cost Structure & Operating Profit Analysis")
         c.showPage()
 
@@ -1340,7 +1380,7 @@ class PDFGenerator:
 
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
-        c.rect(40, 48, self.width - 80, 196, fill=1, stroke=1)
+        c.rect(40, 62, self.width - 80, 182, fill=1, stroke=1)
         c.setFillColor(self.c_mck_navy)
         c.rect(40, 216, self.width - 80, 28, fill=1, stroke=0)
         c.setFont(FONT_BOLD, 10)
@@ -1381,6 +1421,7 @@ class PDFGenerator:
         c.setFillColor(self.c_slate)
         c.drawString(56, 62, f"※ 타석 수를 줄이면 투자비는 낮아지나 인건비·관리비 등 고정비는 그대로 남아 회수기간이 오히려 길어집니다. 본 {site['rooms']}타석 모델이 고정비 분산 측면에서 유리한 구조입니다.")
 
+        self._draw_page_summary(c, f"타석당 하루 {inv['bep_turns_per_room']}회전이면 월 고정비를 모두 덮고, 보편 기준 {inv['payback_months_moderate']:.1f}개월에 투자금을 회수합니다.")
         self._draw_footer(c, "MYPARK BEP & Capital Payback Period Analysis")
         c.showPage()
 
@@ -1449,7 +1490,7 @@ class PDFGenerator:
         head_h12b = 26
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
-        c.rect(40, 48, 425, 196, fill=1, stroke=1)
+        c.rect(40, 62, 425, 182, fill=1, stroke=1)
         c.setFillColor(self.c_mck_navy)
         c.rect(40, 48 + 196 - head_h12b, 425, head_h12b, fill=1, stroke=0)
         c.setFont(FONT_BOLD, 10)
@@ -1481,6 +1522,7 @@ class PDFGenerator:
         for ll in val_l_lines:
             cur_y = self._draw_multiline_text(c, ll, 511, cur_y, max_chars=26, line_height=10.5, max_lines=5, color=self.c_charcoal) - 3
 
+        self._draw_page_summary(c, f"5개년 누적 매출 {fin['five_year']['total_5yr_revenue']/100000000:.1f}억원·누적 순영업이익 {fin['five_year']['total_5yr_profit']/100000000:.1f}억원 전망 — 회수 이후 구간의 수익 흐름을 정리했습니다.")
         self._draw_footer(c, "MYPARK 5-Year Financial Forecast & Final Strategic Recommendation")
         c.showPage()
 
