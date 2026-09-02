@@ -766,6 +766,8 @@ class PDFGenerator:
         # 동일한 숫자가 나오므로, 이 주소만의 실측치인 것처럼 문구를 쓰지 않는다.
         _infra = comm.get('infra', {})
         _bus_count = _infra.get('버스정류장', 30)
+        _infra_measured = score.get('infra_is_measured', False)
+        _sub_txt = _infra.get('지하철', '')
         _subway_info = _infra.get('지하철', '')
         _has_subway = '지하철' in _subway_info or '역세권' in _subway_info or _subway_info.endswith('역')
         if _has_subway or _bus_count >= 35:
@@ -776,6 +778,13 @@ class PDFGenerator:
             _access_desc = f"{comm.get('spending_grade', '')} 지역등급 기준 교통망 보통 수준 추정(버스정류장 약 {_bus_count}개소 수준, 자차 접근 동선 병행 검토 권장)"
         else:
             _access_desc = f"{comm.get('spending_grade', '')} 지역등급 기준 자차 이용 중심 상권 추정(버스정류장 약 {_bus_count}개소 수준, 주차 확보가 핵심 변수)"
+        if _infra_measured:
+            # 카카오 지도 데이터로 실제 시설 개수를 센 경우, 추정 문구 대신 실측값을 쓴다.
+            _access_desc = f"지도 데이터 실측 주변시설: {_sub_txt}"
+            _cnt_bits = [f"{k} {_infra[k]:,}개" for k in ('병원', '은행', '교육기관', '주차장')
+                         if isinstance(_infra.get(k), int)]
+            if _cnt_bits:
+                _access_desc += " | " + ", ".join(_cnt_bits)
         _access_desc += " / 실제 건물 주차면·도보거리는 본사 담당자와 현장 동행 시 정밀 산정"
 
         # 공간 적합성 지표: 실제 채점에 사용된 타석당 평수 구간을 그대로 근거 문구에 반영
@@ -792,7 +801,7 @@ class PDFGenerator:
 
         indicators = [
             ("시니어 인구 밀집도", score['scores']['senior_population'], 25, f"{pop_source_tag}: {'구 전체' if is_district_wide else '반경 3km 내'} 50대 이상 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%) / 본 매장 운영에 필요한 단골 약 {score.get('senior_customers_needed', 1200):,}명은 배후 시니어의 {score.get('senior_penetration', 0)}% 수준", not demo.get('is_estimated', False)),
-            ("접근성 및 주차 인프라", score['scores']['accessibility_parking'], 25, _access_desc + " (※ 건물 자체 주차·엘리베이터 아닌 상권 대중교통 통계 기준)", False),
+            ("접근성 및 주차 인프라", score['scores']['accessibility_parking'], 25, _access_desc + " (※ 건물 자체 주차·엘리베이터 아닌 상권 접근성 기준)", score.get('infra_is_measured', False)),
             ("공간 적합성 및 층고", score['scores']['space_efficiency'], 15, _space_desc if score.get('space_is_verified', True) else "룸/평수 미입력으로 표준값 대신 중립 점수 적용 (현장 실측 시 정밀 산정)", score.get('space_is_verified', True)),
             ("경쟁 매장 여유도", score['scores']['supply_gap'], 15, f"{comm.get('competitor_summary', '반경 3km 내 대형 플래그십 매장 공급 부족')}", score.get('gap_is_verified', False)),
             ("지역 소비력 및 여가지출", score['scores']['commercial_spending'], 20, f"MYPARK 지역등급(4단계 분류) 추정치: 골프용품 성장 +{comm['growth_rate']}% 및 스크린골프 상위 20% 월 {comm['top_20_sales']//10000:,}만원 상권 (동일 등급 지역은 동일 수치 적용, 개별 카드매출 실측 아님)", False),

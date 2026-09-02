@@ -140,6 +140,44 @@ class CommercialEngine:
             '버스정류장': bus_stop_count,
             '지하철': subway
         }
+        # 위 수치는 지역등급 기반 추정치다. 카카오 카테고리 검색으로 실제 개수를
+        # 셀 수 있으면 그 값으로 교체하고, 무엇이 실측인지 플래그로 남긴다.
+        # (특히 지하철은 '○○동 인근 지하철역'처럼 역명을 만들어내고 있었는데,
+        #  실제 역명과 실제 도보거리로 바꾼다.)
+        infra_is_measured = False
+        subway_detail = None
+        try:
+            from . import facility_client
+            _fx, _fy = CompetitorEngine.geocode_address(full_addr)
+            if _fx is not None:
+                _radius = (max(3000, min(district_radius_m or 8000, 20000))
+                           if district_wide else 3000)
+                counts = facility_client.fetch_facility_counts(_fx, _fy, radius=_radius)
+                if counts:
+                    infra_is_measured = True
+                    if counts.get('공공기관') is not None:
+                        infra['관공서'] = counts['공공기관']
+                    if counts.get('학교') is not None and counts.get('학원') is not None:
+                        infra['교육기관'] = counts['학교'] + counts['학원']
+                    elif counts.get('학교') is not None:
+                        infra['교육기관'] = counts['학교']
+                    if counts.get('은행') is not None:
+                        infra['금융기관'] = counts['은행']
+                    for _k in ('병원', '약국', '주차장', '카페', '대형마트', '문화시설'):
+                        if counts.get(_k) is not None:
+                            infra[_k] = counts[_k]
+                    _sub = facility_client.nearest_subway(_fx, _fy, radius=_radius)
+                    if _sub and _sub.get('name'):
+                        subway_detail = _sub
+                        _dist = _sub.get('distance_m')
+                        infra['지하철'] = (f"{_sub['name']} (직선 {_dist:,}m)" if _dist
+                                        else f"{_sub['name']}")
+                    elif _sub is not None:
+                        # 조회는 성공했는데 반경 내 역이 없음 — 없는 역을 만들지 않는다
+                        infra['지하철'] = '반경 내 지하철역 없음 (자차·버스 접근 중심 상권)'
+                        subway_detail = {'name': None, 'distance_m': None}
+        except Exception as e:
+            print(f"[FACILITY SKIP] {e}")
 
         # 반경 내 실제 업종 구성비 (공공데이터, DATA_GO_KR_API_KEY 없으면 None)
         # top_growth_industries(위 성장률 추정표)를 대체하는 게 아니라, "지금 이 순간
@@ -167,6 +205,8 @@ class CommercialEngine:
             'residential_pop_ratio': residential_ratio,
             'workplace_pop_ratio': workplace_ratio,
             'top_growth_industries': top_growth_industries,
+            'infra_is_measured': infra_is_measured,
+            'subway_detail': subway_detail,
             'golf_industry_density': golf_industry_density,
             'infra': infra,
             'competitors': comp_res['stores'],

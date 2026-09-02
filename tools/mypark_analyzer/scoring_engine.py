@@ -69,8 +69,18 @@ class ScoringEngine:
         infra = commercial_data.get('infra', {})
         bus_count = infra.get('버스정류장', 30)
         subway_info = infra.get('지하철', '')
-        has_subway = '지하철' in subway_info or '역세권' in subway_info or subway_info.endswith('역')
-        parking_is_verified = False  # 건물 단위 실측 아님 — 항상 False, 보고서에 '상권 통계 기준' 명시용
+        # 카카오 카테고리 검색으로 실제 역을 확인했으면 그 결과(subway_detail)를 쓴다.
+        # 문자열에 '지하철'이 들어있는지로 판정하던 방식은, 추정 문구까지 역세권으로
+        # 인정해 접근성 점수를 최고 등급으로 올려버리는 문제가 있었다.
+        _sub_detail = commercial_data.get('subway_detail')
+        if _sub_detail is not None:
+            has_subway = bool(_sub_detail.get('name'))
+        else:
+            has_subway = '지하철' in subway_info or '역세권' in subway_info or subway_info.endswith('역')
+        # 건물 단위 주차 실측은 여전히 불가. 다만 주변시설 개수를 실제로 센 경우에는
+        # 상권 접근성 근거가 추정이 아닌 실측이므로 그 사실을 보고서에 표기할 수 있게 한다.
+        parking_is_verified = False
+        infra_is_measured = bool(commercial_data.get('infra_is_measured'))
 
         if has_subway or bus_count >= 35:
             score_parking = 23.0
@@ -174,6 +184,7 @@ class ScoringEngine:
             'total_score': total_score,
             'grade': grade,
             'grade_desc': grade_desc,
+            'infra_is_measured': infra_is_measured,
             'gap_is_verified': gap_is_verified,
             'parking_is_verified': parking_is_verified,
             'space_is_verified': space_is_verified,
