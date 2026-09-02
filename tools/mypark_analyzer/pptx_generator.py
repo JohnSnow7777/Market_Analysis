@@ -300,7 +300,8 @@ class PPTXGenerator:
         self._add_mckinsey_header(s4, "2. 상권 소비력 및 유동 패턴 분석", f"주거지역 {comm.get('residential_pop_ratio', 93.4)}% 밀집 상권 및 유사 골프업종 상위 20% 월매출 {comm['top_20_sales']//10000:,}만원 시장 타겟팅")
         
         top20_str = f"{comm['top_20_sales']//10000:,}만원"
-        bot20_str = f"{comm.get('bottom_20_sales', 3020000)//10000:,}만원"
+        # 하위 20%는 산출값이 아닌 코드 기본값이라 제거하고 상권 평균으로 대체한다.
+        avg_str = f"{comm['monthly_avg_sales']//10000:,}만원"
         
         c4_1 = s4.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.6), Inches(1.45), Inches(3.9), Inches(1.78))
         c4_1.fill.solid()
@@ -315,7 +316,7 @@ class PPTXGenerator:
         p.font.color.rgb = self.c_mck_navy
         p_sub = tf4_1.add_paragraph()
         p_sub.space_before = Pt(4)
-        p_sub.text = f"• 상위 20% 매출: {top20_str} /월 (대형 최신 매장)\n• 하위 20% 매출: {bot20_str} /월 (노후 소형 매장)\n★ 마이파크 {site['rooms']}타석 플래그십은 상위 20% 시장 점유"
+        p_sub.text = f"• 상위 20% 매출: {top20_str} /월 (대형 최신 매장)\n• 상권 평균 매출: {avg_str} /월 (동일 상권 평균)\n★ 마이파크 {site['rooms']}타석 플래그십은 상위 20% 시장 점유"
         p_sub.font.size = Pt(8.8)
         p_sub.font.color.rgb = self.c_charcoal
         

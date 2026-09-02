@@ -182,7 +182,7 @@ class DemographicsEngine:
                 # 유지하되 가짜 동 이름을 나열하지 않도록, 6개 동 규모를 한 줄로
                 # 합쳐서 보여준다(아래 lifezone_fallback 분기에서 집계).
                 lifezone_fallback = True
-                lifezone_scope_label = f"{_scope} 생활권 (약 {LIFEZONE_DONG_COUNT}개 행정동 규모 추정)"
+                lifezone_scope_label = f"{_scope} 생활권"
                 target_dongs = []
 
         if target_dongs is None:
@@ -191,7 +191,7 @@ class DemographicsEngine:
             # 한 생활권(약 6개 동 규모) 추정으로 처리하고 근거를 라벨에 밝힌다.
             target_dongs_is_fallback = True
             lifezone_fallback = True
-            lifezone_scope_label = f"{dong} 중심 생활권 (약 {LIFEZONE_DONG_COUNT}개 행정동 규모 추정)"
+            lifezone_scope_label = f"{dong} 중심 생활권"
             center_dong = dong
             target_dongs = []
 
@@ -351,7 +351,7 @@ class DemographicsEngine:
                 sgis_used = True
                 if dong_list:
                     dong_list[0].update({
-                        'dong': f"{dong} 중심 생활권 (중심동 실측 {center_real:,}명 × 약 {LIFEZONE_DONG_COUNT}개 동 규모)",
+                        'dong': f"{dong} 중심 생활권 (중심동 실측 {center_real:,}명 기준)",
                         'male': tot_male, 'female': tot_female,
                         'total': tot_pop, 'senior_50': tot_senior_50,
                     })

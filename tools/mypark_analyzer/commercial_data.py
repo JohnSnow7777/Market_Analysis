@@ -110,16 +110,22 @@ class CommercialEngine:
         # (골프용품 성장률은 지역등급에 따라 변하는데 rank를 1로 고정해두면,
         #  지방 등급에서 62.1% < 스크린체육시설 84.2% 인데도 '1위'로 표기되어
         #  같은 페이지의 차트와 본문이 서로 모순되는 문제가 있었다.)
+        # [2026-09-02] 이 값들은 실제 매출 통계가 아니라 지역등급별로 정해둔
+        # 내부 참고 지수다. 예전에는 이를 '전년 대비 매출 성장률 +98.6%'처럼
+        # 확정된 실측치로 표기해, 근거를 댈 수 없는 수치가 보고서 전면에 나갔다.
+        # (실제 골프 업종은 최근 위축 국면이라는 지적도 받았다.)
+        # 명칭을 '시니어 여가 수요 지수'로 바꿔 무엇을 나타내는 값인지 분명히 하고,
+        # 출처 표기도 추정 모델임을 드러내도록 했다.
         _industry_pool = [
-            {'name': '골프 및 레저용품', 'value': float(growth_rate), 'status': '초고성장 / 시니어 소비 집중'},
-            {'name': '스크린 체육시설', 'value': 84.2, 'status': '고성장 / 실내 생활체육 선호'},
-            {'name': '체력단련 및 피트니스', 'value': 42.5, 'status': '안정 성장 / 건강관리 수요'},
+            {'name': '골프 및 레저용품', 'value': float(growth_rate), 'status': '시니어 소비 집중 업종'},
+            {'name': '스크린 체육시설', 'value': 84.2, 'status': '실내 생활체육 선호'},
+            {'name': '체력단련 및 피트니스', 'value': 42.5, 'status': '건강관리 수요'},
             {'name': '브런치 및 디저트카페', 'value': 31.8, 'status': '친목 모임 연계 소비'},
             {'name': '한식 및 건강음식점', 'value': 18.4, 'status': '생활밀착 단골 소비'},
         ]
         _industry_pool.sort(key=lambda d: d['value'], reverse=True)
         top_growth_industries = [
-            {'rank': i + 1, 'name': d['name'], 'growth': f"+{d['value']}%",
+            {'rank': i + 1, 'name': d['name'], 'growth': f"{d['value']:.0f}점",
              'value': d['value'], 'status': d['status']}
             for i, d in enumerate(_industry_pool)
         ]

@@ -214,7 +214,9 @@ class Visualizer:
         """업종 성장률 및 골프 특화도 페이지용 — TOP 5 매출 증가 업종 가로 막대 차트"""
         industries = commercial_data.get('top_growth_industries', [])
         names = [it['name'] for it in industries][::-1]
-        growths = [float(str(it['growth']).replace('%', '').replace('+', '')) for it in industries][::-1]
+        # 표시 문자열을 되파싱하지 않고 숫자 필드(value)를 그대로 쓴다.
+        # 라벨 형식이 바뀌면(%→점) 파싱이 깨지던 문제가 있었다.
+        growths = [float(it.get('value', 0)) for it in industries][::-1]
 
         fig, ax = plt.subplots(figsize=(7.5, 4.4), dpi=200)
         fig.patch.set_facecolor('#FFFFFF')
@@ -227,8 +229,8 @@ class Visualizer:
             ax.text(bar.get_width() + 3, bar.get_y() + bar.get_height() / 2, f"+{g:.1f}%",
                     va='center', fontsize=9.5, fontweight='bold', color='#14181F')
 
-        ax.set_title('업종별 매출 성장률 TOP 5 (전년 대비)', fontsize=11.5, fontweight='bold', pad=14, loc='left', color='#14181F')
-        ax.set_xlabel('매출 성장률 (%)', fontsize=9, fontweight='bold', color='#6B6F76')
+        ax.set_title('시니어 여가 수요 지수 TOP 5 (MYPARK 지역등급 추정)', fontsize=11.5, fontweight='bold', pad=14, loc='left', color='#14181F')
+        ax.set_xlabel('시니어 여가 수요 지수 (MYPARK 추정)', fontsize=9, fontweight='bold', color='#6B6F76')
         ax.tick_params(axis='y', labelsize=9.5, colors='#14181F')
         ax.tick_params(axis='x', labelsize=8.5, colors='#6B6F76')
         ax.grid(True, linestyle='-', alpha=0.3, axis='x', color='#D3D1CB', lw=0.8)

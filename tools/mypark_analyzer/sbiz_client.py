@@ -26,7 +26,11 @@ SBIZ_BASE = "https://apis.data.go.kr/B553077/api/open/sdsc2/storeListInRadius"
 
 # 스크린 파크골프 반경 경쟁사 탐지에 쓰는 업종 키워드
 # (표준산업분류/상권업종 명칭에 아래 키워드가 들어가면 경쟁/유사 업종으로 간주)
-GOLF_KEYWORDS = ['골프', '스크린골프', '파크골프']
+# 직접 경쟁: 스크린 파크골프와 같은 실내 시뮬레이터 업태
+DIRECT_KEYWORDS = ['파크골프', '스크린골프', '스크린 골프', '실내골프', '골프연습장']
+# 참고 업종: '골프'가 이름/업종에 들어가지만 업태가 다른 곳
+# (골프용품 소매업, 골프의류 등). 경쟁매장으로 세면 안 되고 참고로만 쓴다.
+GOLF_KEYWORDS = ['골프']
 
 
 def search_stores_in_radius(x, y, radius=3000, page_no=1, num_rows=100):
@@ -74,7 +78,18 @@ def search_stores_in_radius(x, y, radius=3000, page_no=1, num_rows=100):
 def _norm(store):
     """원본 상가업소 레코드를 프로젝트 공통 competitor 스키마로 변환."""
     name = store.get('bizesNm') or store.get('bizesnm') or store.get('상호명') or '이름 미상'
-    addr = store.get('rdnmadr') or store.get('lnoadr') or store.get('adres') or ''
+    # 주소 필드명이 문서로 확정되지 않아 후보를 넓게 본다. 그래도 못 찾으면
+    # 값 자체가 주소처럼 생긴 필드를 찾는다(보고서에 주소가 공란으로 나가던 문제).
+    addr = (store.get('rdnmAdr') or store.get('rdnmadr') or store.get('lnoAdr')
+            or store.get('lnoadr') or store.get('adres') or store.get('newAddr')
+            or store.get('jibunAddr') or '')
+    if not addr:
+        for k, v in store.items():
+            if not isinstance(v, str) or len(v) < 6:
+                continue
+            if ('로 ' in v or '길 ' in v or v.endswith('로') or v.endswith('길')) and                     any(t in v for t in ('시', '군', '구')):
+                addr = v
+                break
     category = store.get('indsSclsNm') or store.get('indsMclsNm') or store.get('indsLclsNm') or ''
     return {'name': name, 'address': addr, 'category': category, 'raw': store}
 
@@ -88,18 +103,44 @@ def find_golf_competitors(x, y, radius=3000):
     items = search_stores_in_radius(x, y, radius=radius, num_rows=500)
     if items is None:
         return None
+    # 예전에는 '골프' 두 글자만 걸리면 전부 경쟁매장으로 실어, 골프용품 소매점과
+    # 골프의류점까지 '경쟁 매장' 카드에 올라갔다. 업태가 다른 곳은 경쟁이 아니므로
+    # 실내 시뮬레이터 업태(직접 경쟁)만 남기고, 나머지는 참고 업종으로 분리한다.
+    direct, related = [], []
+    for it in items:
+        norm = _norm(it)
+        blob = (norm['category'] or '') + ' ' + (norm['name'] or '')
+        entry = {
+            'name': norm['name'],
+            'address': norm['address'],
+            'system': f"소상공인 상가정보 등록 업종: {norm['category']}" if norm['category'] else '업종 미상',
+            'rooms': 0,
+            'features': f"공공데이터(소상공인시장진흥공단) 상가업소 DB 등록 (업종: {norm['category'] or '미상'})",
+            'status': '공공DB 등록 확인',
+            'category': norm['category'] or '',
+        }
+        if any(kw in blob for kw in DIRECT_KEYWORDS):
+            direct.append(entry)
+        elif any(kw in blob for kw in GOLF_KEYWORDS):
+            related.append(entry)
+    # 직접 경쟁이 하나도 없으면 그 사실 자체가 결과다(참고 업종을 경쟁으로 올리지 않음).
+    return direct
+
+
+def find_related_golf_businesses(x, y, radius=3000):
+    """직접 경쟁은 아니지만 골프 수요를 보여주는 참고 업종(용품점 등). 실패 시 None."""
+    items = search_stores_in_radius(x, y, radius=radius, num_rows=500)
+    if items is None:
+        return None
     out = []
     for it in items:
         norm = _norm(it)
-        if any(kw in norm['category'] for kw in GOLF_KEYWORDS) or any(kw in norm['name'] for kw in GOLF_KEYWORDS):
-            out.append({
-                'name': norm['name'],
-                'address': norm['address'],
-                'system': f"소상공인 상가정보 등록 업종: {norm['category']}" if norm['category'] else '업종 미상',
-                'rooms': 0,
-                'features': f"공공데이터(소상공인시장진흥공단) 상가업소 DB 등록 확인 (업종: {norm['category'] or '미상'})",
-                'status': '공공DB 등록 확인'
-            })
+        blob = (norm['category'] or '') + ' ' + (norm['name'] or '')
+        if any(kw in blob for kw in DIRECT_KEYWORDS):
+            continue
+        if any(kw in blob for kw in GOLF_KEYWORDS):
+            out.append({'name': norm['name'], 'address': norm['address'],
+                        'category': norm['category'] or '미상'})
     return out
 
 

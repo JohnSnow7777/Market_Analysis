@@ -260,9 +260,57 @@ class PDFGenerator:
             c.setFillColor(self.c_mck_teal)
             c.drawRightString(429, _ny - 8, f"{demo['senior_ratio']}%")
 
+        # 생활권 추정(SGIS 동별 내역을 못 받은 경우)은 행이 한 줄뿐이라 표가 비어
+        # 보였다. 지어낸 동 이름을 채우는 대신, 실제로 산출된 값들(성별·연령 구성,
+        # 배후 공동주택)을 같은 표에 이어 붙여 근거를 보여준다.
+        if demo.get('lifezone_estimated') and len(demo['dongs']) <= 1:
+            _lz = demo['dongs'][0] if demo['dongs'] else {}
+            _apt = demo.get('apartment_summary') or {}
+            # 첫 행 이름이 길면 총인구 숫자와 겹치므로 폭에 맞춰 줄인다.
+            _lz_name = str(_lz.get('dong', '생활권 추정'))
+            while _lz_name and pdfmetrics.stringWidth(_lz_name, FONT_BOLD, 8.5) > 150:
+                _lz_name = _lz_name[:-1]
+            if _lz_name != str(_lz.get('dong', '')):
+                _lz_name = _lz_name.rstrip('( ') + '…'
+            _rows = [
+                (_lz_name, f"{demo['total_pop']:,}명",
+                 f"{demo['senior_50_plus']:,}명", f"{demo['senior_ratio']}%"),
+                # 남/여는 '50대 이상' 열에 들어가면 오해를 주므로 한 칸에 함께 적는다.
+                ("  └ 남성 / 여성", f"{demo['male_pop']:,} / {demo['female_pop']:,}명", "", ""),
+                ("  └ 50대 (액티브)", f"{demo['pop_50s']:,}명", "", f"{demo['ratio_50s']}%"),
+                ("  └ 60대 (은퇴 시니어)", f"{demo['pop_60s']:,}명", "", f"{demo['ratio_60s']}%"),
+                ("  └ 70대 이상 (실버)", f"{demo['pop_70_plus']:,}명", "", f"{demo['ratio_70_plus']}%"),
+            ]
+            if _apt.get('complex_count'):
+                _rows.append(("  └ 배후 공동주택", f"{_apt['complex_count']:,}개 단지",
+                              f"{_apt.get('total_households_sample', 0):,}세대(표본)", ""))
+            _ry = col_y - 26
+            for _i, (_c1, _c2, _c3, _c4) in enumerate(_rows):
+                if _i % 2 == 1:
+                    c.setFillColor(self.c_box_bg)
+                    c.rect(41, _ry - 7, 423, 22, fill=1, stroke=0)
+                c.setFont(FONT_BOLD if _i == 0 else FONT_REGULAR, 8.5)
+                c.setFillColor(self.c_charcoal)
+                c.drawString(56, _ry, _c1)
+                c.drawRightString(230, _ry, _c2)
+                c.drawRightString(330, _ry, _c3)
+                if _c4:
+                    c.setFillColor(self.c_mck_teal)
+                    c.setFont(FONT_BOLD, 8.5)
+                    c.drawRightString(429, _ry, _c4)
+                _ry -= 22
+            c.setFont(FONT_REGULAR, 7.5)
+            c.setFillColor(self.c_slate)
+            c.drawString(56, tbl_bottom + 10,
+                         f"※ 생활권 범위는 반경 3km에 통상 포함되는 행정동 {demo.get('lifezone_dong_count', 6)}개 규모로 추정 "
+                         "| 행정동별 세부 내역은 SGIS 조회 가능 지역에서 동 단위로 표시됩니다.")
+            demo_rows_drawn = True
+        else:
+            demo_rows_drawn = False
+
         row_h1 = min(24, (col_y - 8 - (tbl_bottom + 12)) / max(1, len(demo['dongs'][:6])))
         y_d = col_y - 8 - row_h1 + 7
-        for ridx, d in enumerate(demo['dongs'][:6]):
+        for ridx, d in enumerate([] if demo_rows_drawn else demo['dongs'][:6]):
             if ridx % 2 == 1:
                 c.setFillColor(self.c_box_bg)
             else:
@@ -418,7 +466,10 @@ class PDFGenerator:
         ry = chart_top - head_h - 22
         c.drawString(511, ry, f"• 상위 20% 매장 월매출: 약 {comm['top_20_sales']//10000:,}만원 (대형 최신 매장)")
         ry -= 20
-        c.drawString(511, ry, f"• 하위 20% 매장 월매출: 약 {comm.get('bottom_20_sales', 3020000)//10000:,}만원 (노후 소형 매장)")
+        # 하위 20%(302만원)는 실제로 산출된 값이 아니라 코드에 박힌 기본값이었고,
+        # 창업 검토자에게 "내가 저기 속할 수도 있다"는 인상만 남겼다.
+        # 실제 산출값인 상권 평균을 비교 기준으로 쓴다.
+        c.drawString(511, ry, f"• 상권 평균 매장 월매출: 약 {comm['monthly_avg_sales']//10000:,}만원 (동일 상권 평균)")
         ry -= 20
         c.drawString(511, ry, "• 시장 특성: 시설 규모와 쾌적성에 따른 매출 양극화 뚜렷")
         ry -= 20
