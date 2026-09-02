@@ -17,12 +17,23 @@ None을 반환하도록 방어적으로 작성했다 (호출부는 기존 추정
 """
 import os
 import json
+import time
 import urllib.request
 import urllib.parse
 
 SGIS_BASE = "https://sgisapi.kostat.go.kr/OpenAPI3"
 SGIS_SERVICE_ID_ENV = "SGIS_SERVICE_ID"
 SGIS_SECURITY_KEY_ENV = "SGIS_SECURITY_KEY"
+
+# SGIS 호출은 응답이 느려(1회당 1~2초) 순차 호출이 그대로 응답 시간이 된다.
+# 실측 결과 인구 분석 단계가 전체 응답의 60~72%(12~22초)를 차지했고, 그 대부분이
+# 매 요청 반복되는 인증·지역코드 조회였다. 아래 세 가지는 요청 간에 바뀌지 않는
+# 값이라 캐시해 재사용한다(서버리스 인스턴스가 살아있는 동안 유지).
+_TOKEN_CACHE = {'token': None, 'expires_at': 0.0}
+_TOKEN_TTL_SEC = 3 * 3600          # 발급 후 4시간 유효 — 여유를 두고 3시간만 쓴다
+_REGION_CD_CACHE = {}              # (부모코드, 지역명) -> 지역코드 (행정구역은 고정값)
+_POP_YEAR_CACHE = {'year': None}   # 조회에 성공한 연도 — 실패 연도 재시도를 없앤다
+_SGIS_CACHE_MAX = 512
 
 
 def _get(path, params, timeout=4):
@@ -33,17 +44,25 @@ def _get(path, params, timeout=4):
 
 
 def get_access_token():
-    """환경변수에 키가 없거나 인증 실패 시 None."""
+    """환경변수에 키가 없거나 인증 실패 시 None.
+
+    토큰은 4시간 유효한데 매 요청 재발급하고 있었다. 유효기간 내에는 재사용한다.
+    """
     consumer_key = os.environ.get(SGIS_SERVICE_ID_ENV)
     consumer_secret = os.environ.get(SGIS_SECURITY_KEY_ENV)
     if not consumer_key or not consumer_secret:
         return None
+    if _TOKEN_CACHE['token'] and time.time() < _TOKEN_CACHE['expires_at']:
+        return _TOKEN_CACHE['token']
     try:
         data = _get('auth/authentication.json', {
             'consumer_key': consumer_key,
             'consumer_secret': consumer_secret,
         })
         token = data.get('result', {}).get('accessToken')
+        if token:
+            _TOKEN_CACHE['token'] = token
+            _TOKEN_CACHE['expires_at'] = time.time() + _TOKEN_TTL_SEC
         return token
     except Exception as e:
         print(f"[SGIS AUTH FAIL] {e}")
@@ -69,6 +88,15 @@ class _CallBudget:
             return False
         self.used += n
         return True
+
+
+def _remember_region(key, cd):
+    """지역코드 캐시에 저장하고 그대로 반환. 무한 증가만 막는다."""
+    if cd:
+        if len(_REGION_CD_CACHE) >= _SGIS_CACHE_MAX:
+            _REGION_CD_CACHE.clear()
+        _REGION_CD_CACHE[key] = cd
+    return cd
 
 
 def _row_name(row):
@@ -164,7 +192,14 @@ def _find_region_named(access_token, parent_cd, target_name):
 
 
 def _find_region_cd(access_token, parent_cd, target_name):
-    """addr/stage.json 한 단계를 조회해 target_name과 일치하는 지역의 cd를 찾는다."""
+    """addr/stage.json 한 단계를 조회해 target_name과 일치하는 지역의 cd를 찾는다.
+
+    행정구역 코드는 바뀌지 않으므로 조회 결과를 캐시한다. 이 조회가 주소 1건당
+    3회 순차로 일어나 인구 분석 지연의 큰 몫을 차지했다.
+    """
+    _ck = (parent_cd, target_name)
+    if _ck in _REGION_CD_CACHE:
+        return _REGION_CD_CACHE[_ck]
     try:
         params = {'accessToken': access_token}
         if parent_cd:
@@ -179,11 +214,11 @@ def _find_region_cd(access_token, parent_cd, target_name):
         for row in rows:
             name = str(row.get('addr_name', '')).replace(' ', '')
             if name == clean_target:
-                return row.get('cd')
+                return _remember_region(_ck, row.get('cd'))
         for row in rows:
             name = str(row.get('addr_name', '')).replace(' ', '')
             if len(clean_target) >= 2 and clean_target in name:
-                return row.get('cd')
+                return _remember_region(_ck, row.get('cd'))
         # 앞 두 글자만 같은 지역을 반환하던 폴백은 제거했다. 요청한 동이 그 구에
         # 없을 때(상류에서 잘못된 동 이름이 넘어온 경우) 엉뚱한 동의 실측 인구를
         # 조용히 가져와 오염시키기 때문이다. 못 찾으면 못 찾았다고 하는 편이 낫다.
@@ -411,7 +446,14 @@ def get_population_by_age(access_token, adm_cd, year=None):
     반환 형식(성공 시): {'total': int, 'age_buckets': {age_label: count, ...}}
     """
     import datetime
-    years_to_try = [str(year)] if year else [str(datetime.datetime.now().year - i) for i in (1, 2, 3)]
+    if year:
+        years_to_try = [str(year)]
+    elif _POP_YEAR_CACHE['year']:
+        # 이미 성공한 연도를 알고 있으면 실패하는 연도를 다시 시도하지 않는다.
+        # (자료가 없는 연도를 매 호출 1~2회씩 헛되이 조회하고 있었다.)
+        years_to_try = [_POP_YEAR_CACHE['year']]
+    else:
+        years_to_try = [str(datetime.datetime.now().year - i) for i in (1, 2, 3)]
     for yr in years_to_try:
         try:
             data = _get('stats/searchpopulation.json', {
@@ -427,6 +469,7 @@ def get_population_by_age(access_token, adm_cd, year=None):
             total = row.get('tot_ppltn') or row.get('population') or row.get('avg_age')
             if total is None:
                 continue
+            _POP_YEAR_CACHE['year'] = yr
             return {'raw': row, 'total': int(total), 'year': yr}
         except Exception as e:
             print(f"[SGIS POPULATION FAIL] adm_cd={adm_cd} year={yr}: {e}")
