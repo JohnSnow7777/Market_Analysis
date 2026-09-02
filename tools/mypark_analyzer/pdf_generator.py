@@ -780,7 +780,8 @@ class PDFGenerator:
             _access_desc = f"{comm.get('spending_grade', '')} 지역등급 기준 자차 이용 중심 상권 추정(버스정류장 약 {_bus_count}개소 수준, 주차 확보가 핵심 변수)"
         if _infra_measured:
             # 카카오 지도 데이터로 실제 시설 개수를 센 경우, 추정 문구 대신 실측값을 쓴다.
-            _access_desc = f"지도 데이터 실측 주변시설: {_sub_txt}"
+            _scope_lbl = f"{demo.get('district_scope_name', '')} 전역" if demo.get('district_wide_analysis') else "반경 3km"
+            _access_desc = f"지도 데이터 실측({_scope_lbl} 기준): {_sub_txt}"
             _cnt_bits = [f"{k} {_infra[k]:,}개" for k in ('병원', '은행', '교육기관', '주차장')
                          if isinstance(_infra.get(k), int)]
             if _cnt_bits:

@@ -627,8 +627,9 @@ class PPTXGenerator:
         tf2 = tb2.text_frame
         tf2.word_wrap = True
 
-        # 접근성 지표: infra(버스정류장 수 등)는 실측 API가 아니라 지역등급(4단계)별
-        # 고정값 테이블에서 나온다 — 이 주소만의 실측치인 것처럼 쓰지 않는다.
+        # 접근성 지표: 카카오 지도로 실제 시설 개수를 센 경우(infra_is_measured)에는
+        # 실측값을, 그렇지 않으면 지역등급(4단계)별 고정값을 쓴다. 어느 쪽인지는
+        # 배지와 문구로 반드시 구분해 표기한다.
         _infra = comm.get('infra', {})
         _bus_count = _infra.get('버스정류장', 30)
         _subway_info = _infra.get('지하철', '')
@@ -641,6 +642,13 @@ class PPTXGenerator:
             _access_desc = f"{comm.get('spending_grade', '')} 지역등급 기준 교통망 보통 수준 추정(버스정류장 약 {_bus_count}개소 수준, 자차 접근 동선 병행 검토 권장)"
         else:
             _access_desc = f"{comm.get('spending_grade', '')} 지역등급 기준 자차 이용 중심 상권 추정(버스정류장 약 {_bus_count}개소 수준, 주차 확보가 핵심 변수)"
+        if score.get('infra_is_measured'):
+            _scope_lbl8 = f"{demo.get('district_scope_name', '')} 전역" if demo.get('district_wide_analysis') else "반경 3km"
+            _access_desc = f"지도 데이터 실측({_scope_lbl8} 기준): {_infra.get('지하철', '')}"
+            _bits8 = [f"{k} {_infra[k]:,}개" for k in ('병원', '은행', '교육기관', '주차장')
+                      if isinstance(_infra.get(k), int)]
+            if _bits8:
+                _access_desc += " | " + ", ".join(_bits8)
         _access_desc += " / 실제 건물 주차면·도보거리는 본사 담당자와 현장 동행 시 정밀 산정"
 
         # 공간 적합성: 룸/평수 미입력 시(is_auto_estimated) 표준값 대신 중립 점수를
