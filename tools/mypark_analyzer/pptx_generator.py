@@ -370,11 +370,11 @@ class PPTXGenerator:
         self._add_source_footer(s4, "MYPARK Regional Tier Estimation Model")
 
         # ---------------------------------------------------------------------
-        # Slide 5: 4. 업종 성장률 및 골프 특화도
+        # Slide 5: 4. 시니어 여가 수요 지수 및 골프 특화도
         # ---------------------------------------------------------------------
         s5 = self.prs.slides.add_slide(self.blank_layout)
         _top_ind_s5 = comm['top_growth_industries'][0]
-        self._add_mckinsey_header(s5, "3. 업종 성장률 및 골프 특화도", f"성장률 1위 업종 {_top_ind_s5['name']}({_top_ind_s5['growth']}) 및 전국 평균 대비 {comm['golf_industry_density']['multiple']}배 높은 골프 특화 상권")
+        self._add_mckinsey_header(s5, "3. 시니어 여가 수요 지수 및 골프 특화도", f"수요 지수 1위 업종 {_top_ind_s5['name']}({_top_ind_s5['growth']}) 및 전국 평균 대비 {comm['golf_industry_density']['multiple']}배 높은 골프 특화 상권")
         
         if 'growth_radar' in charts and os.path.exists(charts['growth_radar']):
             s5.shapes.add_picture(charts['growth_radar'], Inches(0.6), Inches(1.45), width=Inches(5.9))
@@ -391,7 +391,7 @@ class PPTXGenerator:
         table_s5.columns[2].width = Inches(1.4)
         table_s5.columns[3].width = Inches(1.6)
         
-        headers5 = ["순위", "업종명", "매출성장률", "성장 상태"]
+        headers5 = ["순위", "업종명", "수요 지수", "업종 특성"]
         for c_idx, h in enumerate(headers5):
             self._format_cell(table_s5.cell(0, c_idx), h, font_size=9.5, bold=True, color=self.c_white, bg_color=self.c_mck_navy)
             

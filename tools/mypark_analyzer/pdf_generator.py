@@ -518,10 +518,10 @@ class PDFGenerator:
         c.showPage()
 
         # ---------------------------------------------------------------------
-        # Page 5: 4. 업종 성장률 및 골프 특화도
+        # Page 5: 4. 시니어 여가 수요 지수 및 골프 특화도
         # ---------------------------------------------------------------------
         _top_ind = comm['top_growth_industries'][0]
-        self._draw_mckinsey_header(c, "3. 업종 성장률 및 골프 특화도", f"성장률 1위 업종 {_top_ind['name']}({_top_ind['growth']}) 및 전국 평균 대비 {comm['golf_industry_density']['multiple']}배 높은 골프 특화 상권")
+        self._draw_mckinsey_header(c, "3. 시니어 여가 수요 지수 및 골프 특화도", f"수요 지수 1위 업종 {_top_ind['name']}({_top_ind['growth']}) 및 전국 평균 대비 {comm['golf_industry_density']['multiple']}배 높은 골프 특화 상권")
 
         if 'growth_radar' in charts and os.path.exists(charts['growth_radar']):
             c.drawImage(charts['growth_radar'], 40, chart_bottom, width=440, height=chart_h, preserveAspectRatio=True, anchor='n')
@@ -542,7 +542,7 @@ class PDFGenerator:
         c.setFillColor(self.c_slate)
         c.drawString(511, col_y5, "순위")
         c.drawString(535, col_y5, "업종명")
-        c.drawRightString(670, col_y5, "성장률")
+        c.drawRightString(670, col_y5, "수요 지수")
         c.drawString(693, col_y5, "업종 상태")
         c.setStrokeColor(self.c_line)
         c.line(511, col_y5 - 8, box4_right - 16, col_y5 - 8)

@@ -775,11 +775,11 @@
                 </div>
 
                 <div class="report-section">
-                    <div class="report-section-title"><span class="report-section-num">3</span>업종 성장률 및 골프 특화도</div>
+                    <div class="report-section-title"><span class="report-section-num">3</span>시니어 여가 수요 지수 및 골프 특화도</div>
                     <div class="report-section-sub" id="repGrowthSub">-</div>
                     <div class="table-responsive">
                         <table class="report-table">
-                            <thead><tr><th>순위</th><th>업종명</th><th>매출 성장률</th><th>업종 상태</th></tr></thead>
+                            <thead><tr><th>순위</th><th>업종명</th><th>수요 지수</th><th>업종 특성</th></tr></thead>
                             <tbody id="repGrowthTable"></tbody>
                         </table>
                     </div>
@@ -1001,7 +1001,7 @@
             document.getElementById('repCommSub').innerText = `${site.sigungu || ''} 상권 소비력 등급: ${comm.spending_grade}`;
             document.getElementById('repCommList').innerHTML = `
                 <li>상위 20% 매장 월매출: 약 ${manWon(comm.top_20_sales)} (대형 최신 매장)</li>
-                <li>매출 성장률: ${(comm.top_growth_industries && comm.top_growth_industries[0]) ? comm.top_growth_industries[0].name + ' ' + comm.top_growth_industries[0].growth + ' (전 업종 1위)' : '골프·레저용품 +' + comm.growth_rate + '%'}</li>
+                <li>시니어 여가 수요 지수 1위: ${(comm.top_growth_industries && comm.top_growth_industries[0]) ? comm.top_growth_industries[0].name + ' ' + comm.top_growth_industries[0].growth : '-'} (MYPARK 지역등급 추정)</li>
                 <li>골프 인프라 밀집도: 전국 평균 대비 ${comm.golf_industry_density ? comm.golf_industry_density.multiple : '-'}배</li>
                 <li>데이터 출처: ${comm.base_source || 'MYPARK 지역등급 추정 모델'}${comm.is_estimated ? ' (추정치)' : ''}</li>`;
             document.getElementById('repTimeList').innerHTML = `
@@ -1009,9 +1009,9 @@
                 <li>시간대별 비중: 주간(10~17시) ${comm.time_distribution['주간_10_17시_비중']}% 집중 가동</li>
                 <li>4인 1팀 단체 이용 중심으로 식음료·용품 부가 매출 발생</li>`;
 
-            // 3) 업종 성장률
+            // 3) 시니어 여가 수요 지수
             const topInd = (comm.top_growth_industries && comm.top_growth_industries[0]) || { name: '골프용품', growth: '+' + comm.growth_rate + '%' };
-            document.getElementById('repGrowthSub').innerText = `성장률 1위 업종: ${topInd.name}(${topInd.growth})`;
+            document.getElementById('repGrowthSub').innerText = `수요 지수 1위 업종: ${topInd.name}(${topInd.growth})`;
             document.getElementById('repGrowthTable').innerHTML = comm.top_growth_industries.map(it =>
                 `<tr><td>${it.rank}</td><td>${it.name}</td><td style="color:var(--emerald); font-weight:700;">${it.growth}</td><td>${it.status}</td></tr>`
             ).join('');

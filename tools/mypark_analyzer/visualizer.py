@@ -211,7 +211,7 @@ class Visualizer:
 
     @staticmethod
     def generate_industry_growth_chart(commercial_data, output_path):
-        """업종 성장률 및 골프 특화도 페이지용 — TOP 5 매출 증가 업종 가로 막대 차트"""
+        """시니어 여가 수요 지수 페이지용 — TOP 5 업종 가로 막대 차트"""
         industries = commercial_data.get('top_growth_industries', [])
         names = [it['name'] for it in industries][::-1]
         # 표시 문자열을 되파싱하지 않고 숫자 필드(value)를 그대로 쓴다.
