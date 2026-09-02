@@ -9,6 +9,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from .config import DEFAULT_SETTINGS, fmt_eok, fmt_won_full, fmt_months
 from .finance_engine import FinanceEngine
+from .config import DRIVING_RANGE_BENCHMARK
 
 # -----------------------------------------------------------------------------
 # TTF 폰트 등록
@@ -438,19 +439,31 @@ class PDFGenerator:
 
         c.setFillColor(self.c_box_bg)
         c.setStrokeColor(self.c_line)
-        c.rect(40, 96, self.width - 80, 148, fill=1, stroke=1)
+        c.rect(40, 60, self.width - 80, 184, fill=1, stroke=1)
         c.setFont(FONT_BOLD, 10.5)
         c.setFillColor(self.c_mck_navy)
-        c.drawString(56, 222, "■ 상권 소비력 종합 평가")
+        c.drawString(56, 222, "■ 상권 소비력 종합 평가 및 인접 업종 대비 차별화")
 
         c.setFont(FONT_REGULAR, 9)
         c.setFillColor(self.c_charcoal)
-        c.drawString(56, 194, f"• 소비 수준: {comm['spending_grade']} (시니어 여가 및 생활체육 소비 여력 충분)")
-        c.drawString(56, 168, f"• 주간 매출 집중형: 평일 10~17시 매출 비중이 {comm['time_distribution']['주간_10_17시_비중']}%로 주간 시간대 수익 창출력 탁월")
-        c.drawString(56, 142, "• 4인 1팀 단체 이용: 파크골프 1팀당 식음료 및 추가 게임비 지출로 객단가 극대화")
-        c.drawString(56, 116, "• 안정적 단골 매출: 동호회 정기 예약(월 단위 선결제) 비중이 높아 계절성 리스크 방어")
+        c.drawString(56, 198, f"• 소비 수준: {comm['spending_grade']} (시니어 여가 및 생활체육 소비 여력 충분)")
+        c.drawString(56, 176, f"• 주간 매출 집중형: 평일 10~17시 매출 비중이 {comm['time_distribution']['주간_10_17시_비중']}%로 주간 시간대 수익 창출력 탁월")
+        c.drawString(56, 154, "• 4인 1팀 단체 이용: 파크골프 1팀당 식음료 및 추가 게임비 지출로 객단가 극대화")
+        c.drawString(56, 132, "• 안정적 단골 매출: 동호회 정기 예약(월 단위 선결제) 비중이 높아 계절성 리스크 방어")
 
-        self._draw_footer(c, "MYPARK Regional Tier Estimation Model")
+        # 인접 업종(골프 연습장) 실측 지표를 나란히 두어 고객층·시간대가 겹치지
+        # 않는다는 점을 근거로 보여준다. 각 수치의 적용 범위(전국/사례)를 함께 적어
+        # 다른 지역 수치를 이 사업지 것처럼 읽히지 않도록 한다.
+        _bm = DRIVING_RANGE_BENCHMARK
+        c.setFillColor(self.c_mck_teal)
+        c.setFont(FONT_BOLD, 9)
+        c.drawString(56, 108, f"★ 인접 업종(골프 연습장) 비교 — 전국 업소당 월평균 매출 {_bm['national_monthly_sales_manwon']:,}만원 / 전국 {_bm['national_store_count']:,}개소")
+        c.setFont(FONT_REGULAR, 9)
+        c.setFillColor(self.c_charcoal)
+        c.drawString(56, 88, f"• 골프 연습장 이용 특성({_bm['usage_scope']}): 남성 {_bm['usage_male_ratio']}%, 40~50대 {_bm['usage_age_40_50_ratio']}%, 저녁 18~23시 {_bm['usage_evening_ratio']}% 집중")
+        c.drawString(56, 70, "• 마이파크는 시니어·주간 중심이라 고객층과 이용 시간대가 겹치지 않아, 경쟁이 아닌 보완 관계로 공존 가능합니다")
+
+        self._draw_footer(c, f"MYPARK 지역등급 추정 모델 | 인접 업종 비교: {_bm['source']} ({_bm['base_month']} 기준)")
         c.showPage()
 
         # ---------------------------------------------------------------------

@@ -6,7 +6,7 @@ from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.enum.shapes import MSO_SHAPE
-from .config import DEFAULT_SETTINGS, fmt_eok, fmt_won_full, fmt_months
+from .config import DEFAULT_SETTINGS, fmt_eok, fmt_won_full, fmt_months, DRIVING_RANGE_BENCHMARK
 from .finance_engine import FinanceEngine
 
 
@@ -332,7 +332,17 @@ class PPTXGenerator:
         p.font.color.rgb = self.c_mck_navy
         p_sub2 = tf4_2.add_paragraph()
         p_sub2.space_before = Pt(4)
-        p_sub2.text = f"• 요일별: 주중 {100 - comm['day_distribution']['주말평균비중']*2:.1f}% / 주말 {comm['day_distribution']['주말평균비중']*2:.1f}%\n• 시간대: 주간(10~17시) {comm['time_distribution']['주간_10_17시_비중']}% 집중 가동\n• 인구 특성: 주거 {comm['residential_pop_ratio']}% / 직장 {comm['workplace_pop_ratio']}%"
+        # 인접 업종(골프 연습장) 실측 지표를 함께 실어 고객층·시간대가 겹치지 않음을
+        # 근거로 보여준다. 각 수치의 적용 범위(전국/사례)를 반드시 함께 적는다.
+        _bm4 = DRIVING_RANGE_BENCHMARK
+        p_sub2.text = (
+            f"• 요일별: 주중 {100 - comm['day_distribution']['주말평균비중']*2:.1f}% / 주말 {comm['day_distribution']['주말평균비중']*2:.1f}%\n"
+            f"• 시간대: 주간(10~17시) {comm['time_distribution']['주간_10_17시_비중']}% 집중 가동\n"
+            f"• 인구 특성: 주거 {comm['residential_pop_ratio']}% / 직장 {comm['workplace_pop_ratio']}%\n"
+            f"• 인접 업종 비교(골프 연습장): 전국 업소당 월평균 {_bm4['national_monthly_sales_manwon']:,}만원, "
+            f"{_bm4['usage_scope']} 남성 {_bm4['usage_male_ratio']}%·저녁 {_bm4['usage_evening_ratio']}% 집중\n"
+            f"  → 마이파크는 시니어·주간 중심이라 고객층·시간대가 겹치지 않아 보완 관계 "
+            f"({_bm4['source']}, {_bm4['base_month']} 기준)")
         p_sub2.font.size = Pt(8.8)
         p_sub2.font.color.rgb = self.c_charcoal
         
