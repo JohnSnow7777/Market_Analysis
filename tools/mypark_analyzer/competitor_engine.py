@@ -463,7 +463,7 @@ class CompetitorEngine:
             stores.append({
                 'name': d.get('place_name', '이름 미상'),
                 'address': d.get('road_address_name') or d.get('address_name', ''),
-                'system': '시스템 사양은 현장 확인이 필요합니다.',
+                'system': '스크린 시뮬레이터 (사양 현장 확인)',
                 'rooms': 0,
                 'features': f"사업지 기준 {dist_txt} 거리에 위치한 업체로 확인됩니다. 문의처: {phone_txt}",
                 'status': '실시간 검색 확인'
@@ -526,9 +526,11 @@ class CompetitorEngine:
             stores.append({
                 'name': m['name'],
                 'address': m.get('address', ''),
-                'system': '시스템 사양은 현장 확인이 필요합니다.',
+                'system': '스크린 시뮬레이터 (사양 현장 확인)',
                 'rooms': 0,
-                'features': f"{src} 지도 데이터에서 실제 운영 중인 업체로 확인되었습니다.",
+                # src가 이미 '지도'를 포함하면 '지도 지도'가 되므로 소스명만 앞에 붙인다.
+                'features': f"{src} 데이터에서 실제 운영 중인 업체로 확인되었습니다." if src.endswith('지도')
+                            else f"{src} 지도 데이터에서 실제 운영 중인 업체로 확인되었습니다.",
                 'status': '실시간 검색 확인'
             })
         return stores

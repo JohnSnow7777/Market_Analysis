@@ -217,13 +217,22 @@ class AddressResolver:
                 # 시/도만 입력된 경우 — '○○ 중심권역' 같은 가짜 이름을 만들지 않는다
                 admin_level = 'sido'
 
+            # 입력에 옛 명칭(전라북도 등)이 쓰였으면 표기를 공식 명칭으로 맞춘다.
+            _display_addr = clean
+            _first = clean.split()[0] if clean.split() else ''
+            if _first and _first != found_sido:
+                for _alias in SIDO_NAMES:
+                    if _first.startswith(_alias) and SIDO_CANONICAL.get(_alias) == found_sido:
+                        _display_addr = found_sido + clean[len(_first):]
+                        break
+
             return {
                 'sido': found_sido,
                 'sigungu': sigungu,
                 'dong': dong,
                 'road_name': road_name,
                 'admin_level': admin_level,
-                'full_address': clean,
+                'full_address': _display_addr,
                 'is_resolved': True
             }
 

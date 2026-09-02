@@ -282,7 +282,7 @@ class PPTXGenerator:
             f"• 압도적인 타겟 집적도: 반경 3km 내 50대 이상 인구 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%) 확보로 안정적 단골 풀 형성",
             f"• 60대 주력 고객군 {_60s_share3:.0f}%: 은퇴 후 평일 낮 시간 여유가 있는 60대가 전체 시니어 중 {_60s_share3:.0f}%를 차지하여 평일 주간 가동률 극대화",
             f"• 70대 실버 헬스케어 수요 {_70s_share3:.0f}%: 관절 부담이 없는 파크골프 특성상 부부 동반 및 시니어 커뮤니티 공간으로 정착",
-            "• 일반 스크린골프 대비 회전율 우위: 야간 직장인 편중 매장과 달리 주간 7시간 집중 가동으로 일일 높은 회전수 확보"
+            "• 주간 집중 가동 구조: 평일 낮 7시간을 주력 시간대로 삼아 일일 회전수를 안정적으로 확보"
         ]
         for ins in insights3:
             p_i = tf3_2.add_paragraph()
@@ -310,7 +310,7 @@ class PPTXGenerator:
         tf4_1 = c4_1.text_frame
         tf4_1.word_wrap = True
         p = tf4_1.paragraphs[0]
-        p.text = "■ 유사 골프업종 수익구조 격차 (MYPARK 추정)"
+        p.text = "■ 유사 골프업종 수익구조 비교 (MYPARK 추정)"
         p.font.size = Pt(10.5)
         p.font.bold = True
         p.font.color.rgb = self.c_mck_navy
@@ -421,7 +421,7 @@ class PPTXGenerator:
             f"• 레저 스포츠 소비 상위권: {comm['top_growth_industries'][0]['name']}({comm['top_growth_industries'][0]['growth']})이 1위, {_golf_ind_s5['name']}({_golf_ind_s5['growth']})이 {_golf_ind_s5['rank']}위로 시니어 여가 업종이 성장 상위 점유",
             f"• 골프 인프라 밀집도: 전국 평균 대비 {comm['golf_industry_density']['multiple']}배 높은 골프 시설 집적으로 검증된 골프 수요층 상존",
             "• 일반 골프의 파크골프 전환: 일반 골프 비용/체력 부담을 느끼는 시니어층의 스크린 파크골프 유입 가속화",
-            "• 성장 단계: 단순 유행이 아닌 시니어 여가 문화의 핵심 트렌드로 정착 단계 진입"
+            "• 정착 단계: 시니어 여가 문화의 핵심 종목으로 자리 잡아 가는 성장 국면"
         ]
         for ins in insights5:
             p_i = tf5_b.add_paragraph()
@@ -686,7 +686,7 @@ class PPTXGenerator:
             ("3) 공간 적합성 및 층고", score['scores']['space_efficiency'], 15, _space_desc, score.get('space_is_verified', True)),
             ("4) 경쟁 매장 여유도", score['scores']['supply_gap'], 15, f"{comm.get('competitor_summary', '반경 3km 내 대형 플래그십 매장 공급 부족')}", score.get('gap_is_verified', False)),
             ("5) 지역 소비력 및 여가지출", score['scores']['commercial_spending'], 20,
-             f"MYPARK 지역등급(4단계 분류) 추정치: 골프용품 성장 +{comm.get('growth_rate', 145.2)}% 및 스크린골프 상위 20% 월 {comm['top_20_sales']//10000:,}만원 상권 (동일 등급 지역은 동일 수치 적용, 개별 카드매출 실측 아님)", False),
+             f"MYPARK 지역등급(4단계 분류) 추정치: 시니어 여가 수요 지수 {comm.get('growth_rate', 145.2):.0f}점 및 스크린골프 상위 20% 월 {comm['top_20_sales']//10000:,}만원 상권 (동일 등급 지역은 동일 수치 적용, 개별 카드매출 실측 아님)", False),
         ]
         for idx, (iname, iscore, imax, idesc, iverified) in enumerate(indicators):
             badge_color = self.c_mck_teal if iverified else RGBColor(0x9A, 0xA5, 0xB1)
@@ -1020,7 +1020,7 @@ class PPTXGenerator:
         models_comp = [
             f"• 점주 직접 운영 모델 (표준): 월 순영업이익 {m_scen['moderate']['operating_profit']//10000:,}만원 (연간 {m_scen['moderate']['operating_profit']*12//10000:,}만원 / 이익률 {m_scen['moderate']['profit_margin']}%)",
             f"• 직원 채용 모델 (매니저 1인 + 알바 2인): 월 순영업이익 {fin['owner_operated']['staff3_operating_profit']//10000:,}만원 (연간 {fin['owner_operated']['staff3_operating_profit']*12//10000:,}만원)",
-            "• 낮은 변동비 구조: 일반 음식점/카페와 달리 원재료비 비중이 극히 낮아 매출 증가 시 순이익이 급격히 증가하는 고마진 레버리지",
+            "• 낮은 변동비 구조: 원재료비 비중이 매우 낮아 매출이 늘수록 순이익이 빠르게 커지는 고마진 구조",
             "• 고정비 방어력: 월 고정비가 낮아 비수기나 상권 초기 단계에서도 안정적 순영업이익 기반 유지"
         ]
         for mc in models_comp:
@@ -1239,7 +1239,7 @@ class PPTXGenerator:
              f"• 임대 운영 시 월 {site['monthly_rent']//10000:,}만원 수준의 체납 없는 안정적 수취 구조 (자가 운영 시 해당 없음)\n"
              f"• 상가 공실률 해소 및 앵커 테넌트 유치에 따른 건물 전체의 자산 가치(Cap Rate) 동반 상승"),
             ("3. 쾌적한 무소음·무진동·비음주 청정 친환경 체육시설",
-             "• 일반 주점/스크린골프(야간 음주/소음/흡연)와 달리 주간 친목형 청정 체육시설\n"
+             "• 주간 친목형 청정 체육시설로 음주·소음·흡연 부담이 없는 운영 형태\n"
              "• 상하층 입점 학원, 병원, 사무실과의 민원 마찰 전혀 없는 클린 테넌트\n"
              "• 쾌적한 건물 이미지 구축 및 시니어 친화 랜드마크 건물로 브랜딩 효과 극대화")
         ]

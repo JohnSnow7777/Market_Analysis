@@ -282,8 +282,9 @@ class PDFGenerator:
                 ("  └ 70대 이상 (실버)", f"{demo['pop_70_plus']:,}명", "", f"{demo['ratio_70_plus']}%"),
             ]
             if _apt.get('complex_count'):
-                _rows.append(("  └ 배후 공동주택", f"{_apt['complex_count']:,}개 단지",
-                              f"{_apt.get('total_households_sample', 0):,}세대(표본)", ""))
+                _rows.append((f"  └ 배후 공동주택 (표본 {_apt.get('sample_count', 0)}개 조사)",
+                              f"{_apt['complex_count']:,}개 단지",
+                              f"표본 {_apt.get('total_households_sample', 0):,}세대", ""))
             _ry = col_y - 26
             for _i, (_c1, _c2, _c3, _c4) in enumerate(_rows):
                 if _i % 2 == 1:
@@ -401,12 +402,14 @@ class PDFGenerator:
             f"• 타겟 집적도: {_insight_scope_txt} 50대 이상 인구 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%) 확보로 안정적 고객 풀 형성",
             f"• 60대 주력 고객군 {_60s_share:.0f}%: 은퇴 후 평일 낮 시간 여유가 있는 60대가 전체 시니어 중 {_60s_share:.0f}%를 차지하여 평일 낮 가동률 극대화",
             f"• 70대 실버 헬스케어 수요 {_70s_share:.0f}%: 관절 부담이 없는 파크골프 특성상 부부 동반 및 시니어 커뮤니티 공간으로 정착",
-            "• 일반 스크린골프 대비 회전율 우위: 야간 직장인 편중 매장과 달리 주간 7시간 집중 가동으로 일일 높은 회전수 확보",
+            "• 주간 집중 가동 구조: 평일 낮 7시간을 주력 시간대로 삼아 일일 회전수를 안정적으로 확보",
         ]
         apt_sum = demo.get('apartment_summary')
         if apt_sum:
             yr_txt = f"{apt_sum['year_min']}년~{apt_sum['year_max']}년 준공" if apt_sum.get('year_min') else "준공년도 확인 중"
-            _insight_bullets.append(f"• 배후 주거 기반: {apt_sum['scope_label']} 공동주택 {apt_sum['complex_count']}개 단지 (표본 {apt_sum['sample_count']}개 단지 합산 {apt_sum['total_households_sample']:,}세대, {yr_txt}) — 국토교통부 공동주택 기본정보 기준")
+            # '61개 단지 / 5,507세대'처럼 나란히 적으면 61개 단지 전체의 세대수로
+            # 읽힌다. 세대수는 표본 N개 단지만 합산한 값임을 문장 안에서 밝힌다.
+            _insight_bullets.append(f"• 배후 주거 기반: {apt_sum['scope_label']} 공동주택 {apt_sum['complex_count']}개 단지 확인 (이 중 {apt_sum['sample_count']}개 단지를 표본 조사한 결과 {apt_sum['total_households_sample']:,}세대, {yr_txt}) — 국토교통부 공동주택 기본정보 기준")
 
         # 박스 높이를 실제 불릿 수에 맞춰 계산한다 (아파트 정보 유무에 따라 줄 수가
         # 달라지는데 높이가 고정이면 하단에 죽은 여백이 크게 남는다).
@@ -459,7 +462,7 @@ class PDFGenerator:
         c.rect(495, chart_top - head_h, right_col_w, head_h, fill=1, stroke=0)
         c.setFont(FONT_BOLD, 10)
         c.setFillColor(self.c_white)
-        c.drawString(511, chart_top - 19, "유사 골프업종 수익구조 격차 (MYPARK 추정)")
+        c.drawString(511, chart_top - 19, "유사 골프업종 수익구조 비교 (MYPARK 추정)")
 
         c.setFont(FONT_REGULAR, 8.5)
         c.setFillColor(self.c_charcoal)
@@ -512,7 +515,7 @@ class PDFGenerator:
         c.setFont(FONT_REGULAR, 9)
         c.setFillColor(self.c_charcoal)
         c.drawString(56, 88, f"• 골프 연습장 이용 특성({_bm['usage_scope']}): 남성 {_bm['usage_male_ratio']}%, 40~50대 {_bm['usage_age_40_50_ratio']}%, 저녁 18~23시 {_bm['usage_evening_ratio']}% 집중")
-        c.drawString(56, 70, "• 마이파크는 시니어·주간 중심이라 고객층과 이용 시간대가 겹치지 않아, 경쟁이 아닌 보완 관계로 공존 가능합니다")
+        c.drawString(56, 70, "• 마이파크는 시니어·주간 중심이라 고객층과 이용 시간대가 서로 달라 보완 관계로 공존할 수 있습니다")
 
         self._draw_footer(c, f"MYPARK 지역등급 추정 모델 | 인접 업종 비교: {_bm['source']} ({_bm['base_month']} 기준)")
         c.showPage()
@@ -535,7 +538,7 @@ class PDFGenerator:
         c.rect(495, chart_top - head_h, box4_w, head_h, fill=1, stroke=0)
         c.setFont(FONT_BOLD, 10)
         c.setFillColor(self.c_white)
-        c.drawString(511, chart_top - 19, "TOP 5 매출 증가 업종 (MYPARK 지역등급 추정)")
+        c.drawString(511, chart_top - 19, "시니어 여가 수요 지수 TOP 5 (MYPARK 지역등급 추정)")
 
         col_y5 = chart_top - head_h - 22
         c.setFont(FONT_BOLD, 8)
@@ -543,7 +546,7 @@ class PDFGenerator:
         c.drawString(511, col_y5, "순위")
         c.drawString(535, col_y5, "업종명")
         c.drawRightString(670, col_y5, "수요 지수")
-        c.drawString(693, col_y5, "업종 상태")
+        c.drawString(693, col_y5, "업종 특성")
         c.setStrokeColor(self.c_line)
         c.line(511, col_y5 - 8, box4_right - 16, col_y5 - 8)
 
@@ -583,10 +586,16 @@ class PDFGenerator:
         c.setFont(FONT_REGULAR, 9)
         c.setFillColor(self.c_charcoal)
         _golf_ind = next((d for d in comm['top_growth_industries'] if '골프' in d['name']), comm['top_growth_industries'][0])
-        c.drawString(56, 194, f"• 레저 스포츠 소비 상위권: {comm['top_growth_industries'][0]['name']}({comm['top_growth_industries'][0]['growth']})이 1위, {_golf_ind['name']}({_golf_ind['growth']})이 {_golf_ind['rank']}위로 시니어 여가 업종이 성장 상위 점유")
+        # 1위 업종과 골프 업종이 같은 경우 같은 문구가 두 번 나오던 문제를 막는다.
+        _first_ind = comm['top_growth_industries'][0]
+        if _golf_ind['name'] == _first_ind['name']:
+            _lead_txt = f"• 레저 스포츠 소비 상위권: {_first_ind['name']}({_first_ind['growth']})이 수요 지수 1위로 시니어 여가 업종이 상위 점유"
+        else:
+            _lead_txt = f"• 레저 스포츠 소비 상위권: {_first_ind['name']}({_first_ind['growth']})이 1위, {_golf_ind['name']}({_golf_ind['growth']})이 {_golf_ind['rank']}위로 시니어 여가 업종이 상위 점유"
+        c.drawString(56, 194, _lead_txt)
         c.drawString(56, 168, f"• 골프 인프라 밀집도: 전국 평균 대비 {comm['golf_industry_density']['multiple']}배 높은 골프 시설 집적으로 검증된 골프 수요층 상존")
         c.drawString(56, 142, "• 일반 골프의 파크골프 전환: 일반 골프 비용/체력 부담을 느끼는 시니어층의 스크린 파크골프 유입 가속화")
-        c.drawString(56, 116, "• 성장 단계: 단순 유행이 아닌 시니어 여가 문화의 핵심 트렌드로 정착 단계 진입")
+        c.drawString(56, 116, "• 정착 단계: 시니어 여가 문화의 핵심 종목으로 자리 잡아 가는 성장 국면")
 
         self._draw_footer(c, "MYPARK Regional Tier Estimation Model")
         c.showPage()
@@ -745,7 +754,8 @@ class PDFGenerator:
             _comp_source = "MYPARK Competitor Database Matching (Hypothetical Scenario, Live Search Unavailable)"
         elif '소상공인시장진흥공단' in _comp_summary:
             _comp_source = "SBIZ (Small Business Market Promotion Agency) Public Data"
-        elif '지도 API 실시간 검색' in _comp_summary:
+        elif ('지도 API 실시간 검색' in _comp_summary
+              or '카카오' in _comp_summary or '네이버' in _comp_summary or 'TMap' in _comp_summary):
             _comp_source = "Live POI Search (Kakao/TMap/Naver Cross-Verified)"
         else:
             _comp_source = "MYPARK Verified National Store Database"
@@ -866,10 +876,10 @@ class PDFGenerator:
 
         indicators = [
             ("시니어 인구 밀집도", score['scores']['senior_population'], 25, f"{pop_source_tag}: {'구 전체' if is_district_wide else '반경 3km 내'} 50대 이상 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%) / 본 매장 운영에 필요한 단골 약 {score.get('senior_customers_needed', 1200):,}명은 배후 시니어의 {score.get('senior_penetration', 0)}% 수준", not demo.get('is_estimated', False)),
-            ("접근성 및 주차 인프라", score['scores']['accessibility_parking'], 25, _access_desc + " (※ 건물 자체 주차·엘리베이터 아닌 상권 접근성 기준)", score.get('infra_is_measured', False)),
+            ("접근성 및 주차 인프라", score['scores']['accessibility_parking'], 25, _access_desc + " (※ 상권 단위 접근성 기준 — 건물별 주차·승강기는 현장 확인 대상)", score.get('infra_is_measured', False)),
             ("공간 적합성 및 층고", score['scores']['space_efficiency'], 15, _space_desc if score.get('space_is_verified', True) else "룸/평수 미입력으로 표준값 대신 중립 점수 적용 (현장 실측 시 정밀 산정)", score.get('space_is_verified', True)),
             ("경쟁 매장 여유도", score['scores']['supply_gap'], 15, f"{comm.get('competitor_summary', '반경 3km 내 대형 플래그십 매장 공급 부족')}", score.get('gap_is_verified', False)),
-            ("지역 소비력 및 여가지출", score['scores']['commercial_spending'], 20, f"MYPARK 지역등급(4단계 분류) 추정치: 골프용품 성장 +{comm['growth_rate']}% 및 스크린골프 상위 20% 월 {comm['top_20_sales']//10000:,}만원 상권 (동일 등급 지역은 동일 수치 적용, 개별 카드매출 실측 아님)", False),
+            ("지역 소비력 및 여가지출", score['scores']['commercial_spending'], 20, f"MYPARK 지역등급(4단계 분류) 추정치: 시니어 여가 수요 지수 {comm['growth_rate']:.0f}점 및 스크린골프 상위 20% 월 {comm['top_20_sales']//10000:,}만원 상권 (동일 등급 지역은 동일 수치 적용, 개별 카드매출 실측 아님)", False),
         ]
 
         # ===== 렛저 스타일 레이아웃: 좌측 반전 히어로 셀(종합 등급) + 우측 5대 지표 막대 목록 =====
@@ -1243,7 +1253,7 @@ class PDFGenerator:
         c.setFillColor(self.c_charcoal)
         c.drawString(56, 194, f"• 점주 직접 운영 모델 (표준): 월 순영업이익 {scenarios['moderate']['operating_profit']//10000:,}만원 (연간 {scenarios['moderate']['operating_profit']*12//10000:,}만원 / 이익률 {scenarios['moderate']['profit_margin']}%)")
         c.drawString(56, 168, f"• 직원 채용 모델 (매니저 1인 + 알바 2인): 월 순영업이익 {fin['owner_operated']['staff3_operating_profit']//10000:,}만원 (연간 {fin['owner_operated']['staff3_operating_profit']*12//10000:,}만원)")
-        c.drawString(56, 142, "• 낮은 변동비 구조: 일반 음식점/카페와 달리 원재료비 비중이 극히 낮아 매출 증가 시 순이익이 급격히 증가하는 고마진 레버리지")
+        c.drawString(56, 142, "• 낮은 변동비 구조: 원재료비 비중이 매우 낮아 매출이 늘수록 순이익이 빠르게 커지는 고마진 구조")
         c.drawString(56, 116, "• 고정비 방어력: 월 고정비가 낮아 비수기나 상권 초기 단계에서도 안정적 순영업이익 기반 유지")
 
         self._draw_footer(c, "MYPARK Cost Structure & Operating Profit Analysis")
