@@ -255,3 +255,50 @@ class AddressResolver:
             'is_resolved': False,
             'fallback_warning': '시/도를 식별하지 못해 행정구역 매핑 미확인 (지오코딩 단계에서 좌표 확인 필요)'
         }
+
+
+class AddressNotResolvedError(ValueError):
+    """주소를 행정구역으로 확인하지 못했을 때 발생.
+
+    확인되지 않은 주소로 보고서를 만들면 존재하지 않는 사업지에 대해
+    등급·회수기간까지 붙은 완성된 문서가 나가게 된다. 상용 서비스에서는
+    그 자체가 신뢰를 무너뜨리므로, 만들지 않고 분명히 알리는 편이 낫다.
+    """
+    pass
+
+
+def validate_address(raw_address):
+    """분석 가능한 주소인지 확인한다. 불가하면 AddressNotResolvedError.
+
+    1차로 문자열 파싱, 실패하면 카카오 지오코딩으로 한 번 더 확인한다
+    (건물명만 입력하는 등 파서가 못 잡는 실제 주소를 구제하기 위함).
+    둘 다 실패하면 추측하지 않고 사용자에게 다시 입력을 요청한다.
+    반환: resolve() 결과 dict (지오코딩으로 보완된 경우 그 값이 반영됨)
+    """
+    resolved = AddressResolver.resolve(raw_address)
+    if resolved.get('sido'):
+        return resolved
+
+    try:
+        from .competitor_engine import CompetitorEngine
+        x, y = CompetitorEngine.geocode_address(raw_address)
+    except Exception:
+        x = None
+    if x is not None:
+        # 좌표는 나왔으므로 실재하는 주소다. 행정구역명을 카카오 응답에서 보완한다.
+        try:
+            from .competitor_engine import CompetitorEngine
+            geo_dong = CompetitorEngine.resolve_dong_by_geocode(raw_address)
+            if geo_dong:
+                resolved['dong'] = geo_dong
+                resolved['admin_level'] = 'dong'
+                resolved['is_resolved'] = True
+                return resolved
+        except Exception:
+            pass
+
+    raise AddressNotResolvedError(
+        "입력하신 주소에서 행정구역(시/도 · 시군구)을 확인하지 못했습니다. "
+        "'광주광역시 서구 화정동 123' 또는 '광주광역시 서구'처럼 "
+        "시/도부터 포함해 다시 입력해 주십시오."
+    )

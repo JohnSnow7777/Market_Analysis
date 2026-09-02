@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마이파크(MYPARK) Google Stitch 디자인 5종 인터랙티브 쇼케이스</title>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+    <style>
+        /* -------------------------------------------------------------
+           Google Stitch 5종 디자인 테마 변수 정의
+        ------------------------------------------------------------- */
+        :root {
+            /* 기본: Theme 2 (클린 에메랄드 SaaS) */
+            --bg: #F6F8F6;
+            --card-bg: #FFFFFF;
+            --primary: #12211C;
+            --primary-accent: #0F7A5C;
+            --secondary-accent: #E4F3EC;
+            --text-main: #12211C;
+            --text-muted: #657A70;
+            --border: #E2E8E4;
+            --shadow: 0 4px 16px rgba(18, 33, 28, 0.06);
+            --badge-bg: #E4F3EC;
+            --badge-text: #0F7A5C;
+            --font-family: 'Pretendard', sans-serif;
+            --radius-card: 16px;
+            --radius-btn: 10px;
+        }
+
+        /* [Theme 1] 럭셔리 다크 & 샴페인 골드 */
+        body.theme-1 {
+            --bg: #0B1311;
+            --card-bg: #14221E;
+            --primary: #FFFFFF;
+            --primary-accent: #D4AF37;
+            --secondary-accent: #263832;
+            --text-main: #F0FDF4;
+            --text-muted: #94A3B8;
+            --border: #2D423B;
+            --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            --badge-bg: rgba(212, 175, 55, 0.15);
+            --badge-text: #D4AF37;
+            --radius-card: 16px;
+        }
+
+        /* [Theme 2] 클린 에메랄드 SaaS (모던 화이트) */
+        body.theme-2 {
+            --bg: #F6F8F6;
+            --card-bg: #FFFFFF;
+            --primary: #12211C;
+            --primary-accent: #0F7A5C;
+            --secondary-accent: #E4F3EC;
+            --text-main: #12211C;
+            --text-muted: #657A70;
+            --border: #E2E8E4;
+            --shadow: 0 4px 16px rgba(18, 33, 28, 0.06);
+            --badge-bg: #E4F3EC;
+            --badge-text: #0F7A5C;
+            --radius-card: 16px;
+        }
+
+        /* [Theme 3] 모던 핀테크 (토스/뱅크샐러드 네오뱅크 스타일) */
+        body.theme-3 {
+            --bg: #F1F5F9;
+            --card-bg: #FFFFFF;
+            --primary: #0F172A;
+            --primary-accent: #2563EB;
+            --secondary-accent: #EFF6FF;
+            --text-main: #0F172A;
+            --text-muted: #64748B;
+            --border: #E2E8F0;
+            --shadow: 0 6px 20px rgba(37, 99, 235, 0.06);
+            --badge-bg: #EFF6FF;
+            --badge-text: #2563EB;
+            --radius-card: 20px;
+        }
+
+        /* [Theme 4] 웜 라이프스타일 & 시니어 프렌들리 (따뜻한 베이지+올리브) */
+        body.theme-4 {
+            --bg: #FAF7F2;
+            --card-bg: #FFFFFF;
+            --primary: #2B2A27;
+            --primary-accent: #4A6B48;
+            --secondary-accent: #EBF2EA;
+            --text-main: #2B2A27;
+            --text-muted: #78756E;
+            --border: #EAE4D9;
+            --shadow: 0 4px 14px rgba(43, 42, 39, 0.05);
+            --badge-bg: #EBF2EA;
+            --badge-text: #4A6B48;
+            --radius-card: 14px;
+        }
+
+        /* [Theme 5] 다이내믹 GIS 스플릿 뷰 (공간분석 전문가 다크 네이비) */
+        body.theme-5 {
+            --bg: #0F172A;
+            --card-bg: #1E293B;
+            --primary: #F8FAFC;
+            --primary-accent: #06B6D4;
+            --secondary-accent: #164E63;
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+            --border: #334155;
+            --shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            --badge-bg: rgba(6, 182, 212, 0.15);
+            --badge-text: #06B6D4;
+            --radius-card: 12px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 24px 16px;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        .container { max-width: 1280px; margin: 0 auto; }
+
+        /* 테마 스위처 바 (상단 고정 컨트롤러) */
+        .theme-switcher-bar {
+            background: rgba(18, 33, 28, 0.94);
+            backdrop-filter: blur(12px);
+            padding: 14px 20px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+            color: white;
+        }
+        .switcher-title { font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+        .switcher-title span { color: #10B981; }
+        .theme-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+        .theme-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: #E2E8F0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .theme-btn:hover { background: rgba(255, 255, 255, 0.2); color: white; }
+        .theme-btn.active {
+            background: #10B981;
+            color: #0B1311;
+            border-color: #10B981;
+            font-weight: 800;
+        }
+
+        /* 메인 레이아웃 */
+        .layout { display: grid; grid-template-columns: 380px 1fr; gap: 24px; }
+        @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-card);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+        }
+
+        .card-header {
+            font-size: 17px;
+            font-weight: 800;
+            color: var(--primary);
+            padding-bottom: 12px;
+            margin-bottom: 18px;
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 입력 폼 요소 */
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; color: var(--text-main); }
+        input, select {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-btn);
+            font-size: 14px;
+            color: var(--text-main);
+            background: var(--bg);
+            outline: none;
+            transition: 0.2s;
+        }
+        input:focus { border-color: var(--primary-accent); }
+
+        .btn-submit {
+            width: 100%;
+            background: var(--primary-accent);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: var(--radius-btn);
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(15, 122, 92, 0.25);
+            transition: 0.2s;
+        }
+        .btn-submit:hover { opacity: 0.92; transform: translateY(-1px); }
+
+        /* 결과 화면 배너 */
+        .grade-banner {
+            background: var(--badge-bg);
+            border: 1px solid var(--border);
+            padding: 20px 24px;
+            border-radius: var(--radius-card);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .grade-title { font-size: 13px; color: var(--text-muted); font-weight: 700; margin-bottom: 4px; }
+        .grade-desc { font-size: 18px; font-weight: 800; color: var(--primary); }
+        .grade-badge {
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--badge-text);
+            background: var(--card-bg);
+            padding: 8px 16px;
+            border-radius: 12px;
+            border: 2px solid var(--badge-text);
+        }
+
+        /* 5대 지표 패널 */
+        .dims-panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-card);
+            padding: 22px 24px;
+            margin-bottom: 20px;
+        }
+        .dims-title { font-size: 15px; font-weight: 800; margin-bottom: 16px; color: var(--primary); }
+        .dim-row { display: grid; grid-template-columns: 140px 1fr 50px; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .dim-row:last-child { margin-bottom: 0; }
+        .dim-label { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+        .dim-track { height: 8px; background: var(--secondary-accent); border-radius: 6px; overflow: hidden; }
+        .dim-fill { height: 100%; background: var(--primary-accent); border-radius: 6px; transition: width 0.5s ease; }
+        .dim-val { font-size: 13px; font-weight: 800; text-align: right; color: var(--primary); }
+
+        /* 핵심 재무 KPI 카드 그리드 */
+        .metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 20px; }
+        @media (max-width: 560px) { .metrics-grid { grid-template-columns: 1fr; } }
+        .metric-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--primary-accent);
+            padding: 16px;
+            border-radius: 12px;
+        }
+        .metric-label { font-size: 12px; color: var(--text-muted); font-weight: 700; margin-bottom: 4px; }
+        .metric-value { font-size: 19px; font-weight: 900; color: var(--primary); }
+        .metric-sub { font-size: 11.5px; color: var(--text-muted); margin-top: 4px; }
+
+        /* 가치 제안 컨테이너 */
+        .value-box {
+            background: var(--secondary-accent);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 16px;
+        }
+        .value-title { font-size: 14px; font-weight: 800; color: var(--primary-accent); margin-bottom: 6px; }
+        .value-desc { font-size: 13px; color: var(--text-main); line-height: 1.6; }
+
+        /* 다운로드 버튼 그룹 */
+        .download-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
+        .btn-dl {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 12px;
+            border-radius: var(--radius-btn);
+            font-size: 13px;
+            font-weight: 700;
+            text-align: center;
+            text-decoration: none;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-dl.primary { background: var(--primary-accent); color: white; border: none; }
+        .btn-dl:hover { opacity: 0.9; }
+    </style>
+</head>
+<body class="theme-2">
+
+<div class="container">
+    <!-- 상단 Google Stitch 테마 스위처 -->
+    <div class="theme-switcher-bar">
+        <div class="switcher-title">
+            ✨ <span>Google Stitch</span> 디자인 5종 인터랙티브 쇼케이스
+        </div>
+        <div class="theme-tabs">
+            <button class="theme-btn" onclick="setTheme(1)">[1] 럭셔리 다크+골드</button>
+            <button class="theme-btn active" onclick="setTheme(2)">[2] 클린 에메랄드 SaaS</button>
+            <button class="theme-btn" onclick="setTheme(3)">[3] 모던 핀테크</button>
+            <button class="theme-btn" onclick="setTheme(4)">[4] 웜 라이프스타일</button>
+            <button class="theme-btn" onclick="setTheme(5)">[5] GIS 공간분석 스플릿</button>
+        </div>
+    </div>
+
+    <!-- 메인 대시보드 레이아웃 -->
+    <div class="layout">
+        <!-- 좌측 입력 패널 -->
+        <div class="card">
+            <div class="card-header">
+                <span>📍 사업지 분석 설정</span>
+                <span style="font-size:12px; color:var(--text-muted); font-weight:normal;">10타석 플래그십</span>
+            </div>
+            <div class="form-group">
+                <label>사업지 주소</label>
+                <input type="text" id="sampleAddress" value="서울특별시 강남구 역삼동 737" placeholder="주소를 입력하세요">
+            </div>
+            <div class="form-group">
+                <label>매장명 (선택)</label>
+                <input type="text" id="sampleName" value="마이파크 강남역삼점" placeholder="매장명">
+            </div>
+            <div class="form-group">
+                <label>타석 수 / 전용면적</label>
+                <input type="text" value="10타석 (전용 120평)" readonly>
+            </div>
+            <div class="form-group">
+                <label>월 예상 임대료</label>
+                <input type="text" value="540만원 (자가 건물 0원)" readonly>
+            </div>
+            <button class="btn-submit" onclick="simulateAnalysis()">⚡ 실시간 상권 분석 실행</button>
+        </div>
+
+        <!-- 우측 실시간 결과 패널 -->
+        <div class="card">
+            <!-- 등급 배너 -->
+            <div class="grade-banner">
+                <div>
+                    <div class="grade-title">마이파크 입지 적합성 종합 판정</div>
+                    <div class="grade-desc" id="gradeDesc">최우선 출점 추천지 (Prime Location)</div>
+                </div>
+                <div class="grade-badge" id="gradeBadge">S등급 (91.3점)</div>
+            </div>
+
+            <!-- 5대 지표 패널 -->
+            <div class="dims-panel">
+                <div class="dims-title">📊 입지 적합성 5대 다이아몬드 지표</div>
+                <div class="dim-row">
+                    <span class="dim-label">생활권 시니어 인구</span>
+                    <div class="dim-track"><div class="dim-fill" style="width:96%;"></div></div>
+                    <span class="dim-val">24.0 / 25</span>
+                </div>
+                <div class="dim-row">
+                    <span class="dim-label">접근성·교통 인프라</span>
+                    <div class="dim-track"><div class="dim-fill" style="width:92%;"></div></div>
+                    <span class="dim-val">23.0 / 25</span>
+                </div>
+                <div class="dim-row">
+                    <span class="dim-label">공간 적합성 & 층고</span>
+                    <div class="dim-track"><div class="dim-fill" style="width:87%;"></div></div>
+                    <span class="dim-val">13.0 / 15</span>
+                </div>
+                <div class="dim-row">
+                    <span class="dim-label">경쟁 매장 여유도</span>
+                    <div class="dim-track"><div class="dim-fill" style="width:100%;"></div></div>
+                    <span class="dim-val">15.0 / 15</span>
+                </div>
+                <div class="dim-row">
+                    <span class="dim-label">지역 소비력 & 매출</span>
+                    <div class="dim-track"><div class="dim-fill" style="width:82%;"></div></div>
+                    <span class="dim-val">16.3 / 20</span>
+                </div>
+            </div>
+
+            <!-- 4대 핵심 재무 KPI -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">3km 생활권 50대 이상 시니어 인구</div>
+                    <div class="metric-value">72,400명 (38.4%)</div>
+                    <div class="metric-sub">KOSIS 실측 인구통계 기준</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">예상 월 순영업이익 (보편 4.0회전)</div>
+                    <div class="metric-value" style="color:var(--primary-accent);">2,583만원 / 월</div>
+                    <div class="metric-sub">직접운영 2,583만 | 직원채용 2,083만</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">손익분기점 (BEP 회전율)</div>
+                    <div class="metric-value">타석당 1일 1.1팀 (4명)</div>
+                    <div class="metric-sub">월 고정비(940만) 전액 커버 기준</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">총 초기 투자금(3.19억) 전액 회수기간</div>
+                    <div class="metric-value" style="color:var(--primary-accent);">단 12.3개월</div>
+                    <div class="metric-sub">약 1년 1개월 만에 원금 100% 회수</div>
+                </div>
+            </div>
+
+            <!-- 가치 제안 박스 -->
+            <div class="value-box">
+                <div class="value-title">🌟 가맹점 출점 기대효과 및 시너지</div>
+                <div class="value-desc">반경 3km 내 50~70대 시니어 인구가 풍부하고 정형외과/한의원 등 메디컬 집객 시설이 밀집하여, 평일 주간(10~17시) 주부 및 시니어 동호회 정기 예약 가동률이 극대화될 최적 입지입니다.</div>
+            </div>
+
+            <!-- 다운로드 버튼 그룹 -->
+            <div class="download-group">
+                <a href="#" class="btn-dl primary">📄 PDF 분석보고서 다운로드</a>
+                <a href="#" class="btn-dl">📥 PPTX 프레젠테이션</a>
+                <a href="#" class="btn-dl">📝 DOCX 출점기획서</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function setTheme(num) {
+        document.body.className = 'theme-' + num;
+        const btns = document.querySelectorAll('.theme-btn');
+        btns.forEach((b, idx) => {
+            if (idx + 1 === num) b.classList.add('active');
+            else b.classList.remove('active');
+        });
+    }
+
+    function simulateAnalysis() {
+        const addr = document.getElementById('sampleAddress').value;
+        alert('📍 [' + addr + '] Google Stitch UI 테마가 실시간 적용되었습니다!');
+    }
+</script>
+</body>
+</html>

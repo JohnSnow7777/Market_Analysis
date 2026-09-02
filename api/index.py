@@ -11,6 +11,7 @@ curr_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, curr_dir)
 
 from tools.mypark_analyzer import MyParkReportGenerator
+from tools.mypark_analyzer.address_resolver import AddressNotResolvedError
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -59,13 +60,21 @@ class handler(BaseHTTPRequestHandler):
             self.send_header('Content-Type', 'application/json; charset=utf-8')
             self.end_headers()
             self.wfile.write(json.dumps(result, ensure_ascii=False).encode('utf-8'))
+        except AddressNotResolvedError as e:
+            # 사용자가 고칠 수 있는 입력 문제 — 400으로 알리고 안내 문구만 준다.
+            self.send_response(400)
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': str(e)}, ensure_ascii=False).encode('utf-8'))
         except Exception as e:
+            # 서버 오류의 상세(파일 경로·코드 구조)는 로그에만 남긴다.
+            # 예전에는 traceback을 그대로 응답에 실어 내부 구조가 외부에 노출됐다.
             err_trace = traceback.format_exc()
             print("[SERVER ERROR]", err_trace)
             self.send_response(500)
             self.send_header('Content-Type', 'application/json; charset=utf-8')
             self.end_headers()
             self.wfile.write(json.dumps({
-                'error': str(e),
-                'traceback': err_trace
+                'error': '보고서 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해 주시고, '
+                         '문제가 계속되면 담당자에게 문의해 주십시오.'
             }, ensure_ascii=False).encode('utf-8'))

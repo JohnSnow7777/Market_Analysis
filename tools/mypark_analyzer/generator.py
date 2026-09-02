@@ -11,7 +11,7 @@ from .scoring_engine import ScoringEngine
 from .visualizer import Visualizer
 from .pptx_generator import PPTXGenerator
 from .pdf_generator import PDFGenerator
-from .address_resolver import AddressResolver
+from .address_resolver import AddressResolver, validate_address, AddressNotResolvedError
 
 class MyParkReportGenerator:
     def __init__(self, output_dir="output"):
@@ -19,7 +19,9 @@ class MyParkReportGenerator:
         os.makedirs(self.output_dir, exist_ok=True)
 
     def analyze_and_generate(self, address, building_name=None, rooms=None, monthly_rent=None, area_pyeong=None, staff_count=None, special_notes=None):
-        resolved = AddressResolver.resolve(address)
+        # 확인되지 않은 주소로는 보고서를 만들지 않는다. 존재하지 않는 주소에도
+        # 등급·회수기간이 붙은 완성 문서가 나가면 그 자체가 허위 자료가 된다.
+        resolved = validate_address(address)
         site_info = GeoEngine.analyze_site(address, building_name, area_pyeong, rooms, monthly_rent, staff_count, special_notes)
         demographics = DemographicsEngine.get_demographics(address)
         _district_wide = demographics.get('district_wide_analysis', False)

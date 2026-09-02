@@ -1358,6 +1358,9 @@
                         const errJson = await response.json();
                         if (errJson && errJson.error) errDetail = errJson.error;
                     } catch(e) {}
+                    // 400은 사용자가 고칠 수 있는 입력 문제(주소 확인 실패)라
+                    // 기술적인 상태코드를 붙이지 않고 안내 문구만 그대로 보여준다.
+                    if (response.status === 400) throw new Error(errDetail);
                     throw new Error('서버 응답 오류 (' + response.status + '): ' + errDetail);
                 }
 
