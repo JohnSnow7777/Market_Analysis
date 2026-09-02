@@ -16,6 +16,27 @@ from . import map_clients
 
 KAKAO_API_KEY_ENV = 'KAKAO_REST_API_KEY'
 
+# 지오코딩 결과 캐시.
+# 한 번의 보고서 생성에서 인구·상권·경쟁사·시설 모듈이 각각 같은 주소를
+# 지오코딩해 동일한 외부 호출이 최대 9회까지 반복됐다. 호출 1회가 수백 ms라
+# 응답 시간에 그대로 쌓인다. 주소는 요청 중에 바뀌지 않으므로 결과를 재사용한다.
+# 서버리스 인스턴스 수명 동안만 유지되며, 무한히 커지지 않도록 상한을 둔다.
+_GEOCODE_CACHE = {}
+_BCODE_CACHE = {}
+_DONG_CACHE = {}
+_GEOCODE_CACHE_MAX = 256
+
+
+def _cache_get(cache, key):
+    return cache.get(key, '__MISS__')
+
+
+def _cache_put(cache, key, value):
+    if len(cache) >= _GEOCODE_CACHE_MAX:
+        cache.clear()  # 단순 초기화 — LRU를 둘 만큼 재사용 폭이 크지 않다
+    cache[key] = value
+    return value
+
 # 전국 주요 권역 실제 실측 스크린 파크골프장 DB (실제 운영 매장 전수 리스트)
 VERIFIED_NATIONAL_PARK_GOLF_DB = [
     # 경기 고양시 / 덕양구 / 일산
@@ -295,7 +316,11 @@ class CompetitorEngine:
         api_key = os.environ.get(KAKAO_API_KEY_ENV)
         if not api_key:
             return None
-        return CompetitorEngine._kakao_geocode_bcode(address, api_key)
+        hit = _cache_get(_BCODE_CACHE, address)
+        if hit != '__MISS__':
+            return hit
+        return _cache_put(_BCODE_CACHE, address,
+                          CompetitorEngine._kakao_geocode_bcode(address, api_key))
 
     @staticmethod
     def _filter_docs_by_region(docs, sido, sigungu):
@@ -336,6 +361,9 @@ class CompetitorEngine:
         api_key = os.environ.get(KAKAO_API_KEY_ENV)
         if not api_key or not address:
             return None
+        hit = _cache_get(_DONG_CACHE, address)
+        if hit != '__MISS__':
+            return hit
         try:
             url = "https://dapi.kakao.com/v2/local/search/address.json?query=" + urllib.parse.quote(address)
             req = urllib.request.Request(url, headers={'Authorization': f'KakaoAK {api_key}'})
@@ -343,11 +371,11 @@ class CompetitorEngine:
                 data = json.loads(resp.read().decode('utf-8'))
             docs = data.get('documents', [])
             if not docs:
-                return None
+                return _cache_put(_DONG_CACHE, address, None)
             addr = docs[0].get('address') or docs[0].get('road_address') or {}
             # 행정동(region_3depth_h_name)이 있으면 우선, 없으면 법정동(region_3depth_name)
             dong = addr.get('region_3depth_h_name') or addr.get('region_3depth_name')
-            return dong.strip() if dong else None
+            return _cache_put(_DONG_CACHE, address, dong.strip() if dong else None)
         except Exception as e:
             print(f"[KAKAO DONG RESOLVE FAIL] {address}: {e}")
             return None
@@ -375,11 +403,19 @@ class CompetitorEngine:
     @staticmethod
     def geocode_address(address):
         """카카오 키가 있으면 주소를 좌표로 변환. 다른 API(소상공인 등)의 좌표
-        입력으로도 공유해서 쓴다. 키 없음/실패 시 (None, None)."""
+        입력으로도 공유해서 쓴다. 키 없음/실패 시 (None, None).
+
+        같은 주소에 대한 반복 호출은 캐시로 처리한다(모듈마다 따로 지오코딩해
+        동일 호출이 여러 번 나가던 문제).
+        """
         api_key = os.environ.get(KAKAO_API_KEY_ENV)
         if not api_key:
             return None, None
-        return CompetitorEngine._kakao_geocode(address, api_key)
+        hit = _cache_get(_GEOCODE_CACHE, address)
+        if hit != '__MISS__':
+            return hit
+        return _cache_put(_GEOCODE_CACHE, address,
+                          CompetitorEngine._kakao_geocode(address, api_key))
 
     @staticmethod
     def search_sbiz_competitors(address, radius=3000):

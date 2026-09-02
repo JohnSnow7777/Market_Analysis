@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """마이파크 상권 및 사업분석 종합 생성기 파이프라인"""
 import os
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from .geo_engine import GeoEngine
 from .demographics import DemographicsEngine
@@ -26,11 +27,19 @@ class MyParkReportGenerator:
         demographics = DemographicsEngine.get_demographics(address)
         _district_wide = demographics.get('district_wide_analysis', False)
         _district_radius_m = demographics.get('district_radius_m')
-        commercial = CommercialDataEngine.get_commercial_trends(
-            address, district_wide=_district_wide, district_radius_m=_district_radius_m)
-        competitors = CompetitorEngine.search_competitors(
-            address, site_info['sigungu'], site_info['dong'],
-            district_wide=_district_wide, district_radius_m=_district_radius_m)
+        # 상권 분석과 경쟁사 검색은 서로 의존하지 않고 각각 외부 API를 여러 번
+        # 호출한다(응답의 대부분이 이 대기 시간이다). 순차로 두면 두 시간이
+        # 그대로 더해지므로 병렬로 실행한다.
+        with ThreadPoolExecutor(max_workers=2) as _ex:
+            _f_comm = _ex.submit(
+                CommercialDataEngine.get_commercial_trends,
+                address, _district_wide, _district_radius_m)
+            _f_comp = _ex.submit(
+                CompetitorEngine.search_competitors,
+                address, site_info['sigungu'], site_info['dong'],
+                _district_wide, _district_radius_m)
+            commercial = _f_comm.result()
+            competitors = _f_comp.result()
         commercial['competitors'] = competitors['stores']
         commercial['competitor_summary'] = competitors['summary']
         commercial['is_blue_ocean'] = competitors['is_blue_ocean']
