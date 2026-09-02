@@ -379,7 +379,17 @@ class PDFGenerator:
             c.drawString(56, _ins_y, _ib)
             _ins_y -= _ins_line_h
 
-        self._draw_footer(c, "KOSIS National Statistics Portal" + (" (※ 행정동 추정 모델 적용)" if demo.get("is_estimated") else f" ({demo.get('base_date', '2026.08')})"))
+        # 생활권 추정을 쓴 경우, 그 전제(몇 개 동 규모로 봤는지)를 각주로 밝힌다.
+        # 숫자만 보여주고 전제를 감추면 실제와 다를 때 신뢰를 잃는다.
+        if demo.get('lifezone_estimated'):
+            _src_note = (f"KOSIS·SGIS 인구통계 | 생활권 범위는 반경 3km에 통상 포함되는 "
+                         f"행정동 {demo.get('lifezone_dong_count', 6)}개 규모로 추정 "
+                         f"(행정동별 면적 통계 미제공에 따른 전제, 현장 상담 시 정밀 산정)")
+        elif demo.get("is_estimated"):
+            _src_note = "KOSIS National Statistics Portal (※ 행정동 추정 모델 적용)"
+        else:
+            _src_note = f"KOSIS National Statistics Portal ({demo.get('base_date', '2026.08')})"
+        self._draw_footer(c, _src_note)
         c.showPage()
 
         # ---------------------------------------------------------------------

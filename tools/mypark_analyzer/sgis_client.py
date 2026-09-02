@@ -345,10 +345,10 @@ def fetch_district_population(sido, sigungu):
                 dongs.append({'name': d['name'], 'adm_cd': d['adm_cd'], 'total': tot})
         dongs.sort(key=lambda d: d['total'], reverse=True)
 
-        # 구역 면적(㎢). 경쟁사·업종 검색 반경을 임의의 상수(예: 8km) 대신 실제
-        # 구역 크기에서 역산하기 위해 쓴다. 인구밀도(명/㎢) 필드가 응답에 있으면
-        # 면적 = 총인구 / 밀도로 구할 수 있다. 필드가 없거나 값이 이상하면 None을
-        # 돌려주고, 호출부는 기존 기본값을 그대로 쓴다.
+        # 구역 면적(㎢). 검색 반경을 임의 상수 대신 실제 구역 크기에서 역산하려
+        # 했으나, 2026-09-02 실제 응답 확인 결과 이 API는 adm_cd/adm_nm/population
+        # 세 필드만 돌려주며 면적·인구밀도가 없다. 다른 응답 형식이나 향후 필드
+        # 추가에 대비해 탐지 로직은 남겨두되, 없으면 조용히 None을 반환한다.
         area_km2 = None
         try:
             raw = district.get('raw') or {}
@@ -379,8 +379,6 @@ def fetch_district_population(sido, sigungu):
             # 요청했는데 '성남시 분당구'가 잡힘) 호출부가 라벨을 실제 값에 맞춰
             # 고칠 수 있게 그대로 돌려준다 — 요청한 이름으로 표기하면 허위가 된다.
             'matched_region_name': (matched_name or '').strip(),
-            # [임시 진단] 응답 필드명 확인용. 면적 계산 방식을 확정하면 제거한다.
-            'raw_keys': sorted((district.get('raw') or {}).keys()),
         }
     except Exception as e:
         print(f"[SGIS DISTRICT POP FAIL] {sido} {sigungu}: {e}")

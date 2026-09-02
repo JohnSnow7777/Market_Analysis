@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """인구 통계 수집 및 분석 모듈 (전국 모든 시/구/동 반경 3km 생활권 정밀 지오펜싱)"""
 from .address_resolver import AddressResolver
-from .config import classify_region_tier, TIER_PRIME, TIER_METRO, TIER_MID_CITY
+from .config import (classify_region_tier, TIER_PRIME, TIER_METRO, TIER_MID_CITY,
+                     LIFEZONE_DONG_COUNT)
 from . import sgis_client
 from . import apt_client
 from . import region_key as region_key_mod
@@ -180,7 +181,7 @@ class DemographicsEngine:
                 # 유지하되 가짜 동 이름을 나열하지 않도록, 6개 동 규모를 한 줄로
                 # 합쳐서 보여준다(아래 lifezone_fallback 분기에서 집계).
                 lifezone_fallback = True
-                lifezone_scope_label = f"{_scope} 생활권 (약 6개 행정동 규모 추정)"
+                lifezone_scope_label = f"{_scope} 생활권 (약 {LIFEZONE_DONG_COUNT}개 행정동 규모 추정)"
                 target_dongs = []
 
         if target_dongs is None:
@@ -189,7 +190,7 @@ class DemographicsEngine:
             # 한 생활권(약 6개 동 규모) 추정으로 처리하고 근거를 라벨에 밝힌다.
             target_dongs_is_fallback = True
             lifezone_fallback = True
-            lifezone_scope_label = f"{dong} 중심 생활권 (약 6개 행정동 규모 추정)"
+            lifezone_scope_label = f"{dong} 중심 생활권 (약 {LIFEZONE_DONG_COUNT}개 행정동 규모 추정)"
             center_dong = dong
             target_dongs = []
 
@@ -245,7 +246,7 @@ class DemographicsEngine:
                 d_m, d_f, s_ratio = 5200, 5600, 0.435
             else:
                 d_m, d_f, s_ratio = 2800, 3100, 0.485
-            _slots = 6
+            _slots = LIFEZONE_DONG_COUNT
             tot_male = d_m * _slots
             tot_female = d_f * _slots
             tot_pop = tot_male + tot_female
@@ -339,7 +340,7 @@ class DemographicsEngine:
                 # 중심동 실측 인구를 기준으로 생활권(약 6개 동) 규모로 환산한다.
                 # 인접동이 중심동과 같은 규모라는 가정이라 정확도에 한계가 있어,
                 # 라벨에 '추정'임을 계속 명시한다.
-                lifezone_total = int(center_real * 6)
+                lifezone_total = int(center_real * LIFEZONE_DONG_COUNT)
                 tot_pop = lifezone_total
                 tot_male = int(lifezone_total * 0.483)
                 tot_female = lifezone_total - tot_male
@@ -348,7 +349,7 @@ class DemographicsEngine:
                 sgis_used = True
                 if dong_list:
                     dong_list[0].update({
-                        'dong': f"{dong} 중심 생활권 (중심동 실측 {center_real:,}명 × 약 6개 동 규모)",
+                        'dong': f"{dong} 중심 생활권 (중심동 실측 {center_real:,}명 × 약 {LIFEZONE_DONG_COUNT}개 동 규모)",
                         'male': tot_male, 'female': tot_female,
                         'total': tot_pop, 'senior_50': tot_senior_50,
                     })
@@ -401,7 +402,7 @@ class DemographicsEngine:
             # 동이 특정되지 않은 상태의 추정. 구역명을 두 번 반복하지 않도록
             # (예: "광주광역시 서구 서구 일원") 구역명만 한 번 쓴다.
             _scope_full = f"{sido} {sigungu}".strip() if sigungu else sido
-            region_name = f"{_scope_full} 일원 (약 6개 행정동 규모 생활권 추정)"
+            region_name = f"{_scope_full} 일원 (약 {LIFEZONE_DONG_COUNT}개 행정동 규모 생활권 추정)"
         else:
             region_name = f"{sido} {sigungu} {center_dong} 일원 (반경 3km 생활권)"
 
@@ -414,13 +415,13 @@ class DemographicsEngine:
             # 입력된 경우엔 시/도 이름. (site['sigungu']는 비어 있을 수 있어
             # PDF/PPTX가 이 값을 쓰도록 한다.)
             'district_scope_name': district_scope_name,
+            # 생활권 추정을 썼는지와 그 전제(동 수) — 보고서 각주로 노출한다.
+            'lifezone_estimated': lifezone_fallback,
+            'lifezone_dong_count': LIFEZONE_DONG_COUNT,
             # 구역 면적(㎢)과 그 면적을 원으로 환산한 반경(m).
             # 경쟁사/업종 검색 반경을 임의 상수로 두지 않고 실제 구역 크기에서
             # 역산하기 위한 값. 면적을 못 구하면 None(호출부가 기본값 사용).
             'district_area_km2': (district_pop or {}).get('area_km2'),
-            # [임시 진단] SGIS 인구통계 응답의 실제 필드명을 확인하기 위한 항목.
-            # 면적(인구밀도) 필드를 찾으면 제거한다.
-            '_sgis_raw_keys': (district_pop or {}).get('raw_keys'),
             'district_radius_m': _district_radius_m,
             'region_name': region_name,
             # 채점용 배후 시니어 인구.
@@ -429,7 +430,7 @@ class DemographicsEngine:
             # 모호하게 적을수록 점수가 올라가는" 왜곡이 생기므로, 구 전체 분석에서는
             # 구 평균 동 인구 × 6개 동 규모로 환산한 대표 상권 인구로 채점한다.
             'catchment_senior_50': (
-                int(tot_senior_50 * min(1.0, 6.0 / district_dong_count))
+                int(tot_senior_50 * min(1.0, float(LIFEZONE_DONG_COUNT) / district_dong_count))
                 if district_wide_analysis and district_dong_count > 0 else tot_senior_50
             ),
             'total_pop': tot_pop,
