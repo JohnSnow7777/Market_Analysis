@@ -20,7 +20,20 @@ class MyParkReportGenerator:
         self.output_dir = output_dir
         os.makedirs(self.output_dir, exist_ok=True)
 
-    def analyze_and_generate(self, address, building_name=None, rooms=None, monthly_rent=None, area_pyeong=None, staff_count=None, special_notes=None):
+    def analyze_and_generate(self, address, building_name=None, rooms=None, monthly_rent=None,
+                             area_pyeong=None, staff_count=None, special_notes=None, progress=None):
+        """progress: 단계가 끝날 때마다 (단계명, 진행률 0~100)로 호출되는 콜백.
+
+        보고서 생성이 15~25초 걸려 사용자가 빈 화면으로 기다리게 되므로,
+        호출부(API)가 실제 진행 상황을 실시간으로 내려줄 수 있도록 한다.
+        타이머로 화면만 넘기는 연출이 아니라 실제 완료 시점을 알린다.
+        """
+        def _report(stage, pct):
+            if progress:
+                try:
+                    progress(stage, pct)
+                except Exception:
+                    pass  # 진행 표시 실패가 보고서 생성을 막아서는 안 된다
         # 확인되지 않은 주소로는 보고서를 만들지 않는다. 존재하지 않는 주소에도
         # 등급·회수기간이 붙은 완성 문서가 나가면 그 자체가 허위 자료가 된다.
         _t = {}
@@ -32,10 +45,12 @@ class MyParkReportGenerator:
 
         resolved = validate_address(address)
         _m = _lap('validate', _t0)
+        _report('주소 확인', 5)
         site_info = GeoEngine.analyze_site(address, building_name, area_pyeong, rooms, monthly_rent, staff_count, special_notes)
         _m = _lap('geo', _m)
         demographics = DemographicsEngine.get_demographics(address)
         _m = _lap('demographics', _m)
+        _report('인구 분석 (통계청 SGIS·국토부 공동주택)', 45)
         _district_wide = demographics.get('district_wide_analysis', False)
         _district_radius_m = demographics.get('district_radius_m')
         # 상권 분석과 경쟁사 검색은 서로 의존하지 않고 각각 외부 API를 여러 번
@@ -52,6 +67,7 @@ class MyParkReportGenerator:
             commercial = _f_comm.result()
             competitors = _f_comp.result()
         _m = _lap('commercial+competitors(병렬)', _m)
+        _report('상권·경쟁사 분석 (소상공인 공공데이터·지도)', 70)
         commercial['competitors'] = competitors['stores']
         commercial['competitor_summary'] = competitors['summary']
         commercial['is_blue_ocean'] = competitors['is_blue_ocean']
@@ -86,6 +102,7 @@ class MyParkReportGenerator:
         _m = _lap('financials', _m)
         scores = ScoringEngine.evaluate_site(demographics, commercial, site_info, financials)
         _m = _lap('scoring', _m)
+        _report('입지 채점 및 재무 시뮬레이션', 78)
         
         # 차트 및 상권 지도 이미지 생성
         timestamp = datetime.now().strftime("%y%m%d_%H%M%S")
@@ -108,6 +125,7 @@ class MyParkReportGenerator:
         Visualizer.generate_bep_chart(financials, chart_bep)
 
         _m = _lap('charts(7종)', _m)
+        _report('차트 생성', 88)
         charts = {
             'sales_trend': chart_sales,
             'radar_score': chart_radar,
@@ -156,6 +174,7 @@ class MyParkReportGenerator:
         _m2 = _lap('pptx', _m2)
         PDFGenerator().generate(bundle, pdf_path)
         _lap('pdf', _m2)
+        _report('보고서 문서 생성 완료', 100)
         _t['합계'] = round(time.time() - _t0, 2)
         bundle['_timing'] = _t
         print(f"[TIMING] {_t}")
