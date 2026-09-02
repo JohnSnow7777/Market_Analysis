@@ -187,7 +187,7 @@ class PDFGenerator:
         c.setFont(FONT_REGULAR, 12)
         notes_str = f"  |  특이사항: {site['special_notes']}" if site.get('special_notes') else ""
         c.drawString(60, self.height - 230, f"• 대상 사업지: {site['full_address']}{notes_str}")
-        _cover_scope = f"{site['sigungu']} 전체 (관할 행정동 {demo.get('district_dong_count', 0)}개 전수)" if demo.get('district_wide_analysis') else f"{site['sido']} {site['sigungu']} {target_dong} 반경 3km 생활권"
+        _cover_scope = f"{demo.get('district_scope_name') or site['sigungu']} 전체 (관할 행정동 {demo.get('district_dong_count', 0)}개 전수)" if demo.get('district_wide_analysis') else f"{site['sido']} {site['sigungu']} {target_dong} 반경 3km 생활권"
         c.drawString(60, self.height - 255, f"• 상권 분석 대상: {_cover_scope}")
         c.drawString(60, self.height - 280, f"• 출점 모델: {site['rooms']}타석 ({site['area_pyeong']}평형)  |  분석 기준일: {data.get('created_at', '2026.08')}")
 
@@ -223,9 +223,9 @@ class PDFGenerator:
         _has_dong_rows = bool(demo.get('dongs'))
         if is_district_wide:
             if _has_dong_rows:
-                _tbl_title = f"{site['sigungu']} 전체 {_dcnt}개 행정동 중 인구 상위 {min(6, len(demo['dongs']))}개 ({pop_source_tag})"
+                _tbl_title = f"{demo.get('district_scope_name') or site['sigungu']} 전체 {_dcnt}개 행정동 중 인구 상위 {min(6, len(demo['dongs']))}개 ({pop_source_tag})"
             else:
-                _tbl_title = f"{site['sigungu']} 전체 {_dcnt}개 행정동 통합 인구 ({pop_source_tag})"
+                _tbl_title = f"{demo.get('district_scope_name') or site['sigungu']} 전체 {_dcnt}개 행정동 통합 인구 ({pop_source_tag})"
         else:
             _tbl_title = f"{target_dong} 반경 3km 행정동별 인구 집계 ({pop_source_tag})"
         c.drawString(56, tbl_top - 19, _tbl_title)
@@ -253,7 +253,7 @@ class PDFGenerator:
                 _ny -= 13
             c.setFont(FONT_BOLD, 9)
             c.setFillColor(self.c_mck_navy)
-            c.drawString(56, _ny - 8, f"{site['sigungu']} 전체 인구")
+            c.drawString(56, _ny - 8, f"{demo.get('district_scope_name') or site['sigungu']} 전체 인구")
             c.drawRightString(230, _ny - 8, f"{demo['total_pop']:,}명")
             c.drawRightString(330, _ny - 8, f"{demo['senior_50_plus']:,}명")
             c.setFillColor(self.c_mck_teal)
@@ -283,7 +283,7 @@ class PDFGenerator:
         if is_district_wide and _has_dong_rows:
             c.setFont(FONT_BOLD, 8)
             c.setFillColor(self.c_mck_navy)
-            c.drawString(56, tbl_bottom + 9, f"{site['sigungu']} 전체 {_dcnt}개 행정동 합계")
+            c.drawString(56, tbl_bottom + 9, f"{demo.get('district_scope_name') or site['sigungu']} 전체 {_dcnt}개 행정동 합계")
             c.drawRightString(230, tbl_bottom + 9, f"{demo['total_pop']:,}명")
             c.drawRightString(330, tbl_bottom + 9, f"{demo['senior_50_plus']:,}명")
             c.setFillColor(self.c_mck_teal)
@@ -606,7 +606,7 @@ class PDFGenerator:
             elif is_hypothetical:
                 r_str = "1호점 선점 대상"
             else:
-                r_str = "타석 규모 미확인"
+                r_str = "타석 규모 확인 예정"
             c.drawCentredString(cur_x + card_w/2, stat_top - 22, r_str)
             c.setFont(FONT_REGULAR, 7.5)
             c.setFillColor(self.c_slate)
@@ -648,9 +648,9 @@ class PDFGenerator:
             if comp.get('rooms', 0) > 0:
                 rooms_str = f"■ 규모: {comp['rooms']}타석 운영"
             elif '예시 시나리오' in comp.get('status', ''):
-                rooms_str = "■ 상태: 상업용 매장 미등록"
+                rooms_str = "■ 상태: 공공데이터 미등록 (신규 개업 가능성 포함해 현장 확인 권장)"
             else:
-                rooms_str = "■ 규모: 타석수 미확인"
+                rooms_str = "■ 규모: 타석수 추가 확인 예정"
             c.drawString(body_x, body_y, rooms_str)
             body_y -= 20
 
@@ -763,10 +763,10 @@ class PDFGenerator:
         elif _bus_count >= 20:
             _access_desc = f"{comm.get('spending_grade', '')} 지역등급 기준 표준 수준 교통망 추정(버스정류장 약 {_bus_count}개소 수준)"
         elif _bus_count >= 10:
-            _access_desc = f"{comm.get('spending_grade', '')} 지역등급 기준 교통망 다소 협소 추정(버스정류장 약 {_bus_count}개소 수준)"
+            _access_desc = f"{comm.get('spending_grade', '')} 지역등급 기준 교통망 보통 수준 추정(버스정류장 약 {_bus_count}개소 수준, 자차 접근 동선 병행 검토 권장)"
         else:
-            _access_desc = f"{comm.get('spending_grade', '')} 지역등급 기준 대중교통 접근성 열위 추정(버스정류장 약 {_bus_count}개소 수준)"
-        _access_desc += " / 실제 건물 주차면·지하철 도보거리는 '현장 실측' 필요"
+            _access_desc = f"{comm.get('spending_grade', '')} 지역등급 기준 자차 이용 중심 상권 추정(버스정류장 약 {_bus_count}개소 수준, 주차 확보가 핵심 변수)"
+        _access_desc += " / 실제 건물 주차면·도보거리는 본사 담당자와 현장 동행 시 정밀 산정"
 
         # 공간 적합성 지표: 실제 채점에 사용된 타석당 평수 구간을 그대로 근거 문구에 반영
         _pyeong_per_room = site['area_pyeong'] / max(1, site['rooms'])
@@ -775,10 +775,10 @@ class PDFGenerator:
         elif _pyeong_per_room >= 10.0:
             _space_desc = f"타석당 {_pyeong_per_room:.1f}평, 표준 배치 규모"
         elif _pyeong_per_room >= 8.0:
-            _space_desc = f"타석당 {_pyeong_per_room:.1f}평, 다소 협소한 배치"
+            _space_desc = f"타석당 {_pyeong_per_room:.1f}평, 효율 배치 설계 권장"
         else:
-            _space_desc = f"타석당 {_pyeong_per_room:.1f}평, 초협소 배치로 별도 검토 필요"
-        _space_desc += " / 유효 층고 2.8m 이상은 현장 실측 필수"
+            _space_desc = f"타석당 {_pyeong_per_room:.1f}평, 타석 수·면적 조합 재설계 권장"
+        _space_desc += " / 유효 층고 2.8m 이상 여부는 현장 동행 확인 시 정밀 산정"
 
         indicators = [
             ("시니어 인구 밀집도", score['scores']['senior_population'], 25, f"{pop_source_tag}: {'구 전체' if is_district_wide else '반경 3km 내'} 50대 이상 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%) / 본 매장 운영에 필요한 단골 약 {score.get('senior_customers_needed', 1200):,}명은 배후 시니어의 {score.get('senior_penetration', 0)}% 수준", not demo.get('is_estimated', False)),

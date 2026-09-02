@@ -50,6 +50,90 @@ def get_access_token():
         return None
 
 
+class _CallBudget:
+    """API 호출 횟수 상한을 들고 다니는 카운터.
+
+    Vercel 서버리스에서 전체 요청이 수십 초 안에 끝나야 하는데, 산하에 구가
+    여러 개인 시(구마다 stage 조회가 추가됨)에서는 호출이 쉽게 불어난다.
+    그래서 호출 지점마다 남은 예산을 물어보고, 예산이 없으면 '동 이름 수집'
+    같은 부가 작업만 조용히 포기하도록 한다(총인구/동 개수는 먼저 확보).
+    """
+
+    def __init__(self, limit=15):
+        self.limit = limit
+        self.used = 0
+
+    def take(self, n=1):
+        """n회를 쓸 여유가 있으면 차감하고 True, 없으면 False(호출 자체를 생략)."""
+        if self.used + n > self.limit:
+            return False
+        self.used += n
+        return True
+
+
+def _row_name(row):
+    """stage/population 응답의 지역명 필드명이 문서로 확정되지 않아 후보를 모두 본다."""
+    if not isinstance(row, dict):
+        return None
+    for key in ('addr_name', 'adm_nm', 'adm_name', 'nm', 'name'):
+        val = row.get(key)
+        if val:
+            return str(val).strip()
+    return None
+
+
+def _row_cd(row):
+    """지역코드 필드명도 마찬가지로 여러 후보를 관대하게 받는다."""
+    if not isinstance(row, dict):
+        return None
+    for key in ('cd', 'adm_cd', 'adm_code', 'code'):
+        val = row.get(key)
+        if val:
+            return str(val).strip()
+    return None
+
+
+def _stage_rows(access_token, cd, budget=None, timeout=6):
+    """addr/stage.json 한 단계를 조회해 [(이름, 코드), ...]로 정규화. 실패 시 []."""
+    if budget is not None and not budget.take():
+        return []
+    try:
+        params = {'accessToken': access_token}
+        if cd:
+            params['cd'] = cd
+        data = _get('addr/stage.json', params, timeout=timeout)
+        rows = data.get('result', [])
+        if not isinstance(rows, list):
+            return []
+        out = []
+        for row in rows:
+            nm = _row_name(row)
+            rc = _row_cd(row)
+            if nm and rc:
+                out.append((nm, rc))
+        return out
+    except Exception as e:
+        print(f"[SGIS STAGE FAIL] cd={cd}: {e}")
+        return []
+
+
+def _classify_sub_level(rows):
+    """하위 목록이 '읍면동'인지 '구'인지를 응답에 실제로 들어있는 이름으로 판별.
+
+    SGIS 코드 자릿수 체계를 추측하지 않고 이름 접미사만 본다.
+    - 읍/면/동으로 끝나는 항목이 하나라도 있으면 'dong'
+      (동이 있으면 그 계층이 최말단이므로 더 내려갈 필요가 없다)
+    - 그렇지 않고 '구'로 끝나는 항목이 있으면 'gu' (성남시·창원시처럼 시 밑에 구)
+    - 둘 다 아니면 'unknown' -> 하강하지 않고 조용히 포기
+    """
+    has_dong = any(nm.endswith(('동', '읍', '면')) for nm, _ in rows)
+    if has_dong:
+        return 'dong'
+    if any(nm.endswith('구') for nm, _ in rows):
+        return 'gu'
+    return 'unknown'
+
+
 def _find_region_cd(access_token, parent_cd, target_name):
     """addr/stage.json 한 단계를 조회해 target_name과 일치하는 지역의 cd를 찾는다."""
     try:
@@ -119,65 +203,104 @@ def fetch_district_population(sido, sigungu):
     구 전체 합계는 반드시 low_search='0' 값을 쓴다. 동별 목록은 표시용이며,
     일부 동이 누락돼도 합계가 틀어지지 않도록 분리해서 관리한다.
 
+    행정 계층 깊이는 지역마다 다르다. 자치구/군은 산하가 바로 읍면동이지만
+    성남시·창원시 같은 일반시는 산하가 먼저 '구'이고 그 밑에 동이 있다.
+    그래서 하위 목록을 받아본 뒤 이름으로 계층을 판별하고, 구라면 한 단계
+    더 내려가 동을 모은다(지역명 하드코딩 없이 응답만으로 판단).
+
     반환: {'total': int, 'sigungu_cd': str, 'year': str,
-           'dongs': [{'name': str, 'adm_cd': str, 'total': int}, ...]} 또는 None
+           'dong_count': int, 'dong_names': [str],
+           'dongs': [{'name': str, 'adm_cd': str, 'total': int}, ...],
+           'sub_level': 'dong'|'gu', 'gu_names': [str]} 또는 None
     """
     token = get_access_token()
-    if not token or not (sido and sigungu):
+    if not token or not sido:
         return None
+    # 인증 1회 + _find_region_cd 2회는 이미 쓴 것으로 계산해 예산에 반영한다.
+    budget = _CallBudget(limit=15)
+    budget.take(3)
     try:
         sido_cd = _find_region_cd(token, None, sido)
         if not sido_cd:
             return None
-        sigungu_short = sigungu.split()[-1] if ' ' in sigungu else sigungu
-        sigungu_cd = _find_region_cd(token, sido_cd, sigungu_short)
-        if not sigungu_cd:
-            return None
+        if sigungu:
+            sigungu_short = sigungu.split()[-1] if ' ' in sigungu else sigungu
+            sigungu_cd = _find_region_cd(token, sido_cd, sigungu_short)
+            if not sigungu_cd:
+                return None
+        else:
+            # 시/도만 입력된 경우("광주광역시"). 없는 시군구를 지어내지 않고
+            # 시/도 자체를 집계 단위로 삼는다. 산하가 시군구라 _classify_sub_level이
+            # 'gu'로 판별해 한 단계 더 내려가며, 동 이름까지 예산 안에서 모은다.
+            sigungu_cd = sido_cd
 
+        # 총인구는 항상 최상위 집계값(low_search='0')을 쓴다. 하위 동을 합산하면
+        # 일부 누락 시 총계가 틀어지므로 계층 깊이와 무관하게 이 값만 신뢰한다.
+        # 연도 탐색으로 내부에서 최대 3회 호출될 수 있어 예산에서 미리 뺀다.
+        budget.take(3)
         district = get_population_by_age(token, sigungu_cd)
         if not district or district.get('total', 0) <= 0:
             return None
 
-        # 관할 행정동 목록/개수는 addr/stage.json에서 받는다. 이 경로는 실제 키로
-        # 응답 형식을 확인한 적이 있어 신뢰할 수 있고, "구 전체 N개 동"의 N을
+        # 관할 행정동 목록/개수는 addr/stage.json에서 받는다. "구 전체 N개 동"의 N을
         # 정확히 세는 것이 채점 보정(생활권 환산)의 전제라 반드시 확보해야 한다.
+        sub_rows = _stage_rows(token, sigungu_cd, budget)
+        sub_level = _classify_sub_level(sub_rows)
+
         dong_names = []
-        try:
-            stage = _get('addr/stage.json', {'accessToken': token, 'cd': sigungu_cd}, timeout=6)
-            rows = stage.get('result', [])
-            if isinstance(rows, list):
-                for row in rows:
-                    nm = row.get('addr_name')
-                    cd = row.get('cd')
-                    if nm and cd and str(nm).endswith(('동', '읍', '면')):
-                        dong_names.append({'name': str(nm), 'adm_cd': cd})
-        except Exception as e:
-            print(f"[SGIS DONG NAMES FAIL] {sigungu_cd}: {e}")
+        gu_names = []
+        if sub_level == 'dong':
+            # 자치구/군: 산하가 바로 읍면동이므로 그대로 사용.
+            for nm, cd in sub_rows:
+                if nm.endswith(('동', '읍', '면')):
+                    dong_names.append({'name': nm, 'adm_cd': cd})
+        elif sub_level == 'gu':
+            # 일반시: 구마다 한 단계 더 내려가야 동이 나온다. 구 수가 많으면
+            # 남은 예산 안에서만 내려가고, 못 내려간 구는 조용히 건너뛴다.
+            # (총인구는 이미 확보했으므로 결과가 틀리지는 않고 동 목록만 부분적)
+            gu_names = [nm for nm, _ in sub_rows]
+            for nm, cd in sub_rows:
+                if budget.used >= budget.limit:
+                    print(f"[SGIS BUDGET] 구 하강 중단 used={budget.used} gu={nm}")
+                    break
+                child_rows = _stage_rows(token, cd, budget)
+                if not child_rows:
+                    # 예산 소진이나 형식 불일치 — 나머지 구도 어차피 못 받는다.
+                    if budget.used >= budget.limit:
+                        print(f"[SGIS BUDGET] 구 하강 중단 used={budget.used}")
+                        break
+                    continue
+                for c_nm, c_cd in child_rows:
+                    if c_nm.endswith(('동', '읍', '면')):
+                        dong_names.append({'name': c_nm, 'adm_cd': c_cd})
+        else:
+            print(f"[SGIS SUB LEVEL UNKNOWN] cd={sigungu_cd} rows={str(sub_rows[:3])[:200]}")
 
         # 동별 인구 내역(선택). 응답 필드명이 확인되지 않아 실패할 수 있으므로
         # 실패해도 구 총인구/동 개수에는 영향이 없도록 완전히 분리한다.
+        # 산하가 구인 경우 low_search='1'은 '구별' 인구를 주므로 동 코드와 매칭되지
+        # 않는다. 헛호출로 예산만 쓰지 않도록 산하가 읍면동일 때만 호출한다.
         pop_by_cd = {}
         try:
-            data = _get('stats/searchpopulation.json', {
-                'accessToken': token,
-                'adm_cd': sigungu_cd,
-                'low_search': '1',
-                'year': district['year'],
-            }, timeout=8)
-            rows = data.get('result', [])
-            if isinstance(rows, list):
-                for row in rows:
-                    if not isinstance(row, dict):
-                        continue
-                    cd = row.get('adm_cd') or row.get('cd')
-                    tot = row.get('tot_ppltn') or row.get('population')
-                    if cd and tot:
-                        try:
-                            pop_by_cd[str(cd)] = int(float(tot))
-                        except (TypeError, ValueError):
-                            continue
-            if not pop_by_cd:
-                print(f"[SGIS LOW_SEARCH SHAPE] rows={str(rows)[:300]}")
+            if sub_level == 'dong' and budget.take():
+                data = _get('stats/searchpopulation.json', {
+                    'accessToken': token,
+                    'adm_cd': sigungu_cd,
+                    'low_search': '1',
+                    'year': district['year'],
+                }, timeout=8)
+                rows = data.get('result', [])
+                if isinstance(rows, list):
+                    for row in rows:
+                        cd = _row_cd(row)
+                        tot = row.get('tot_ppltn') or row.get('population') if isinstance(row, dict) else None
+                        if cd and tot:
+                            try:
+                                pop_by_cd[str(cd)] = int(float(tot))
+                            except (TypeError, ValueError):
+                                continue
+                if not pop_by_cd:
+                    print(f"[SGIS LOW_SEARCH SHAPE] rows={str(rows)[:300]}")
         except Exception as e:
             print(f"[SGIS DONG BREAKDOWN FAIL] {sigungu_cd}: {e}")
 
@@ -188,6 +311,25 @@ def fetch_district_population(sido, sigungu):
                 dongs.append({'name': d['name'], 'adm_cd': d['adm_cd'], 'total': tot})
         dongs.sort(key=lambda d: d['total'], reverse=True)
 
+        # 구역 면적(㎢). 경쟁사·업종 검색 반경을 임의의 상수(예: 8km) 대신 실제
+        # 구역 크기에서 역산하기 위해 쓴다. 인구밀도(명/㎢) 필드가 응답에 있으면
+        # 면적 = 총인구 / 밀도로 구할 수 있다. 필드가 없거나 값이 이상하면 None을
+        # 돌려주고, 호출부는 기존 기본값을 그대로 쓴다.
+        area_km2 = None
+        try:
+            raw = district.get('raw') or {}
+            for key in ('ppltn_dnsty', 'population_density', 'dnsty'):
+                dnsty = raw.get(key)
+                if dnsty:
+                    dnsty = float(dnsty)
+                    if dnsty > 0:
+                        area_km2 = round(district['total'] / dnsty, 2)
+                        break
+            if area_km2 is None:
+                print(f"[SGIS AREA MISS] density fields absent; raw keys={list(raw.keys())[:20]}")
+        except Exception as e:
+            print(f"[SGIS AREA CALC FAIL] {e}")
+
         return {
             'total': district['total'],
             'sigungu_cd': sigungu_cd,
@@ -195,6 +337,10 @@ def fetch_district_population(sido, sigungu):
             'dong_count': len(dong_names),
             'dong_names': [d['name'] for d in dong_names],
             'dongs': dongs,
+            # 호출부가 "N개 동" 문구를 만들 때 계층을 알아야 해서 함께 돌려준다.
+            'sub_level': sub_level,
+            'gu_names': gu_names,
+            'area_km2': area_km2,
         }
     except Exception as e:
         print(f"[SGIS DISTRICT POP FAIL] {sido} {sigungu}: {e}")

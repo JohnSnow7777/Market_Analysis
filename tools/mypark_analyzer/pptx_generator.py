@@ -165,7 +165,7 @@ class PPTXGenerator:
 
         p4 = tf1.add_paragraph()
         p4.space_before = Pt(6)
-        _scope_txt = f"{site['sigungu']} 전체 (관할 행정동 {demo.get('district_dong_count', 0)}개 전수)" if demo.get('district_wide_analysis') else f"{site['sido']} {site['sigungu']} {target_dong} 반경 3km 생활권"
+        _scope_txt = f"{demo.get('district_scope_name') or site['sigungu']} 전체 (관할 행정동 {demo.get('district_dong_count', 0)}개 전수)" if demo.get('district_wide_analysis') else f"{site['sido']} {site['sigungu']} {target_dong} 반경 3km 생활권"
         p4.text = f"상권 분석 범위: {_scope_txt}  |  분석 기준: {data.get('created_at', '2026.08')}"
         p4.font.name = 'Malgun Gothic'
         p4.font.size = Pt(13)
@@ -194,7 +194,7 @@ class PPTXGenerator:
         s3 = self.prs.slides.add_slide(self.blank_layout)
         _dw3 = demo.get('district_wide_analysis', False)
         _s3_title = "1. 구 전체 인구 및 타겟 연령 분석" if _dw3 else "1. 3km 생활권 인구 및 타겟 연령 분석"
-        _s3_scope = f"{site['sigungu']} 전체 관할" if _dw3 else "사업지 반경 3km 내"
+        _s3_scope = f"{demo.get('district_scope_name') or site['sigungu']} 전체 관할" if _dw3 else "사업지 반경 3km 내"
         self._add_mckinsey_header(s3, _s3_title, f"{_s3_scope} {demo['total_pop']/10000:.1f}만 명({len(demo['dongs'])}개 행정동) 및 50대 이상 시니어 {demo['senior_50_plus']/10000:.1f}만 명({demo['senior_ratio']}%) 확보")
         
         # 좌측 행정동별 인구 테이블
@@ -485,7 +485,7 @@ class PPTXGenerator:
             elif '예시 시나리오' in c.get('status', ''):
                 p_m1.text = "1호점 선점 대상"
             else:
-                p_m1.text = "타석 규모 미확인"
+                p_m1.text = "타석 규모 확인 예정"
             p_m1.font.bold = True
             p_m1.font.size = Pt(13)
             p_m1.font.color.rgb = self.c_mck_navy
@@ -522,9 +522,9 @@ class PPTXGenerator:
             if c.get('rooms', 0) > 0:
                 p3.text = f"■ 보유 규모: {c['rooms']}타석 운영"
             elif '예시 시나리오' in c.get('status', ''):
-                p3.text = "■ 상태: 상업용 매장 미등록"
+                p3.text = "■ 상태: 공공데이터 미등록 (신규 개업 가능성 포함해 현장 확인 권장)"
             else:
-                p3.text = "■ 보유 규모: 타석수 미확인"
+                p3.text = "■ 보유 규모: 타석수 추가 확인 예정"
             p3.font.size = Pt(8.8)
             p3.font.color.rgb = self.c_charcoal
             
@@ -638,10 +638,10 @@ class PPTXGenerator:
         elif _bus_count >= 20:
             _access_desc = f"{comm.get('spending_grade', '')} 지역등급 기준 표준 수준 교통망 추정(버스정류장 약 {_bus_count}개소 수준)"
         elif _bus_count >= 10:
-            _access_desc = f"{comm.get('spending_grade', '')} 지역등급 기준 교통망 다소 협소 추정(버스정류장 약 {_bus_count}개소 수준)"
+            _access_desc = f"{comm.get('spending_grade', '')} 지역등급 기준 교통망 보통 수준 추정(버스정류장 약 {_bus_count}개소 수준, 자차 접근 동선 병행 검토 권장)"
         else:
-            _access_desc = f"{comm.get('spending_grade', '')} 지역등급 기준 대중교통 접근성 열위 추정(버스정류장 약 {_bus_count}개소 수준)"
-        _access_desc += " / 실제 건물 주차면·지하철 도보거리는 '현장 실측' 필요"
+            _access_desc = f"{comm.get('spending_grade', '')} 지역등급 기준 자차 이용 중심 상권 추정(버스정류장 약 {_bus_count}개소 수준, 주차 확보가 핵심 변수)"
+        _access_desc += " / 실제 건물 주차면·도보거리는 본사 담당자와 현장 동행 시 정밀 산정"
 
         # 공간 적합성: 룸/평수 미입력 시(is_auto_estimated) 표준값 대신 중립 점수를
         # 적용한 것이므로 산출근거 문구도 그 사실을 그대로 반영한다.
@@ -653,9 +653,9 @@ class PPTXGenerator:
         elif _pyeong_per_room >= 10.0:
             _space_desc = f"{site['area_pyeong']}평 {site['rooms']}타석 (타석당 {_pyeong_per_room:.1f}평), 표준 배치 규모"
         elif _pyeong_per_room >= 8.0:
-            _space_desc = f"{site['area_pyeong']}평 {site['rooms']}타석 (타석당 {_pyeong_per_room:.1f}평), 다소 협소한 배치"
+            _space_desc = f"{site['area_pyeong']}평 {site['rooms']}타석 (타석당 {_pyeong_per_room:.1f}평), 효율 배치 설계 권장"
         else:
-            _space_desc = f"{site['area_pyeong']}평 {site['rooms']}타석 (타석당 {_pyeong_per_room:.1f}평), 초협소 배치로 별도 검토 필요"
+            _space_desc = f"{site['area_pyeong']}평 {site['rooms']}타석 (타석당 {_pyeong_per_room:.1f}평), 타석 수·면적 조합을 전문가와 함께 재설계 권장"
         if score.get('space_is_verified', True):
             _space_desc += " / 권장 유효 층고 2.8m 이상 여부는 '인테리어 실측' 필수"
 

@@ -298,6 +298,34 @@ class CompetitorEngine:
         return CompetitorEngine._kakao_geocode_bcode(address, api_key)
 
     @staticmethod
+    def resolve_dong_by_geocode(address):
+        """도로명 주소를 카카오 지오코딩해 실제 행정동/법정동 이름을 얻는다. 실패 시 None.
+
+        "OO로 36"처럼 도로명만 있는 주소는 문자열만으로는 행정동을 알 수 없다.
+        동 이름을 추측해 만들어내는 대신, 카카오가 돌려주는 실제 region_3depth_name을
+        그대로 쓴다. 키가 없거나 조회에 실패하면 None을 돌려주고, 호출부는 구 전체
+        분석으로 자연스럽게 넘어간다(없는 동을 지어내지 않는다).
+        """
+        api_key = os.environ.get(KAKAO_API_KEY_ENV)
+        if not api_key or not address:
+            return None
+        try:
+            url = "https://dapi.kakao.com/v2/local/search/address.json?query=" + urllib.parse.quote(address)
+            req = urllib.request.Request(url, headers={'Authorization': f'KakaoAK {api_key}'})
+            with urllib.request.urlopen(req, timeout=4) as resp:
+                data = json.loads(resp.read().decode('utf-8'))
+            docs = data.get('documents', [])
+            if not docs:
+                return None
+            addr = docs[0].get('address') or docs[0].get('road_address') or {}
+            # 행정동(region_3depth_h_name)이 있으면 우선, 없으면 법정동(region_3depth_name)
+            dong = addr.get('region_3depth_h_name') or addr.get('region_3depth_name')
+            return dong.strip() if dong else None
+        except Exception as e:
+            print(f"[KAKAO DONG RESOLVE FAIL] {address}: {e}")
+            return None
+
+    @staticmethod
     def _kakao_keyword_search(query, x, y, radius, api_key):
         """카카오 로컬 API 키워드 장소 검색 (좌표 중심 반경 검색).
 
@@ -433,16 +461,22 @@ class CompetitorEngine:
         return stores
 
     @staticmethod
-    def search_competitors(address, sigungu=None, dong=None, district_wide=False):
+    def search_competitors(address, sigungu=None, dong=None, district_wide=False, district_radius_m=None):
         resolved = AddressResolver.resolve(address)
         s_dong = dong or resolved.get('dong', '')
         s_sigungu = sigungu or resolved.get('sigungu', '')
         s_sido = resolved.get('sido', '')
         full_addr = address
 
-        # 구 전체 분석이면 특정 지점 3km가 아니라 구 전역을 덮는 반경으로 넓힌다.
-        # (자치구 면적은 대체로 10~50km² 수준이라 8km 반경이면 구 전역을 포함한다.)
-        search_radius = 8000 if district_wide else 3000
+        # 구 전체 분석이면 특정 지점 3km가 아니라 구 전역을 덮는 반경을 쓴다.
+        # 반경은 상수로 두지 않고 실제 구역 면적에서 역산한 값(district_radius_m)을
+        # 우선 사용한다 — 구마다 넓이가 크게 달라 같은 상수를 쓰면 근거가 없다.
+        # 면적을 못 구한 경우에만 자치구 통상 규모를 감안한 기본값으로 물러선다.
+        if district_wide:
+            search_radius = district_radius_m if district_radius_m else 8000
+            search_radius = max(3000, min(search_radius, 20000))  # 카카오 반경 상한 20km
+        else:
+            search_radius = 3000
         scope_label = f"{s_sigungu} 전역" if district_wide else "반경 3km 내"
 
         # 1. 전국 전수 실측 DB에서 주소/구/동 일치 매장 매칭
@@ -459,7 +493,9 @@ class CompetitorEngine:
                 score += 3
             if store['dong'] and (store['dong'] in full_addr or store['dong'] in s_dong):
                 score += 5
-            if any(k in store['name'] for k in [s_dong, s_sigungu.split()[-1]] if len(k) >= 2):
+            # 시/도만 입력된 경우 s_sigungu가 빈 문자열이라 split()이 빈 리스트가 된다.
+            _sig_last = s_sigungu.split()[-1] if s_sigungu.split() else ''
+            if any(k in store['name'] for k in [s_dong, _sig_last] if len(k) >= 2):
                 score += 2
             if score >= 3:
                 matched_stores.append((score, store))

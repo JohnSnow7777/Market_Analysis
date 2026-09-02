@@ -99,6 +99,20 @@ class DemographicsEngine:
         sigungu = resolved.get('sigungu', '')
         sido = resolved.get('sido', '')
         full_addr = address
+        admin_level = resolved.get('admin_level', 'dong' if dong else 'sigungu')
+
+        # 도로명까지만 입력된 주소("OO로 36")는 문자열만으로 행정동을 알 수 없다.
+        # 동 이름을 지어내지 않고 카카오 지오코딩으로 실제 행정동을 받아온다.
+        # 실패하면 dong은 빈 값으로 남고, 아래에서 구 전체 분석으로 넘어간다.
+        if not dong and admin_level == 'road':
+            try:
+                from .competitor_engine import CompetitorEngine
+                geo_dong = CompetitorEngine.resolve_dong_by_geocode(full_addr)
+                if geo_dong:
+                    dong = geo_dong
+                    admin_level = 'dong'
+            except Exception as e:
+                print(f"[DONG GEOCODE SKIP] {e}")
 
         # 1. 대상 행정동 중심 반경 3km 인접동 리스트 탐색
         target_dongs = None
@@ -126,6 +140,9 @@ class DemographicsEngine:
         district_pop = None
         district_dong_count = 0
         district_dong_names = []
+        district_scope_name = sigungu or sido
+        lifezone_fallback = False
+        lifezone_scope_label = ''
         if not target_dongs:
             target_dongs_is_fallback = True
             district_pop = sgis_client.fetch_district_population(sido, sigungu)
@@ -135,16 +152,22 @@ class DemographicsEngine:
                 # 동 개수는 addr/stage 기준(신뢰 가능). 인구 내역(dongs)은 없을 수 있다.
                 district_dong_count = district_pop.get('dong_count', 0)
                 district_dong_names = district_pop.get('dong_names', [])
-                center_dong = district_dong_names[0] if district_dong_names else sigungu
+                district_scope_name = sigungu or sido
+                center_dong = district_dong_names[0] if district_dong_names else district_scope_name
                 target_dongs = []
 
             if not district_wide_analysis:
-                clean_dong = dong.replace('동', '') if dong else '사업권역'
-                center_dong = f"{clean_dong}동"
-                target_dongs = [
-                    f"{clean_dong}1동", f"{clean_dong}2동", f"{clean_dong}본동",
-                    "인접동 A", "인접동 B", "인접동 C"
-                ]
+                # SGIS를 쓸 수 없는 상황(키 미설정/일시 장애)에서의 최후 폴백.
+                # 존재하지 않는 동 이름을 지어내지 않고, 입력된 구역명을 그대로 쓰고
+                # 인구는 지역 체급 기반 추정치임을 라벨로 분명히 밝힌다.
+                _scope = sigungu or sido or '해당 권역'
+                center_dong = dong if dong else _scope
+                # 반경 3km 생활권은 통상 6개 안팎의 행정동을 포함한다. 인구 규모를
+                # 유지하되 가짜 동 이름을 나열하지 않도록, 6개 동 규모를 한 줄로
+                # 합쳐서 보여준다(아래 lifezone_fallback 분기에서 집계).
+                lifezone_fallback = True
+                lifezone_scope_label = f"{_scope} 생활권 (약 6개 행정동 규모 추정)"
+                target_dongs = []
 
         # 3. 반경 3km 인접 행정동 인구 정밀 집계
         # 추정 생성 동(실측 DB 미등록)의 인구·비중이 전부 동일하게 찍히지 않도록 슬롯별 편차 적용
@@ -186,6 +209,30 @@ class DemographicsEngine:
                     'senior_ratio': round(s_50 / d_tot * 100.0, 1) if d_tot > 0 else 0.0,
                     'is_estimated': False,
                 })
+
+        if lifezone_fallback:
+            # SGIS 미가용 시의 생활권 추정. 체급별 1개 동 기준값에 생활권 동 수(6)를
+            # 곱해 규모를 맞추고, 가짜 동 이름 대신 한 줄로 합쳐 표시한다.
+            if is_metro:
+                d_m, d_f, s_ratio = 12500, 13500, 0.385
+            elif is_city:
+                d_m, d_f, s_ratio = 9500, 10200, 0.395
+            elif is_mid_small:
+                d_m, d_f, s_ratio = 5200, 5600, 0.435
+            else:
+                d_m, d_f, s_ratio = 2800, 3100, 0.485
+            _slots = 6
+            tot_male = d_m * _slots
+            tot_female = d_f * _slots
+            tot_pop = tot_male + tot_female
+            tot_senior_50 = int(tot_pop * s_ratio)
+            tot_senior_f = int(tot_senior_50 * 0.525)
+            dong_list.append({
+                'dong': lifezone_scope_label, 'male': tot_male, 'female': tot_female,
+                'total': tot_pop, 'senior_50': tot_senior_50,
+                'senior_ratio': round(tot_senior_50 / tot_pop * 100.0, 1) if tot_pop > 0 else 0.0,
+                'is_estimated': True,
+            })
 
         for idx, dname in enumerate(target_dongs):
             if dname in DONG_POPULATION_DB:
@@ -236,6 +283,16 @@ class DemographicsEngine:
                 tot_senior_f += s_f
 
         senior_ratio = round((tot_senior_50 / tot_pop * 100.0), 1) if tot_pop > 0 else 38.4
+
+        # 구역 전체를 덮는 검색 반경을 실제 면적에서 역산한다(원 면적 = πr²).
+        # 구마다 넓이가 크게 달라(서울 중구 약 10㎢, 광주 서구 약 47㎢) 같은
+        # 상수 반경을 쓰면 근거가 없다. 면적을 못 구하면 None으로 두고 호출부가
+        # 기존 기본값을 쓰게 한다.
+        _district_radius_m = None
+        _area = (district_pop or {}).get('area_km2') if district_wide_analysis else None
+        if _area and _area > 0:
+            import math
+            _district_radius_m = int(math.sqrt(_area / math.pi) * 1000)
 
         # 3-1. SGIS 실제 인구 통계로 보정 시도 (키 없음/실패 시 완전히 무시하고 기존 추정치 유지)
         # 주의: SGIS에서 검증 확인된 건 '실제 총인구'뿐이라, 시니어 비중(%)은 기존 추정치를
@@ -291,7 +348,13 @@ class DemographicsEngine:
             data_source_text = 'KOSIS 시군구 통계 기반 3km 추정 모델'
 
         if district_wide_analysis:
-            region_name = f"{sido} {sigungu} 전체 (관할 행정동 {district_dong_count}개 전수 집계)"
+            _scope_full = f"{sido} {sigungu}".strip() if sigungu else sido
+            region_name = f"{_scope_full} 전체 (관할 행정동 {district_dong_count}개 전수 집계)"
+        elif lifezone_fallback:
+            # 동이 특정되지 않은 상태의 추정. 구역명을 두 번 반복하지 않도록
+            # (예: "광주광역시 서구 서구 일원") 구역명만 한 번 쓴다.
+            _scope_full = f"{sido} {sigungu}".strip() if sigungu else sido
+            region_name = f"{_scope_full} 일원 (약 6개 행정동 규모 생활권 추정)"
         else:
             region_name = f"{sido} {sigungu} {center_dong} 일원 (반경 3km 생활권)"
 
@@ -300,6 +363,15 @@ class DemographicsEngine:
             'district_wide_analysis': district_wide_analysis,
             'district_dong_count': district_dong_count,
             'district_dong_names': district_dong_names,
+            # 보고서에 표시할 분석 구역 이름. 시/군/구가 있으면 그것, 시/도만
+            # 입력된 경우엔 시/도 이름. (site['sigungu']는 비어 있을 수 있어
+            # PDF/PPTX가 이 값을 쓰도록 한다.)
+            'district_scope_name': district_scope_name,
+            # 구역 면적(㎢)과 그 면적을 원으로 환산한 반경(m).
+            # 경쟁사/업종 검색 반경을 임의 상수로 두지 않고 실제 구역 크기에서
+            # 역산하기 위한 값. 면적을 못 구하면 None(호출부가 기본값 사용).
+            'district_area_km2': (district_pop or {}).get('area_km2'),
+            'district_radius_m': _district_radius_m,
             'region_name': region_name,
             # 채점용 배후 시니어 인구.
             # 매장 1곳이 실제로 끌어올 수 있는 범위는 구 전체가 아니라 생활권(약 3km,

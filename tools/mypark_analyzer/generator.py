@@ -23,10 +23,12 @@ class MyParkReportGenerator:
         site_info = GeoEngine.analyze_site(address, building_name, area_pyeong, rooms, monthly_rent, staff_count, special_notes)
         demographics = DemographicsEngine.get_demographics(address)
         _district_wide = demographics.get('district_wide_analysis', False)
-        commercial = CommercialDataEngine.get_commercial_trends(address, district_wide=_district_wide)
+        _district_radius_m = demographics.get('district_radius_m')
+        commercial = CommercialDataEngine.get_commercial_trends(
+            address, district_wide=_district_wide, district_radius_m=_district_radius_m)
         competitors = CompetitorEngine.search_competitors(
             address, site_info['sigungu'], site_info['dong'],
-            district_wide=_district_wide)
+            district_wide=_district_wide, district_radius_m=_district_radius_m)
         commercial['competitors'] = competitors['stores']
         commercial['competitor_summary'] = competitors['summary']
         commercial['is_blue_ocean'] = competitors['is_blue_ocean']
