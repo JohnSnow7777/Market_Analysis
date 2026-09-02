@@ -625,8 +625,11 @@
 
                 <div id="loadingBox" class="loading-box">
                     <div class="spinner"></div>
-                    <p style="font-weight:800; color:var(--primary); font-size:15px; margin-bottom:6px;">공공데이터 및 재무 시뮬레이션 분석 중...</p>
-                    <p style="font-size:13px; color:var(--text-muted);">16:9 와이드 고품질 프레젠테이션과 상세 분석 보고서를 실시간 렌더링하고 있습니다.</p>
+                    <p id="loadingStage" style="font-weight:800; color:var(--primary); font-size:15px; margin-bottom:10px;">분석을 시작하고 있습니다...</p>
+                    <div style="max-width:420px; margin:0 auto 10px; background:#E2E8F0; border-radius:99px; height:8px; overflow:hidden;">
+                        <div id="loadingBar" style="width:0%; height:100%; background:var(--primary); border-radius:99px; transition:width .4s ease;"></div>
+                    </div>
+                    <p id="loadingSteps" style="font-size:12.5px; color:var(--text-muted); line-height:1.9; text-align:left; max-width:420px; margin:0 auto;"></p>
                 </div>
 
                 <div id="resultContent" class="result-content">
@@ -1346,12 +1349,55 @@
             };
 
             try {
+                // 진행 상황을 실시간으로 받아 화면에 표시한다.
+                // 서버가 각 단계를 '실제로 끝낸 시점'에 이벤트를 보내므로,
+                // 타이머로 화면만 넘기는 연출이 아니다.
+                payload.stream = true;
+                const stageEl = document.getElementById('loadingStage');
+                const barEl = document.getElementById('loadingBar');
+                const stepsEl = document.getElementById('loadingSteps');
+                const doneSteps = [];
+                if (stepsEl) stepsEl.innerHTML = '';
+                if (barEl) barEl.style.width = '0%';
+
                 const response = await fetch('/api/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' },
                     body: JSON.stringify(payload)
                 });
-                
+
+                if (response.ok && (response.headers.get('Content-Type') || '').includes('text/event-stream')) {
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let buf = '';
+                    let finalPayload = null;
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        buf += decoder.decode(value, { stream: true });
+                        const parts = buf.split('\n\n');
+                        buf = parts.pop();
+                        for (const part of parts) {
+                            const line = part.trim();
+                            if (!line.startsWith('data:')) continue;
+                            let ev;
+                            try { ev = JSON.parse(line.slice(5).trim()); } catch (e) { continue; }
+                            if (ev.error) throw new Error(ev.error);
+                            if (ev.done) { finalPayload = ev.result; continue; }
+                            if (ev.stage) {
+                                if (stageEl) stageEl.innerText = ev.stage + ' 진행 중...';
+                                if (barEl) barEl.style.width = (ev.pct || 0) + '%';
+                                doneSteps.push(ev.stage);
+                                if (stepsEl) stepsEl.innerHTML = doneSteps
+                                    .map(function (t) { return '&#10003; ' + t; }).join('<br>');
+                            }
+                        }
+                    }
+                    if (!finalPayload) throw new Error('보고서 생성이 완료되지 않았습니다. 다시 시도해 주십시오.');
+                    if (stageEl) stageEl.innerText = '보고서 준비 완료';
+                    return renderAnalysisResult(finalPayload, payload);
+                }
+
                 if (!response.ok) {
                     let errDetail = response.statusText;
                     try {
@@ -1368,112 +1414,7 @@
                 if (res.error) {
                     throw new Error(res.error);
                 }
-                const site = res.bundle.site;
-                
-                document.getElementById('gradeScore').innerText = res.grade + "등급 (" + res.total_score + "점)";
-                document.getElementById('gradeDesc').innerText = res.bundle.scores.grade_desc;
-                
-                document.getElementById('specRooms').innerText = site.rooms + "타석 (" + site.area_pyeong + "평)";
-                document.getElementById('specRent').innerText = (Math.floor(site.monthly_rent / 10000)).toLocaleString() + "만원/월";
-                document.getElementById('specStaff').innerText = site.staff_count + "명";
-                
-                const finBundle = res.bundle.financials;
-                const invData = finBundle.investment;
-                const modScen = finBundle.monthly_scenarios.moderate;
-                const ownData = finBundle.owner_operated;
-                
-                document.getElementById('valSenior').innerText = res.bundle.demographics.senior_50_plus.toLocaleString() + "명 (" + res.bundle.demographics.senior_ratio + "%)";
-                
-                // 1. 월 영업이익 (직접운영 2,583만 vs 직원채용 2,083만)
-                document.getElementById('valProfit').innerHTML = (Math.floor(res.operating_profit_moderate / 10000)).toLocaleString() + '만원/월 <span style="font-size:12.5px; color:var(--text-muted); font-weight:normal;">(이익률 ' + modScen.profit_margin + '%)</span>';
-                document.getElementById('valProfitSub').innerHTML = '★ <strong>직접운영</strong>: ' + (Math.floor(res.operating_profit_moderate / 10000)).toLocaleString() + '만원 | 직원채용: ' + (Math.floor(ownData.staff3_operating_profit / 10000)).toLocaleString() + '만원';
-                
-                // 2. 손익분기점 BEP (타석당 1일 1.1팀)
-                const fixedCostMan = Math.floor(ownData.fixed_cost / 10000);
-                document.getElementById('valBEP').innerHTML = '타석당 1일 ' + invData.bep_turns_per_room + '팀 (약 4명)';
-                document.getElementById('valBEPSub').innerHTML = '• 타석당 하루 1팀 이용 시 월 고정비(' + fixedCostMan.toLocaleString() + '만원) 전액 커버 가능<br>• ★ <strong>직접운영</strong>: 일 ' + invData.bep_turns_per_room + '회전 | 직원채용: 일 ' + ownData.staff3_bep_turns + '회전';
-                
-                // 3. 회수기간 (직접운영 12.3개월 vs 직원채용 15.3개월)
-                document.getElementById('valPayback').innerHTML = formatPaybackPeriod(res.payback_months) + ' <span style="font-size:12.5px; color:var(--royal-blue); font-weight:normal;">(' + res.payback_months + '개월)</span>';
-                document.getElementById('valPaybackSub').innerHTML = '★ <strong>직접운영</strong>: ' + res.payback_months + '개월 | 직원채용: ' + ownData.staff3_payback_months + '개월 (' + (invData.total_capex / 100000000).toFixed(3) + '억 회수)';
-                
-                // 5대 지표 시각화 바인딩
-                const dims = (res.bundle && res.bundle.scores && res.bundle.scores.scores) ? res.bundle.scores.scores : (res.bundle && res.bundle.score && res.bundle.score.scores ? res.bundle.score.scores : {});
-                const setDim = (fillId, valId, score, max) => {
-                    const sc = score || 0;
-                    const elFill = document.getElementById(fillId);
-                    const elVal = document.getElementById(valId);
-                    if (elFill) elFill.style.width = Math.min(100, Math.max(0, (sc / max * 100))) + '%';
-                    if (elVal) elVal.innerText = sc.toFixed(1) + '점';
-                };
-                setDim('dimSenior', 'dimSeniorVal', dims.senior_population, 25);
-                setDim('dimParking', 'dimParkingVal', dims.accessibility_parking, 25);
-                setDim('dimSpace', 'dimSpaceVal', dims.space_efficiency, 15);
-                setDim('dimGap', 'dimGapVal', dims.supply_gap, 15);
-                setDim('dimSpending', 'dimSpendingVal', dims.commercial_spending, 20);
-
-                document.getElementById('valueFranchisee').innerText = res.bundle.scores.value_franchisee || res.bundle.scores.pitch_franchisee;
-                document.getElementById('valueLandlord').innerText = res.bundle.scores.value_landlord || res.bundle.scores.pitch_landlord;
-                document.getElementById('resDate').innerText = '분석 기준: ' + res.bundle.created_at;
-
-                const now = new Date();
-                const yy = String(now.getFullYear()).slice(-2);
-                const m = now.getMonth() + 1;
-                const d = now.getDate();
-                const dateSuffix = yy + "년" + m + "월" + d + "일";
-                const fileBase = '마이파크_' + (payload.name || site.sigungu || '상권분석') + '_상권및사업분석_' + dateSuffix;
-
-                if (res.pdf_base64) {
-                    document.getElementById('btnPdf').href = 'data:application/pdf;base64,' + res.pdf_base64;
-                    document.getElementById('btnPdf').setAttribute('download', fileBase + '.pdf');
-                }
-                if (res.pptx_base64) {
-                    document.getElementById('btnPptx').href = 'data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,' + res.pptx_base64;
-                    document.getElementById('btnPptx').setAttribute('download', fileBase + '.pptx');
-                }
-                // 히스토리에 자동 추가
-                const historyList = getHistory();
-                const newRecord = {
-                    id: Date.now(),
-                    timestamp: now.toLocaleString(),
-                    dateSuffix: dateSuffix,
-                    address: payload.address,
-                    special_notes: payload.special_notes || '',
-                    name: payload.name || site.building_name,
-                    rooms: site.rooms,
-                    area: site.area_pyeong,
-                    rent: site.monthly_rent,
-                    staff: site.staff_count,
-                    score: res.total_score,
-                    grade: res.grade,
-                    gradeDesc: res.bundle.scores.grade_desc,
-                    profit: res.operating_profit_moderate,
-                    payback: res.payback_months,
-                    seniorPop: res.bundle.demographics.senior_50_plus,
-                    seniorRatio: res.bundle.demographics.senior_ratio,
-                    pdfBase64: res.pdf_base64,
-                    pptxBase64: res.pptx_base64,
-                    bundle: res.bundle
-                };
-                historyList.unshift(newRecord);
-                saveHistory(historyList);
-
-                // 구글 시트 Webhook 자동 전송 (설정되어 있을 때)
-                const webhookUrl = localStorage.getItem(WEBHOOK_KEY);
-                if (webhookUrl) {
-                    try {
-                        fetch(webhookUrl, {
-                            method: 'POST',
-                            mode: 'no-cors',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(newRecord)
-                        });
-                    } catch (e) {
-                        console.warn('Google Sheets webhook error:', e);
-                    }
-                }
-
-                renderFullReport(res.bundle);
+                renderAnalysisResult(res, payload);
                 loading.style.display = 'none';
                 result.style.display = 'block';
             } catch (err) {
@@ -1484,6 +1425,118 @@
                 btn.disabled = false;
             }
         });
+
+        // 결과 렌더링. 스트리밍 경로와 일반 경로가 같은 코드를 쓰도록 분리했다.
+        function renderAnalysisResult(res, payload) {
+                    const site = res.bundle.site;
+                
+                    document.getElementById('gradeScore').innerText = res.grade + "등급 (" + res.total_score + "점)";
+                    document.getElementById('gradeDesc').innerText = res.bundle.scores.grade_desc;
+                
+                    document.getElementById('specRooms').innerText = site.rooms + "타석 (" + site.area_pyeong + "평)";
+                    document.getElementById('specRent').innerText = (Math.floor(site.monthly_rent / 10000)).toLocaleString() + "만원/월";
+                    document.getElementById('specStaff').innerText = site.staff_count + "명";
+                
+                    const finBundle = res.bundle.financials;
+                    const invData = finBundle.investment;
+                    const modScen = finBundle.monthly_scenarios.moderate;
+                    const ownData = finBundle.owner_operated;
+                
+                    document.getElementById('valSenior').innerText = res.bundle.demographics.senior_50_plus.toLocaleString() + "명 (" + res.bundle.demographics.senior_ratio + "%)";
+                
+                    // 1. 월 영업이익 (직접운영 2,583만 vs 직원채용 2,083만)
+                    document.getElementById('valProfit').innerHTML = (Math.floor(res.operating_profit_moderate / 10000)).toLocaleString() + '만원/월 <span style="font-size:12.5px; color:var(--text-muted); font-weight:normal;">(이익률 ' + modScen.profit_margin + '%)</span>';
+                    document.getElementById('valProfitSub').innerHTML = '★ <strong>직접운영</strong>: ' + (Math.floor(res.operating_profit_moderate / 10000)).toLocaleString() + '만원 | 직원채용: ' + (Math.floor(ownData.staff3_operating_profit / 10000)).toLocaleString() + '만원';
+                
+                    // 2. 손익분기점 BEP (타석당 1일 1.1팀)
+                    const fixedCostMan = Math.floor(ownData.fixed_cost / 10000);
+                    document.getElementById('valBEP').innerHTML = '타석당 1일 ' + invData.bep_turns_per_room + '팀 (약 4명)';
+                    document.getElementById('valBEPSub').innerHTML = '• 타석당 하루 1팀 이용 시 월 고정비(' + fixedCostMan.toLocaleString() + '만원) 전액 커버 가능<br>• ★ <strong>직접운영</strong>: 일 ' + invData.bep_turns_per_room + '회전 | 직원채용: 일 ' + ownData.staff3_bep_turns + '회전';
+                
+                    // 3. 회수기간 (직접운영 12.3개월 vs 직원채용 15.3개월)
+                    document.getElementById('valPayback').innerHTML = formatPaybackPeriod(res.payback_months) + ' <span style="font-size:12.5px; color:var(--royal-blue); font-weight:normal;">(' + res.payback_months + '개월)</span>';
+                    document.getElementById('valPaybackSub').innerHTML = '★ <strong>직접운영</strong>: ' + res.payback_months + '개월 | 직원채용: ' + ownData.staff3_payback_months + '개월 (' + (invData.total_capex / 100000000).toFixed(3) + '억 회수)';
+                
+                    // 5대 지표 시각화 바인딩
+                    const dims = (res.bundle && res.bundle.scores && res.bundle.scores.scores) ? res.bundle.scores.scores : (res.bundle && res.bundle.score && res.bundle.score.scores ? res.bundle.score.scores : {});
+                    const setDim = (fillId, valId, score, max) => {
+                        const sc = score || 0;
+                        const elFill = document.getElementById(fillId);
+                        const elVal = document.getElementById(valId);
+                        if (elFill) elFill.style.width = Math.min(100, Math.max(0, (sc / max * 100))) + '%';
+                        if (elVal) elVal.innerText = sc.toFixed(1) + '점';
+                    };
+                    setDim('dimSenior', 'dimSeniorVal', dims.senior_population, 25);
+                    setDim('dimParking', 'dimParkingVal', dims.accessibility_parking, 25);
+                    setDim('dimSpace', 'dimSpaceVal', dims.space_efficiency, 15);
+                    setDim('dimGap', 'dimGapVal', dims.supply_gap, 15);
+                    setDim('dimSpending', 'dimSpendingVal', dims.commercial_spending, 20);
+
+                    document.getElementById('valueFranchisee').innerText = res.bundle.scores.value_franchisee || res.bundle.scores.pitch_franchisee;
+                    document.getElementById('valueLandlord').innerText = res.bundle.scores.value_landlord || res.bundle.scores.pitch_landlord;
+                    document.getElementById('resDate').innerText = '분석 기준: ' + res.bundle.created_at;
+
+                    const now = new Date();
+                    const yy = String(now.getFullYear()).slice(-2);
+                    const m = now.getMonth() + 1;
+                    const d = now.getDate();
+                    const dateSuffix = yy + "년" + m + "월" + d + "일";
+                    const fileBase = '마이파크_' + (payload.name || site.sigungu || '상권분석') + '_상권및사업분석_' + dateSuffix;
+
+                    if (res.pdf_base64) {
+                        document.getElementById('btnPdf').href = 'data:application/pdf;base64,' + res.pdf_base64;
+                        document.getElementById('btnPdf').setAttribute('download', fileBase + '.pdf');
+                    }
+                    if (res.pptx_base64) {
+                        document.getElementById('btnPptx').href = 'data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,' + res.pptx_base64;
+                        document.getElementById('btnPptx').setAttribute('download', fileBase + '.pptx');
+                    }
+                    // 히스토리에 자동 추가
+                    const historyList = getHistory();
+                    const newRecord = {
+                        id: Date.now(),
+                        timestamp: now.toLocaleString(),
+                        dateSuffix: dateSuffix,
+                        address: payload.address,
+                        special_notes: payload.special_notes || '',
+                        name: payload.name || site.building_name,
+                        rooms: site.rooms,
+                        area: site.area_pyeong,
+                        rent: site.monthly_rent,
+                        staff: site.staff_count,
+                        score: res.total_score,
+                        grade: res.grade,
+                        gradeDesc: res.bundle.scores.grade_desc,
+                        profit: res.operating_profit_moderate,
+                        payback: res.payback_months,
+                        seniorPop: res.bundle.demographics.senior_50_plus,
+                        seniorRatio: res.bundle.demographics.senior_ratio,
+                        pdfBase64: res.pdf_base64,
+                        pptxBase64: res.pptx_base64,
+                        bundle: res.bundle
+                    };
+                    historyList.unshift(newRecord);
+                    saveHistory(historyList);
+
+                    // 구글 시트 Webhook 자동 전송 (설정되어 있을 때)
+                    const webhookUrl = localStorage.getItem(WEBHOOK_KEY);
+                    if (webhookUrl) {
+                        try {
+                            fetch(webhookUrl, {
+                                method: 'POST',
+                                mode: 'no-cors',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(newRecord)
+                            });
+                        } catch (e) {
+                            console.warn('Google Sheets webhook error:', e);
+                        }
+                    }
+
+                    renderFullReport(res.bundle);
+            document.getElementById('loadingBox').style.display = 'none';
+            document.getElementById('resultContent').style.display = 'block';
+        }
 
         // 공유 링크 생성 및 복사
         function buildShareUrl() {
