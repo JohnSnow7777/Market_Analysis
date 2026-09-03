@@ -166,18 +166,6 @@ class MyParkReportGenerator:
             'tenant_monthly_rent': site_info['monthly_rent'],
         }
 
-        # [임시 진단] 외부 API 실제 응답 형태 확인용. 확인 후 제거한다.
-        try:
-            from . import sgis_client as _sg, sbiz_client as _sb
-            from . import apt_client as _ap, map_clients as _mc
-            _d = {}
-            _d.update(getattr(_sg, 'DIAG', {}))
-            _d.update(getattr(_sb, 'DIAG', {}))
-            _d.update(getattr(_ap, 'DIAG', {}))
-            _d.update(getattr(_mc, 'DIAG', {}))
-            bundle['_diag'] = _d
-        except Exception:
-            pass
 
         safe_name = site_info['building_name'].replace(' ', '_').replace('/', '_')
         date_str = datetime.now().strftime("%y%m%d")

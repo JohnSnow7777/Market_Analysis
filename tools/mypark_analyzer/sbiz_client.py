@@ -22,7 +22,9 @@ import urllib.request
 import urllib.parse
 
 SBIZ_API_KEY_ENV = "DATA_GO_KR_API_KEY"
-DIAG = {}  # [임시 진단] 확인 후 제거
+# 조회 상태. 'paged_complete'는 마지막 조회가 전수였는지를 나타내며,
+# False면 호출부가 '0건'을 확정하지 않는다(뒤 페이지에 매장이 있을 수 있음).
+SCAN_STATE = {}
 SBIZ_BASE = "https://apis.data.go.kr/B553077/api/open/sdsc2/storeListInRadius"
 
 # 스크린 파크골프 반경 경쟁사 탐지에 쓰는 업종 키워드
@@ -92,22 +94,23 @@ def search_stores_in_radius(x, y, radius=3000, page_no=1, num_rows=100):
             items = items.get('item', [])
         if isinstance(items, dict):
             items = [items]
-        DIAG['sbiz_total_count'] = body.get('totalCount')
         return items or []
     except Exception as e:
         print(f"[SBIZ API FAIL] {e}")
         return None
 
 
-def search_all_stores_in_radius(x, y, radius=3000, page_size=1000, max_pages=6):
-    """반경 내 상가업소를 페이지를 넘겨가며 모두 조회. 실패 시 None.
+def search_all_stores_in_radius(x, y, radius=3000, page_size=1000, max_pages=2):
+    """반경 내 상가업소를 여러 페이지에 걸쳐 조회. 실패 시 None.
 
-    한 페이지(500건)만 보고 판단하면 밀집 상권에서 경쟁 매장이 뒤 페이지에
-    있을 때 '0건'으로 확정해버린다(실측: 분당 서현동 3km에서 정확히 500건
-    반환 = 잘림 확인). 페이지를 끝까지 넘겨 실제 전수를 본다.
+    2026-09-03 실측: 분당구 반경 조회의 totalCount가 53,562건이었다.
+    상가업소 전수를 받는 것은 현실적으로 불가능하고(응답 48.9초까지 늘어남),
+    필요하지도 않다 — 경쟁 매장 탐지는 지도 API의 '파크골프' 키워드 검색이
+    훨씬 정확하며, 소상공인 데이터는 보조 확인용이다.
 
-    max_pages로 상한을 둬 서버리스 응답 시간이 무한정 늘어나는 것을 막고,
-    상한에 걸리면 그 사실을 DIAG에 남겨 호출부가 '전수 아님'을 알 수 있게 한다.
+    그래서 여기서는 앞 2페이지만 보고, 전수를 못 봤다는 사실을 SCAN_STATE에 남긴다.
+    호출부는 그 경우 '0건'을 확정하지 않는다(뒤 페이지에 매장이 있는데
+    블루오션이라고 단정하는 일을 막는 것이 이 함수의 핵심 목적이다).
     """
     collected = []
     for page in range(1, max_pages + 1):
@@ -117,9 +120,9 @@ def search_all_stores_in_radius(x, y, radius=3000, page_size=1000, max_pages=6):
             return None if page == 1 else collected
         collected.extend(items)
         if len(items) < page_size:
-            DIAG['sbiz_paged_complete'] = True
+            SCAN_STATE['paged_complete'] = True
             return collected
-    DIAG['sbiz_paged_complete'] = False
+    SCAN_STATE['paged_complete'] = False
     print(f"[SBIZ PAGING] 상한 {max_pages}페이지 도달 — 전수가 아닐 수 있음")
     return collected
 
@@ -156,7 +159,7 @@ def find_golf_competitors(x, y, radius=3000):
     items = search_all_stores_in_radius(x, y, radius=radius)
     if items is None:
         return None
-    if DIAG.get('sbiz_paged_complete') is False:
+    if SCAN_STATE.get('paged_complete') is False:
         # 전수를 못 봤으면 0건을 확정하지 않는다
         _found = [it for it in items
                   if is_park_golf(_norm(it)['name'], _norm(it)['category'])]
@@ -208,9 +211,6 @@ def industry_mix(x, y, radius=3000, top_n=8):
     items = search_all_stores_in_radius(x, y, radius=radius)
     if items is None:
         return None
-    DIAG['sbiz_returned'] = len(items)
-    if items:
-        DIAG['sbiz_item_keys'] = sorted(items[0].keys())
     counts = {}
     for it in items:
         norm = _norm(it)

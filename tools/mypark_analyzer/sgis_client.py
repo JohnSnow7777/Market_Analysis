@@ -9,11 +9,17 @@
   - 인구통계 조건검색: GET stats/searchpopulation.json?accessToken=&adm_cd=&low_search=&year=
           (네 파라미터 모두 필수 확인됨. age_type/gender는 선택)
 
-주의: addr/stage.json의 응답 필드명(cd, addr_name)과 searchpopulation.json의
-연령대별 필드명은 공식 문서가 로그인 후에만 열람 가능해 제3자 예제 코드로
-교차 확인한 것이며, 실제 키로 첫 호출한 뒤 반드시 재확인이 필요하다.
-그래서 이 클라이언트는 필드가 기대와 다르면 예외를 던지는 대신 조용히
-None을 반환하도록 방어적으로 작성했다 (호출부는 기존 추정모델로 폴백).
+[2026-09-03 실키 응답으로 확정된 사양]
+  searchpopulation.json 응답 항목: adm_cd, adm_nm, population (3개)
+    예) {"adm_cd":"31023","adm_nm":"성남시 분당구","population":"447920"}
+    - population은 문자열이다. 연령대별 분포는 제공하지 않는다.
+    - avg_age(평균연령) 항목은 존재하지 않는다(총인구 폴백으로 쓰면 안 됨).
+  addr/stage.json: 시/도 하위에 '성남시 분당구'처럼 시+구가 한 항목으로 온다.
+    구 하위는 바로 읍면동이다(예: 구미1동, 금곡동, 백현동, 서현1동 …).
+
+연령 분포가 없으므로 시니어 비중은 지역 체급별 추정 계수를 적용한다.
+그 외 필드가 기대와 다르면 예외를 던지는 대신 조용히 None을 반환한다
+(호출부는 기존 추정모델로 폴백).
 """
 import os
 import json
@@ -34,9 +40,6 @@ _TOKEN_TTL_SEC = 3 * 3600          # 발급 후 4시간 유효 — 여유를 두
 _REGION_CD_CACHE = {}              # (부모코드, 지역명) -> 지역코드 (행정구역은 고정값)
 _POP_YEAR_CACHE = {'year': None}   # 조회에 성공한 연도 — 실패 연도 재시도를 없앤다
 _SGIS_CACHE_MAX = 512
-
-# [임시 진단] 실제 응답 형태 확인용. 확인 후 제거한다.
-DIAG = {}
 
 
 def _get(path, params, timeout=4):
@@ -317,7 +320,6 @@ def fetch_district_population(sido, sigungu):
         # 관할 행정동 목록/개수는 addr/stage.json에서 받는다. "구 전체 N개 동"의 N을
         # 정확히 세는 것이 채점 보정(생활권 환산)의 전제라 반드시 확보해야 한다.
         sub_rows = _stage_rows(token, sigungu_cd, budget)
-        DIAG['sgis_sub_names'] = [nm for nm, _ in sub_rows[:8]]
         sub_level = _classify_sub_level(sub_rows)
 
         dong_names = []
@@ -476,8 +478,6 @@ def get_population_by_age(access_token, adm_cd, year=None):
             if total is None:
                 continue
             _POP_YEAR_CACHE['year'] = yr
-            DIAG['sgis_pop_keys'] = sorted(row.keys())
-            DIAG['sgis_pop_sample'] = {k: row.get(k) for k in list(row)[:6]}
             return {'raw': row, 'total': int(total), 'year': yr}
         except Exception as e:
             print(f"[SGIS POPULATION FAIL] adm_cd={adm_cd} year={yr}: {e}")

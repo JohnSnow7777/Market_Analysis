@@ -27,7 +27,6 @@ APT_API_KEY_ENV = "DATA_GO_KR_API_KEY"
 # 소상공인 API와 동일 계정 키를 공유하되, 별도 활용신청이 안 되어 있으면
 # NO_OPENAPI_SERVICE_ERROR가 나므로 그 경우도 실패(None)로 조용히 처리한다.
 MAX_DETAIL_COMPLEXES = 15
-DIAG = {}  # [임시 진단] 확인 후 제거
 
 
 def _get(url, params):
@@ -109,9 +108,6 @@ def fetch_apt_summary(sigungu_code, dong_name):
         # 라벨을 정직하게 구분한다 (3km 생활권과 다른 범위임을 명시)
         target = items
         scope_label = "행정구역(시/군/구) 전체 기준"
-    DIAG['apt_list_len'] = len(items)
-    if items:
-        DIAG['apt_item_keys'] = sorted(items[0].keys())
 
     sample = target[:MAX_DETAIL_COMPLEXES]
     households = []
