@@ -24,6 +24,7 @@ KAKAO_API_KEY_ENV = 'KAKAO_REST_API_KEY'
 _GEOCODE_CACHE = {}
 _BCODE_CACHE = {}
 _DONG_CACHE = {}
+_REGION_CACHE = {}
 _GEOCODE_CACHE_MAX = 256
 
 
@@ -335,14 +336,18 @@ class CompetitorEngine:
             return docs
         if not (sido or sigungu):
             return []
-        sido_short = (sido or '').replace('특별시', '').replace('광역시', '').replace('특별자치시', '').replace('특별자치도', '').replace('도', '')
+        # '경상북도'를 '경상북'으로 자르면 실재하지 않는 약칭이 된다.
+        # 정식명↔약칭 대응표(region_key)를 역방향으로 조회해 실제 약칭을 얻는다.
+        from .region_key import _SIDO_ALIASES
+        _aliases = [a for a, full in _SIDO_ALIASES.items() if full == sido]
+        _aliases.append(sido or '')
         sigungu_last = sigungu.split()[-1] if sigungu else ''
         kept = []
         for d in docs:
             addr = d.get('address') or ''
             if not addr:
                 continue
-            if sido and not (sido in addr or (len(sido_short) >= 2 and sido_short in addr)):
+            if sido and not any(a and len(a) >= 2 and a in addr for a in _aliases):
                 continue
             if sigungu_last and sigungu_last not in addr:
                 continue
@@ -363,6 +368,12 @@ class CompetitorEngine:
         api_key = os.environ.get(KAKAO_API_KEY_ENV)
         if not api_key or not address:
             return None
+        # 결과를 캐시한다. 한 보고서에서 사업지·인구·상권·경쟁사 모듈이 각각
+        # resolve()를 호출하는데, 캐시가 없으면 그중 한 번만 API가 실패해도
+        # 그 모듈만 시/도 없이 계산해 임대료·등급이 어긋난다.
+        hit = _cache_get(_REGION_CACHE, address)
+        if hit != '__MISS__':
+            return hit
         try:
             url = "https://dapi.kakao.com/v2/local/search/address.json?query=" + urllib.parse.quote(address)
             req = urllib.request.Request(url, headers={'Authorization': f'KakaoAK {api_key}'})
@@ -370,7 +381,7 @@ class CompetitorEngine:
                 data = json.loads(resp.read().decode('utf-8'))
             docs = data.get('documents', [])
             if not docs:
-                return None
+                return _cache_put(_REGION_CACHE, address, None)
             addr = docs[0].get('address') or docs[0].get('road_address') or {}
             # 카카오는 '경기', '충북'처럼 축약 표기를 돌려준다. 지역등급 판정은
             # '경기도' 같은 정식 명칭으로 비교하므로, 여기서 표기를 통일하지 않으면
@@ -380,8 +391,9 @@ class CompetitorEngine:
             sigungu = (addr.get('region_2depth_name') or '').strip()
             dong = (addr.get('region_3depth_h_name') or addr.get('region_3depth_name') or '').strip()
             if not sido:
-                return None
-            return {'sido': sido, 'sigungu': sigungu, 'dong': dong}
+                return _cache_put(_REGION_CACHE, address, None)
+            return _cache_put(_REGION_CACHE, address,
+                              {'sido': sido, 'sigungu': sigungu, 'dong': dong})
         except Exception as e:
             print(f"[KAKAO REGION RESOLVE FAIL] {address}: {e}")
             return None

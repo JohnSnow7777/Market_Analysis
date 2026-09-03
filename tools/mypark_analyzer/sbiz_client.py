@@ -125,6 +125,15 @@ def find_golf_competitors(x, y, radius=3000):
     items = search_stores_in_radius(x, y, radius=radius, num_rows=500)
     if items is None:
         return None
+    # 상위 500건만 조회하므로, 밀집 상권에서는 파크골프 매장이 그 뒤에 있을 수
+    # 있다. 정확히 500건이 돌아왔다면 잘렸다는 뜻이므로 '0건 확정'으로 보지
+    # 않는다(블루오션이라고 단정하면 허위가 된다). 판정 불가는 None으로 알린다.
+    if len(items) >= 500:
+        _found = [it for it in items
+                  if is_park_golf(_norm(it)['name'], _norm(it)['category'])]
+        if not _found:
+            print("[SBIZ TRUNCATED] 조회 상한(500건)에 도달해 0건을 확정할 수 없음")
+            return None
     # 예전에는 '골프' 두 글자만 걸리면 전부 경쟁매장으로 실어, 골프용품 소매점과
     # 골프의류점까지 '경쟁 매장' 카드에 올라갔다. 업태가 다른 곳은 경쟁이 아니므로
     # 실내 시뮬레이터 업태(직접 경쟁)만 남기고, 나머지는 참고 업종으로 분리한다.
@@ -178,7 +187,11 @@ def industry_mix(x, y, radius=3000, top_n=8):
         counts[cat] = counts.get(cat, 0) + 1
     ranked = sorted(counts.items(), key=lambda kv: kv[1], reverse=True)[:top_n]
     total = len(items)
+    # 상한에 걸렸으면 구성비가 전체 상권을 대표하지 않는다. 호출부가 알 수 있게
+    # 표시한다(정확히 500이면 잘린 것).
+    truncated = total >= 500
     return {
+        'truncated': truncated,
         'total_stores': total,
         'top_categories': [{'category': c, 'count': n, 'ratio': round(n / total * 100.0, 1) if total else 0.0} for c, n in ranked]
     }

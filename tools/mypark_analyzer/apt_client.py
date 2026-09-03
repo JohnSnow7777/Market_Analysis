@@ -46,7 +46,7 @@ def _get(url, params):
     return data.get('response', {}).get('body', {})
 
 
-def get_apt_list(sigungu_code, num_rows=200):
+def get_apt_list(sigungu_code, num_rows=1000):
     """시군구(법정동코드 앞5자리) 내 공동주택 단지 목록. 키 없음/실패 시 None."""
     api_key = os.environ.get(APT_API_KEY_ENV)
     if not api_key:

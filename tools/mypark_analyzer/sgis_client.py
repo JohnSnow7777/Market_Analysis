@@ -466,7 +466,9 @@ def get_population_by_age(access_token, adm_cd, year=None):
             if not rows:
                 continue
             row = rows[0] if isinstance(rows, list) else rows
-            total = row.get('tot_ppltn') or row.get('population') or row.get('avg_age')
+            # avg_age(평균연령)를 총인구 폴백으로 쓰면 '구 전체 인구 43명' 같은
+            # 값이 만들어져 인구·채점·매출이 통째로 무너진다. 인구 필드만 본다.
+            total = row.get('tot_ppltn') or row.get('population')
             if total is None:
                 continue
             _POP_YEAR_CACHE['year'] = yr

@@ -134,7 +134,10 @@ class DemographicsEngine:
 
         # 2. 지역 체급별 디폴트 인구 계수 산정 (config.classify_region_tier 공용 SSOT)
         tier = classify_region_tier(full_addr, sigungu, sido)
-        is_metro = tier in (TIER_PRIME, TIER_METRO)
+        # 주의: is_metro에 TIER_METRO를 포함시키면 아래 elif is_city 분기가
+        # 영원히 도달하지 않는다(광역시·경기 주요시가 강남·분당과 같은 인구
+        # 계수를 받아 생활권 인구가 약 32% 부풀려지던 원인).
+        is_metro = tier == TIER_PRIME
         is_city = tier == TIER_METRO
         is_mid_small = tier == TIER_MID_CITY
 

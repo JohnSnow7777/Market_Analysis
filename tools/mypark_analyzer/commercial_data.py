@@ -16,8 +16,9 @@ class CommercialEngine:
         sigungu = resolved.get('sigungu', '')
         dong = resolved.get('dong', '') if resolved.get('dong') else '사업권역'
 
-        # 경쟁 매장 실시간 검색
-        comp_res = CompetitorEngine.search_competitors(address, sigungu, dong)
+        # 경쟁 매장 검색은 generator가 병렬로 따로 수행하고 그 결과로 덮어쓴다.
+        # 여기서 또 호출하면 카카오·소상공인 API를 한 번 더 태우고 결과는 전량
+        # 폐기되므로(쿼터·응답시간 낭비) 호출하지 않는다.
 
         # 지역별 실측 상권 매출 및 소비력 지수 차등화
         is_estimated_comm = False
@@ -215,10 +216,11 @@ class CommercialEngine:
             'subway_detail': subway_detail,
             'golf_industry_density': golf_industry_density,
             'infra': infra,
-            'competitors': comp_res['stores'],
-            'competitor_count': comp_res['count'],
-            'competitor_summary': comp_res['summary'],
-            'is_blue_ocean': comp_res['is_blue_ocean'],
+            # 아래 네 항목은 generator가 병렬 검색 결과로 즉시 덮어쓴다.
+            # 키가 없으면 참조하는 쪽이 깨지므로 빈 기본값만 둔다.
+            'competitors': [],
+            'competitor_summary': '',
+            'is_blue_ocean': False,
             'base_source': 'MYPARK 지역등급 추정 모델 (Tier 1~4)',
             'is_estimated': is_estimated_comm,
             'real_industry_mix': real_industry_mix

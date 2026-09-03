@@ -4,6 +4,12 @@
 def format_payback_text(months, capex_amount=281500000):
     m = float(months)
     capex_str = f"약 {capex_amount / 100000000:.2f}억원 ({capex_amount // 10000:,}만원)"
+    # 99.0은 '월 순익이 0 이하라 회수 불가'를 뜻하는 표식이다. 이를 그대로
+    # 개월 수로 옮기면 적자 사업지에 '8년 3개월 만에 전액 회수'라는 문장이
+    # 나간다. 회수 시점을 지어내지 않고 조건이 필요하다는 사실을 밝힌다.
+    if m >= 99.0:
+        return (f"현재 조건에서는 초기 순투자금 {capex_str} 회수 시점을 산출하기 어렵습니다. "
+                "가동률 상향 또는 고정비 조정 등 조건 보완 후 재산정이 필요합니다.")
     if m < 12:
         return f"초기 순투자금 {capex_str} 기준 약 {m:.1f}개월 만에 전액 회수"
     years = int(m // 12)
@@ -74,7 +80,15 @@ class ScoringEngine:
         # 인정해 접근성 점수를 최고 등급으로 올려버리는 문제가 있었다.
         _sub_detail = commercial_data.get('subway_detail')
         if _sub_detail is not None:
-            has_subway = bool(_sub_detail.get('name'))
+            # 구 전체 분석은 검색 반경이 최대 20km까지 넓어진다. 그 범위의 역을
+            # 역세권으로 인정하면 12km 떨어진 역도 만점을 받는다. 걸어갈 수 있는
+            # 거리(1.5km)까지만 역세권으로 본다.
+            _sub_name = _sub_detail.get('name')
+            _sub_dist = _sub_detail.get('distance_m')
+            if _sub_name and (_sub_dist is None or _sub_dist <= 1500):
+                has_subway = True
+            else:
+                has_subway = False
         else:
             has_subway = '지하철' in subway_info or '역세권' in subway_info or subway_info.endswith('역')
         # 건물 단위 주차 실측은 여전히 불가. 다만 주변시설 개수를 실제로 센 경우에는
