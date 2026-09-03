@@ -372,7 +372,11 @@ class CompetitorEngine:
             if not docs:
                 return None
             addr = docs[0].get('address') or docs[0].get('road_address') or {}
-            sido = (addr.get('region_1depth_name') or '').strip()
+            # 카카오는 '경기', '충북'처럼 축약 표기를 돌려준다. 지역등급 판정은
+            # '경기도' 같은 정식 명칭으로 비교하므로, 여기서 표기를 통일하지 않으면
+            # 분당구가 최상위 상권으로 잡히지 않는다(실제 발생한 오분류).
+            from .region_key import normalize_sido
+            sido = normalize_sido((addr.get('region_1depth_name') or '').strip())
             sigungu = (addr.get('region_2depth_name') or '').strip()
             dong = (addr.get('region_3depth_h_name') or addr.get('region_3depth_name') or '').strip()
             if not sido:
