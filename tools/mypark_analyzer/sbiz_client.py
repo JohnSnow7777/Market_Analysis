@@ -92,10 +92,36 @@ def search_stores_in_radius(x, y, radius=3000, page_no=1, num_rows=100):
             items = items.get('item', [])
         if isinstance(items, dict):
             items = [items]
+        DIAG['sbiz_total_count'] = body.get('totalCount')
         return items or []
     except Exception as e:
         print(f"[SBIZ API FAIL] {e}")
         return None
+
+
+def search_all_stores_in_radius(x, y, radius=3000, page_size=1000, max_pages=6):
+    """반경 내 상가업소를 페이지를 넘겨가며 모두 조회. 실패 시 None.
+
+    한 페이지(500건)만 보고 판단하면 밀집 상권에서 경쟁 매장이 뒤 페이지에
+    있을 때 '0건'으로 확정해버린다(실측: 분당 서현동 3km에서 정확히 500건
+    반환 = 잘림 확인). 페이지를 끝까지 넘겨 실제 전수를 본다.
+
+    max_pages로 상한을 둬 서버리스 응답 시간이 무한정 늘어나는 것을 막고,
+    상한에 걸리면 그 사실을 DIAG에 남겨 호출부가 '전수 아님'을 알 수 있게 한다.
+    """
+    collected = []
+    for page in range(1, max_pages + 1):
+        items = search_stores_in_radius(x, y, radius=radius, page_no=page, num_rows=page_size)
+        if items is None:
+            # 첫 페이지부터 실패면 판정 불가, 중간 실패면 지금까지 모은 것을 쓴다
+            return None if page == 1 else collected
+        collected.extend(items)
+        if len(items) < page_size:
+            DIAG['sbiz_paged_complete'] = True
+            return collected
+    DIAG['sbiz_paged_complete'] = False
+    print(f"[SBIZ PAGING] 상한 {max_pages}페이지 도달 — 전수가 아닐 수 있음")
+    return collected
 
 
 def _norm(store):
@@ -103,6 +129,8 @@ def _norm(store):
     name = store.get('bizesNm') or store.get('bizesnm') or store.get('상호명') or '이름 미상'
     # 주소 필드명이 문서로 확정되지 않아 후보를 넓게 본다. 그래도 못 찾으면
     # 값 자체가 주소처럼 생긴 필드를 찾는다(보고서에 주소가 공란으로 나가던 문제).
+    # 필드명은 2026-09-03 실키 응답으로 확정: rdnmAdr(도로명), lnoAdr(지번),
+    # bizesNm(상호), indsSclsNm(업종소분류), ctprvnNm/signguNm/adongNm(행정구역)
     addr = (store.get('rdnmAdr') or store.get('rdnmadr') or store.get('lnoAdr')
             or store.get('lnoadr') or store.get('adres') or store.get('newAddr')
             or store.get('jibunAddr') or '')
@@ -123,17 +151,16 @@ def find_golf_competitors(x, y, radius=3000):
     밀집 상권은 3km 반경에 상가업소가 만 단위로 잡혀 골프 관련 업소가
     상위 100건 안에 없을 수 있어 500건까지 조회한다
     (2026-08-31 전주 완산구 실키 테스트: 100건 내 0건, 500건 내 5건 확인)."""
-    items = search_stores_in_radius(x, y, radius=radius, num_rows=500)
+    # 페이지를 끝까지 넘겨 전수를 본다(한 페이지만 보면 뒤 페이지의 매장을
+    # 놓친 채 '0건 = 블루오션'으로 확정해버린다).
+    items = search_all_stores_in_radius(x, y, radius=radius)
     if items is None:
         return None
-    # 상위 500건만 조회하므로, 밀집 상권에서는 파크골프 매장이 그 뒤에 있을 수
-    # 있다. 정확히 500건이 돌아왔다면 잘렸다는 뜻이므로 '0건 확정'으로 보지
-    # 않는다(블루오션이라고 단정하면 허위가 된다). 판정 불가는 None으로 알린다.
-    if len(items) >= 500:
+    if DIAG.get('sbiz_paged_complete') is False:
+        # 전수를 못 봤으면 0건을 확정하지 않는다
         _found = [it for it in items
                   if is_park_golf(_norm(it)['name'], _norm(it)['category'])]
         if not _found:
-            print("[SBIZ TRUNCATED] 조회 상한(500건)에 도달해 0건을 확정할 수 없음")
             return None
     # 예전에는 '골프' 두 글자만 걸리면 전부 경쟁매장으로 실어, 골프용품 소매점과
     # 골프의류점까지 '경쟁 매장' 카드에 올라갔다. 업태가 다른 곳은 경쟁이 아니므로
@@ -161,7 +188,7 @@ def find_golf_competitors(x, y, radius=3000):
 
 def find_related_golf_businesses(x, y, radius=3000):
     """직접 경쟁은 아니지만 골프 수요를 보여주는 참고 업종(용품점 등). 실패 시 None."""
-    items = search_stores_in_radius(x, y, radius=radius, num_rows=500)
+    items = search_all_stores_in_radius(x, y, radius=radius)
     if items is None:
         return None
     out = []
@@ -178,7 +205,7 @@ def find_related_golf_businesses(x, y, radius=3000):
 
 def industry_mix(x, y, radius=3000, top_n=8):
     """반경 내 업종 구성비 집계 (시니어 동선 업종 밀집도 분석용). 실패 시 None."""
-    items = search_stores_in_radius(x, y, radius=radius, num_rows=500)
+    items = search_all_stores_in_radius(x, y, radius=radius)
     if items is None:
         return None
     DIAG['sbiz_returned'] = len(items)
