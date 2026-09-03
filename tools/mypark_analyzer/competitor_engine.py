@@ -31,6 +31,16 @@ SOURCE_STATE = {}
 _GEOCODE_CACHE_MAX = 256
 
 
+def _now_kst_text():
+    """지도 조회 시각(KST)을 보고서에 적을 문자열로 돌려준다.
+
+    매장은 폐업하고 새로 생긴다. 조회 시각을 함께 적어야 독자가 그 목록이
+    언제 기준인지 알 수 있다.
+    """
+    from datetime import datetime, timedelta, timezone
+    return datetime.now(timezone(timedelta(hours=9))).strftime('%Y-%m-%d %H:%M')
+
+
 def _normalize_name(name):
     """상호를 비교용으로 정규화(띄어쓰기·괄호·지점명 표기 차이를 흡수)."""
     import re as _re
@@ -747,10 +757,31 @@ class CompetitorEngine:
                 elif _st.get('status') in ('운영중', '공공시설'):
                     _st['status'] = '등록 정보 (최신 여부 담당자 확인)'
 
+            # 지도에서 확인된 매장이 하나라도 있으면, 그것이 현재 상태다.
+            # 코드 내장 목록에만 있고 지도에 없는 매장은 폐업했거나 상호가
+            # 바뀌었을 수 있으므로 경쟁매장 목록에서 내린다. 지도 조회가 통째로
+            # 실패했을 때만 내장 목록을 참고용으로 남긴다.
+            _confirmed = [x for x in _merged if x.get('status') == '지도 확인']
+            _unconfirmed = [x for x in _merged if x.get('status') != '지도 확인']
+            if _live is not None and _confirmed:
+                _merged = _confirmed
             _merged = _merged[:4]
             _live_cnt = len([1 for x in _merged if x.get('status') == '지도 확인'])
-            summary_txt = (f"{scope_label} 실내 스크린 파크골프 매장 {len(_merged)}곳을 확인했습니다"
-                           f"(지도에서 현재 운영이 확인된 곳 {_live_cnt}곳).")
+            _checked_at = _now_kst_text()
+            if _live is None:
+                # 지도 조회가 실패한 상태. 목록의 최신 여부를 확인할 방법이 없다.
+                summary_txt = (f"{scope_label} 등록 정보 기준 실내 스크린 파크골프 매장 "
+                               f"{len(_merged)}곳이 확인됩니다. 지도 조회가 일시적으로 되지 않아 "
+                               f"현재 영업 여부는 확인하지 못했습니다 — 마이파크 담당자가 "
+                               f"현장 기준으로 확인해 드립니다.")
+            else:
+                summary_txt = (f"{scope_label} 실내 스크린 파크골프 매장 {len(_merged)}곳을 "
+                               f"{_checked_at} 지도 데이터 기준으로 확인했습니다.")
+                if _unconfirmed and not _confirmed:
+                    summary_txt += " 지도에서 현재 영업이 확인된 곳은 없어, 등록 정보 기준으로 표시했습니다."
+                elif _unconfirmed:
+                    summary_txt += (f" 과거 등록 정보에 있던 {len(_unconfirmed)}곳은 이번 조회에서 "
+                                    f"확인되지 않아 목록에서 제외했습니다(폐업 또는 상호 변경 가능성).")
             _outdoor = SOURCE_STATE.get('outdoor_courses') or []
             if _outdoor:
                 summary_txt += (f" 같은 범위에 실외 파크골프 구장 {len(_outdoor)}곳이 함께 확인되어,"

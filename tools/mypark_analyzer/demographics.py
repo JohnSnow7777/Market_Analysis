@@ -264,10 +264,55 @@ class DemographicsEngine:
                 'is_estimated': True,
             })
 
+        # 통계청(SGIS) 실제 인구를 먼저 조회한다.
+        #
+        # 예전에는 코드에 적힌 인구표를 먼저 보고, 거기서 못 찾았을 때만 통계청을
+        # 불렀다. 그래서 표에 등록된 지역(분당구 등)은 통계청을 아예 조회하지 않고
+        # 고정값으로 계산됐다. 순서를 뒤집는다 — 실제 통계가 있으면 그것이 답이고,
+        # 코드에 적힌 표는 통계청을 쓸 수 없을 때의 폴백이다.
+        #
+        # 동마다 따로 부르지 않고 시군구 조회 한 번으로 관내 전체 동 인구를 받아
+        # 이름으로 찾는다(호출 6회 -> 1회).
+        _sgis_dong_pop = {}
+        if target_dongs and not district_wide_analysis:
+            _dp = sgis_client.fetch_district_population(sido, sigungu)
+            for _d in (_dp or {}).get('dongs', []):
+                _nm = (_d.get('name') or '').strip()
+                if _nm and _d.get('total', 0) > 0:
+                    _sgis_dong_pop[_nm] = _d['total']
+
+        # 연령 비중은 SGIS 응답에 없다(응답 필드는 adm_cd/adm_nm/population 3개뿐).
+        # 총인구만 실측으로 바꾸고 비중은 체급 추정치를 곱한다.
+        if is_metro:
+            _sr = 0.385
+        elif is_city:
+            _sr = 0.395
+        elif is_mid_small:
+            _sr = 0.435
+        else:
+            _sr = 0.485
+
         # target_dongs는 (시/도, 시군구, 동) 3요소 튜플 목록이다. 동 이름만으로
         # 조회하면 다른 지역의 동이 걸리므로 반드시 3요소로 찾는다.
         for idx, dkey in enumerate(target_dongs):
             d_sido, d_sigungu, dname = dkey
+            _real = _sgis_dong_pop.get(dname)
+            if _real:
+                _m = int(_real * 0.483)
+                _s50 = int(_real * _sr)
+                dong_list.append({
+                    'dong': dname, 'male': _m, 'female': _real - _m, 'total': _real,
+                    'senior_50': _s50,
+                    'senior_ratio': round(_s50 / _real * 100.0, 1),
+                    'is_estimated': False,
+                })
+                tot_male += _m
+                tot_female += _real - _m
+                tot_pop += _real
+                tot_senior_50 += _s50
+                tot_senior_f += int(_s50 * 0.525)
+                sgis_used = True
+                continue
             info = DONG_POPULATION_DB.get(dkey)
             if info:
                 d_senior_ratio = round(info['senior_50'] / info['total'] * 100.0, 1) if info['total'] > 0 else 0.0
@@ -398,7 +443,10 @@ class DemographicsEngine:
         if sgis_used:
             data_source_text = 'SGIS 통계청 실제 인구 + MYPARK 연령비중 추정 모델'
         elif not is_estimated_flag:
-            data_source_text = 'KOSIS 국가통계포털 (실측 DB 매핑)'
+            # 코드에 내장된 인구표를 쓴 경우다. 이 표에는 출처 URL·통계표 번호·
+            # 기준 시점이 기록되어 있지 않아 국가통계 실측이라고 표기할 근거가 없다.
+            # 확인하지 못한 것은 확인하지 못했다고 쓴다.
+            data_source_text = 'MYPARK 지역 인구 추정 모델 (통계청 조회 불가 시 대체값)'
         else:
             data_source_text = 'KOSIS 시군구 통계 기반 3km 추정 모델'
 
