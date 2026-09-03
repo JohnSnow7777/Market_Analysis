@@ -399,12 +399,31 @@ class DemographicsEngine:
         # 생활권 규모(약 6개 동)로 환산한다.
         if dong and lifezone_fallback:
             sgis_pop = sgis_client.fetch_real_population(sido, sigungu, dong)
+            _center_dongs = 1
+            if not (sgis_pop and sgis_pop.get('total', 0) > 0) and dong.endswith('동'):
+                # 통계청은 '화정1동'~'화정4동'으로 세분해 관리하는데 주소에는
+                # '화정동'으로 적힌다. 이름이 정확히 없으면 같은 이름으로 시작하는
+                # 세분 동을 모아 그 동네의 실제 인구로 쓴다.
+                # (2026-09-03 실측: 광주 서구 화정동이 이 불일치로 통계청 값을
+                #  쓰지 못하고 추정 모델로 넘어가고 있었다.)
+                _stem = dong[:-1]
+                _dp2 = sgis_client.fetch_district_population(sido, sigungu)
+                _subs = [d['total'] for d in (_dp2 or {}).get('dongs', [])
+                         if (d.get('name') or '').startswith(_stem)
+                         and (d.get('name') or '')[len(_stem):-1].isdigit()
+                         and d.get('total', 0) > 0]
+                if _subs:
+                    sgis_pop = {'total': sum(_subs)}
+                    _center_dongs = len(_subs)
             if sgis_pop and sgis_pop.get('total', 0) > 0:
                 center_real = sgis_pop['total']
                 # 중심동 실측 인구를 기준으로 생활권(약 6개 동) 규모로 환산한다.
                 # 인접동이 중심동과 같은 규모라는 가정이라 정확도에 한계가 있어,
                 # 라벨에 '추정'임을 계속 명시한다.
-                lifezone_total = int(center_real * LIFEZONE_DONG_COUNT)
+                # 이미 N개 동을 합쳤으면 생활권(약 6개 동) 규모까지의 나머지만 곱한다.
+                # 4개 동을 합쳐놓고 다시 6배 하면 생활권을 24개 동 규모로 부풀린다.
+                _scale = max(1.0, LIFEZONE_DONG_COUNT / max(1, _center_dongs))
+                lifezone_total = int(center_real * _scale)
                 tot_pop = lifezone_total
                 tot_male = int(lifezone_total * 0.483)
                 tot_female = lifezone_total - tot_male
@@ -413,7 +432,8 @@ class DemographicsEngine:
                 sgis_used = True
                 if dong_list:
                     dong_list[0].update({
-                        'dong': f"{dong} 중심 생활권 (중심동 실측 {center_real:,}명 기준)",
+                        'dong': (f"{dong} 중심 생활권 (통계청 실측 {center_real:,}명 기준"
+                                 + (f", {_center_dongs}개 행정동 합산)" if _center_dongs > 1 else ")")),
                         'male': tot_male, 'female': tot_female,
                         'total': tot_pop, 'senior_50': tot_senior_50,
                     })
