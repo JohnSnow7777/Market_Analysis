@@ -157,7 +157,15 @@ def classify_region_tier(address, sigungu='', sido=''):
     추정해 쓴다 — 이때도 부분 문자열로 동 이름을 뒤지지는 않는다.
     """
     sigungu = ' '.join((sigungu or '').split())
-    sido = (sido or '').strip()
+    # 시/도 표기를 정식 명칭으로 통일한 뒤 비교한다.
+    # 호출부가 어디든(지도 API의 '경기', 사용자 입력의 '서울시' 등) 같은 결과가
+    # 나오도록 판정 함수 안에서 방어한다. 정규화 없이 비교하면 '서울'이
+    # 최상위 상권에 걸리지 않고 지방 중소도시로 떨어진다(9개 표기에서 발생).
+    try:
+        from .region_key import normalize_sido
+        sido = normalize_sido(sido)
+    except Exception:
+        sido = (sido or '').strip()
 
     if not sido and address:
         # 주소 맨 앞 토큰이 시/도인 경우만 인정한다(주소 중간의 지명은 보지 않음).

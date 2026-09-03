@@ -120,6 +120,43 @@ def test_tier_gun_inside_metro_city_is_rural():
         assert _tier(addr) == TIER_RURAL, addr
 
 
+def test_tier_accepts_abbreviated_sido():
+    """지도 API가 돌려주는 축약 표기('경기','서울')로도 같은 등급이 나와야 한다.
+
+    카카오는 region_1depth_name을 '경기'로 축약해 준다. 정규화 없이 비교하면
+    분당구가 최상위 상권에 걸리지 않고 지방 중소도시로 떨어져, 임대료가
+    절반으로 잡히고 손익·회수기간까지 어긋난다(실제 발생 사례).
+    """
+    pairs = [
+        ('서울', '서울특별시', '강남구'),
+        ('서울시', '서울특별시', '강남구'),
+        ('경기', '경기도', '성남시 분당구'),
+        ('부산', '부산광역시', '해운대구'),
+        ('대구', '대구광역시', '수성구'),
+        ('광주', '광주광역시', '서구'),
+        ('울산', '울산광역시', '울주군'),
+        ('전북', '전북특별자치도', '전주시 완산구'),
+    ]
+    for short, full, sigungu in pairs:
+        assert classify_region_tier('', sigungu, short) == classify_region_tier('', sigungu, full),             f"{short} vs {full} ({sigungu}) 등급 불일치"
+
+
+def test_park_golf_excludes_screen_golf_brands():
+    """스크린골프 브랜드를 파크골프 경쟁매장으로 세면 안 된다.
+
+    '골프존파크'는 골프존의 스크린골프 브랜드로 파크골프장이 아닌데
+    이름에 '파크'가 들어가 경쟁매장으로 실렸던 사례가 있다.
+    반대로 '마실파크골프 분당점'은 상호에 '스크린'이 없어 검색에서
+    누락됐었다 — 둘 다 판정이 정확해야 한다.
+    """
+    from tools.mypark_analyzer.sbiz_client import is_park_golf
+    assert is_park_golf('마실파크골프 분당점', '파크골프장') is True
+    assert is_park_golf('아르피아스포츠센터 스크린파크골프장', '') is True
+    assert is_park_golf('골프존파크 수내JUN스크린점', '스크린골프장') is False
+    assert is_park_golf('골프존파크 야탑명품스크린점', '') is False
+    assert is_park_golf('파크스포츠센터', '스크린골프장') is False
+
+
 def test_tier_prime_regions():
     for addr in ["서울특별시 강남구 역삼동", "경기도 성남시 분당구 서현동",
                  "부산광역시 해운대구 우동", "대구광역시 수성구 범어동"]:
