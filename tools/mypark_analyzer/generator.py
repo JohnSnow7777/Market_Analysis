@@ -164,6 +164,10 @@ class MyParkReportGenerator:
             'tenant_payback_months': tenant_payback,
             'tenant_bep_turns_per_room': tenant_bep_turns,
             'tenant_monthly_rent': site_info['monthly_rent'],
+            # 지도 소스별 동작 상태(키 설정 여부·결과 건수). 운영 점검용.
+            'map_source_state': dict(getattr(CompetitorEngine, 'SOURCE_STATE', {}) or
+                                     __import__('tools.mypark_analyzer.competitor_engine',
+                                                fromlist=['SOURCE_STATE']).SOURCE_STATE),
         }
 
 

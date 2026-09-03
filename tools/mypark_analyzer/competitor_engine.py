@@ -25,6 +25,9 @@ _GEOCODE_CACHE = {}
 _BCODE_CACHE = {}
 _DONG_CACHE = {}
 _REGION_CACHE = {}
+
+# 지도 소스별 동작 상태(키 설정 여부·결과 건수). 키 값은 담지 않는다.
+SOURCE_STATE = {}
 _GEOCODE_CACHE_MAX = 256
 
 
@@ -582,6 +585,18 @@ class CompetitorEngine:
             kakao_res = f_kakao.result()
             tmap_res = f_tmap.result()
             naver_res = f_naver.result()
+
+        # 어느 소스가 설정돼 있고 몇 건을 돌려줬는지 기록한다.
+        # (None = 키 없음 또는 호출 실패, [] = 정상 호출 후 0건)
+        SOURCE_STATE.update({
+            'kakao_key': bool(os.environ.get(KAKAO_API_KEY_ENV)),
+            'tmap_key': bool(os.environ.get(map_clients.TMAP_APP_KEY_ENV)),
+            'naver_key': bool(os.environ.get(map_clients.NAVER_CLIENT_ID_ENV)
+                              and os.environ.get(map_clients.NAVER_CLIENT_SECRET_ENV)),
+            'kakao_n': None if kakao_res is None else len(kakao_res),
+            'tmap_n': None if tmap_res is None else len(tmap_res),
+            'naver_n': None if naver_res is None else len(naver_res),
+        })
 
         succeeded = [r for r in (kakao_res, tmap_res, naver_res) if r is not None]
         if not succeeded:
