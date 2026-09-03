@@ -735,6 +735,13 @@ class CompetitorEngine:
             # 지도에서 확인된 매장은 '지도 확인', 목록에만 있는 매장은 최신 여부를
             # 담당자가 확인하도록 표시한다(폐업 가능성을 감춘 채 단정하지 않는다).
             for _st in _merged:
+                # 내장 목록 항목에도 같은 실내/실외 분류를 적용한다.
+                if not _st.get('venue'):
+                    _st['venue'] = sbiz_client.classify_venue(
+                        _st.get('name', ''), _st.get('category', ''))
+            # 실외 구장은 내장 목록에서 온 것이라도 경쟁매장에서 제외한다.
+            _merged = [x for x in _merged if x.get('venue') != 'outdoor']
+            for _st in _merged:
                 if _normalize_name(_st['name']) in _live_names:
                     _st['status'] = '지도 확인'
                 elif _st.get('status') in ('운영중', '공공시설'):
