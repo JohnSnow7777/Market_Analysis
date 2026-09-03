@@ -31,6 +31,12 @@ SOURCE_STATE = {}
 _GEOCODE_CACHE_MAX = 256
 
 
+def _normalize_name(name):
+    """상호를 비교용으로 정규화(띄어쓰기·괄호·지점명 표기 차이를 흡수)."""
+    import re as _re
+    return _re.sub(r'[\s()（）·\-]', '', name or '').lower()
+
+
 def _cache_get(cache, key):
     return cache.get(key, '__MISS__')
 
@@ -679,14 +685,45 @@ class CompetitorEngine:
                                ['우경파크골프', '화신로272번길 11', '마실파크골프'])
 
         if final_stores:
-            summary_txt = f"{scope_label} 실측 전문 매장 {len(final_stores)}곳이 운영 중이며, {final_stores[0]['name'].split()[0]} 등 주요 매장의 현황을 확인했습니다."
+            # 내장 목록에 매장이 있어도 지도 검색을 반드시 함께 수행한다.
+            #
+            # 이 목록은 코드에 적힌 고정 데이터라 시간이 지나면 실제와 어긋난다.
+            # 폐업한 매장이 계속 '운영중'으로 남고, 새로 생긴 매장은 영영 잡히지
+            # 않는다. 예전에는 목록에 매장이 있으면 여기서 바로 반환해 지도
+            # 검색을 아예 하지 않았다 — 그래서 최신 상태가 반영되지 않았다.
+            _live = CompetitorEngine.search_live_multi_source_competitors(
+                resolved['full_address'], radius=search_radius, _resolved_hint=resolved)
+
+            _merged = list(final_stores)
+            _live_names = set()
+            if _live:
+                _seen = {_normalize_name(x['name']) for x in _merged}
+                for d in _live:
+                    _nm = _normalize_name(d.get('name', ''))
+                    _live_names.add(_nm)
+                    if _nm and _nm not in _seen:
+                        _seen.add(_nm)
+                        _merged.append(d)
+
+            # 지도에서 확인된 매장은 '지도 확인', 목록에만 있는 매장은 최신 여부를
+            # 담당자가 확인하도록 표시한다(폐업 가능성을 감춘 채 단정하지 않는다).
+            for _st in _merged:
+                if _normalize_name(_st['name']) in _live_names:
+                    _st['status'] = '지도 확인'
+                elif _st.get('status') in ('운영중', '공공시설'):
+                    _st['status'] = '등록 정보 (최신 여부 담당자 확인)'
+
+            _merged = _merged[:4]
+            _live_cnt = len([1 for x in _merged if x.get('status') == '지도 확인'])
+            summary_txt = (f"{scope_label} 파크골프 매장 {len(_merged)}곳을 확인했습니다"
+                           f"(지도에서 현재 운영이 확인된 곳 {_live_cnt}곳).")
             if is_self_location:
-                summary_txt = f"현재 이 주소에서 운영 중인 '{final_stores[0]['name']}' 매장을 대상으로, 리뉴얼 및 상권 경쟁력 강화 관점에서 분석했습니다."
+                summary_txt = f"현재 이 주소에서 운영 중인 '{_merged[0]['name']}' 매장을 대상으로, 리뉴얼 및 상권 경쟁력 강화 관점에서 분석했습니다."
             return {
                 'region_key': s_sigungu,
-                'stores': final_stores,
-                'count': len(final_stores),
-                'verified_count': len(final_stores),
+                'stores': _merged,
+                'count': len(_merged),
+                'verified_count': len(_merged),
                 'is_verified': True,
                 'is_blue_ocean': False,
                 'summary': summary_txt
