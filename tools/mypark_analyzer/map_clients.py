@@ -16,6 +16,7 @@
 전부 .get()으로 방어해 필드가 다르면 그 값만 비어 보일 뿐 예외를 던지지 않는다.
 """
 import os
+DIAG = {}  # [임시 진단] 확인 후 제거
 import re
 import json
 import urllib.request
@@ -81,6 +82,10 @@ def naver_local_search(query, region_hint='', display=10, timeout=4):
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             data = json.loads(resp.read().decode('utf-8'))
         items = data.get('items', [])
+        DIAG['naver_count'] = len(items)
+        if items:
+            DIAG['naver_keys'] = sorted(items[0].keys())
+            DIAG['naver_addr_sample'] = items[0].get('roadAddress') or items[0].get('address')
         out = []
         for it in items:
             name = re.sub('<[^<]+?>', '', it.get('title', '이름 미상'))

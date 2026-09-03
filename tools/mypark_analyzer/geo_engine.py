@@ -54,8 +54,11 @@ class GeoEngine:
         }
 
     @staticmethod
-    def analyze_site(address, building_name=None, area_pyeong=None, rooms=None, monthly_rent=None, staff_count=None, special_notes=None):
-        resolved = AddressResolver.resolve(address)
+    def analyze_site(address, building_name=None, area_pyeong=None, rooms=None, monthly_rent=None,
+                     staff_count=None, special_notes=None, resolved=None):
+        # resolved를 받으면 그대로 쓴다. 모듈마다 다시 판정하면 지도 API가
+        # 한 번만 실패해도 이 모듈만 다른 지역으로 계산하게 된다.
+        resolved = resolved or AddressResolver.resolve(address)
         smart = GeoEngine.estimate_smart_defaults(
             address, rooms, monthly_rent, area_pyeong, staff_count,
             sigungu=resolved.get('sigungu', ''), sido=resolved.get('sido', ''))

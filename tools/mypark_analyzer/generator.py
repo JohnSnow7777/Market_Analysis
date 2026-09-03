@@ -46,9 +46,14 @@ class MyParkReportGenerator:
         resolved = validate_address(address)
         _m = _lap('validate', _t0)
         _report('주소 확인', 5)
-        site_info = GeoEngine.analyze_site(address, building_name, area_pyeong, rooms, monthly_rent, staff_count, special_notes)
+        # 행정구역은 위에서 '한 번만' 확정하고 아래 모든 모듈에 그 결과를 넘긴다.
+        # 모듈마다 다시 판정하면 지도 API가 한 번만 실패해도 그 모듈만 다른
+        # 지역으로 계산해, 같은 보고서 안에서 임대료·등급이 어긋난다.
+        site_info = GeoEngine.analyze_site(address, building_name, area_pyeong, rooms,
+                                           monthly_rent, staff_count, special_notes,
+                                           resolved=resolved)
         _m = _lap('geo', _m)
-        demographics = DemographicsEngine.get_demographics(address)
+        demographics = DemographicsEngine.get_demographics(address, resolved=resolved)
         _m = _lap('demographics', _m)
         _report('인구 분석 (통계청 SGIS·국토부 공동주택)', 45)
         _district_wide = demographics.get('district_wide_analysis', False)
@@ -59,11 +64,11 @@ class MyParkReportGenerator:
         with ThreadPoolExecutor(max_workers=2) as _ex:
             _f_comm = _ex.submit(
                 CommercialDataEngine.get_commercial_trends,
-                address, _district_wide, _district_radius_m)
+                address, _district_wide, _district_radius_m, resolved)
             _f_comp = _ex.submit(
                 CompetitorEngine.search_competitors,
                 address, site_info['sigungu'], site_info['dong'],
-                _district_wide, _district_radius_m)
+                _district_wide, _district_radius_m, resolved)
             commercial = _f_comm.result()
             competitors = _f_comp.result()
         _m = _lap('commercial+competitors(병렬)', _m)
@@ -160,6 +165,19 @@ class MyParkReportGenerator:
             'tenant_bep_turns_per_room': tenant_bep_turns,
             'tenant_monthly_rent': site_info['monthly_rent'],
         }
+
+        # [임시 진단] 외부 API 실제 응답 형태 확인용. 확인 후 제거한다.
+        try:
+            from . import sgis_client as _sg, sbiz_client as _sb
+            from . import apt_client as _ap, map_clients as _mc
+            _d = {}
+            _d.update(getattr(_sg, 'DIAG', {}))
+            _d.update(getattr(_sb, 'DIAG', {}))
+            _d.update(getattr(_ap, 'DIAG', {}))
+            _d.update(getattr(_mc, 'DIAG', {}))
+            bundle['_diag'] = _d
+        except Exception:
+            pass
 
         safe_name = site_info['building_name'].replace(' ', '_').replace('/', '_')
         date_str = datetime.now().strftime("%y%m%d")

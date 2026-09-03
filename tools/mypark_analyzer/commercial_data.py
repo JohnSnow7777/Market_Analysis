@@ -10,8 +10,9 @@ class CommercialEngine:
     """지역별 실측 상권 소비력 및 매출 분석기"""
 
     @staticmethod
-    def get_commercial_analysis(address, district_wide=False, district_radius_m=None):
-        resolved = AddressResolver.resolve(address)
+    def get_commercial_analysis(address, district_wide=False, district_radius_m=None, resolved=None):
+        # 상위에서 확정한 행정구역을 그대로 쓴다(모듈별 재판정 금지).
+        resolved = resolved or AddressResolver.resolve(address)
         full_addr = address
         sigungu = resolved.get('sigungu', '')
         dong = resolved.get('dong', '') if resolved.get('dong') else '사업권역'

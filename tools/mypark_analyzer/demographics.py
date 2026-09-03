@@ -94,8 +94,9 @@ class DemographicsEngine:
     """KOSIS 인구 데이터 전국 반경 3km 정밀 지오펜싱 분석기"""
 
     @staticmethod
-    def get_demographics(address):
-        resolved = AddressResolver.resolve(address)
+    def get_demographics(address, resolved=None):
+        # 상위에서 확정한 행정구역을 그대로 쓴다(모듈별 재판정 금지).
+        resolved = resolved or AddressResolver.resolve(address)
         dong = resolved.get('dong', '')
         sigungu = resolved.get('sigungu', '')
         sido = resolved.get('sido', '')
@@ -422,6 +423,11 @@ class DemographicsEngine:
             # 입력된 경우엔 시/도 이름. (site['sigungu']는 비어 있을 수 있어
             # PDF/PPTX가 이 값을 쓰도록 한다.)
             'district_scope_name': district_scope_name,
+            # 행정구역을 확인하지 못한 채 계산했는지 여부.
+            # True면 지역등급 기반 수치(매출·임대료·소비력)를 신뢰할 수 없으므로
+            # 보고서가 '담당자 확인 필요'를 표시해야 한다(조용히 기본값으로
+            # 계산해 다른 지역 수치를 내보내는 일을 막는다).
+            'region_unverified': not bool(sido),
             '_t_sgis': round(_sgis_elapsed, 2),
             '_t_apt': round(_apt_elapsed, 2),
             # 생활권 추정을 썼는지와 그 전제(동 수) — 보고서 각주로 노출한다.

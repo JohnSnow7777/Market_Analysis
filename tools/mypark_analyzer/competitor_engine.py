@@ -535,7 +535,7 @@ class CompetitorEngine:
         return stores
 
     @staticmethod
-    def search_live_multi_source_competitors(address, radius=3000):
+    def search_live_multi_source_competitors(address, radius=3000, _resolved_hint=None):
         """카카오+TMap+네이버 3개 지도 소스를 병렬 호출해 교차검증 (설정된 것만 사용).
 
         한 지도 서비스에 없는 매장을 다른 서비스가 잡아낼 수 있어, 단일 소스보다
@@ -565,7 +565,7 @@ class CompetitorEngine:
             # 찾는데 인천·대구·대전·부산 서구 매장이 그대로 섞여 들어왔다.
             # 그래서 (1) 시/도까지 포함한 온전한 지역명을 힌트로 주고,
             #        (2) 돌아온 결과의 주소를 다시 지역 기준으로 걸러낸다.
-            _r = AddressResolver.resolve(address)
+            _r = _resolved_hint or AddressResolver.resolve(address)
             _hint = ' '.join(t for t in (_r.get('sido', ''), _r.get('sigungu', '')) if t)
             ok, docs = map_clients.naver_local_search('파크골프', region_hint=_hint)
             if not ok:
@@ -605,8 +605,10 @@ class CompetitorEngine:
         return stores
 
     @staticmethod
-    def search_competitors(address, sigungu=None, dong=None, district_wide=False, district_radius_m=None):
-        resolved = AddressResolver.resolve(address)
+    def search_competitors(address, sigungu=None, dong=None, district_wide=False,
+                           district_radius_m=None, resolved=None):
+        # 상위에서 확정한 행정구역을 그대로 쓴다(모듈별 재판정 금지).
+        resolved = resolved or AddressResolver.resolve(address)
         s_dong = dong or resolved.get('dong', '')
         s_sigungu = sigungu or resolved.get('sigungu', '')
         s_sido = resolved.get('sido', '')
@@ -695,7 +697,8 @@ class CompetitorEngine:
         sbiz_confirmed_zero = (sbiz_stores == [])
 
         # 2-1. 소상공인 DB 미설정/0건이면 카카오 로컬 API로 실시간 검색 시도 (KAKAO_REST_API_KEY 설정 시)
-        live_stores = CompetitorEngine.search_live_multi_source_competitors(resolved['full_address'], radius=search_radius)
+        live_stores = CompetitorEngine.search_live_multi_source_competitors(
+            resolved['full_address'], radius=search_radius, _resolved_hint=resolved)
         if live_stores is None and sbiz_confirmed_zero:
             # 카카오는 미설정/실패했지만 소상공인 공공데이터가 이미 0건을 확정했으므로
             # 이 확정치를 그대로 채택한다 (가상 시나리오로 대체하지 않음)

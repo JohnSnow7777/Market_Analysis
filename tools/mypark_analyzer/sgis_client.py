@@ -35,6 +35,9 @@ _REGION_CD_CACHE = {}              # (부모코드, 지역명) -> 지역코드 (
 _POP_YEAR_CACHE = {'year': None}   # 조회에 성공한 연도 — 실패 연도 재시도를 없앤다
 _SGIS_CACHE_MAX = 512
 
+# [임시 진단] 실제 응답 형태 확인용. 확인 후 제거한다.
+DIAG = {}
+
 
 def _get(path, params, timeout=4):
     url = f"{SGIS_BASE}/{path}?" + urllib.parse.urlencode(params)
@@ -314,6 +317,7 @@ def fetch_district_population(sido, sigungu):
         # 관할 행정동 목록/개수는 addr/stage.json에서 받는다. "구 전체 N개 동"의 N을
         # 정확히 세는 것이 채점 보정(생활권 환산)의 전제라 반드시 확보해야 한다.
         sub_rows = _stage_rows(token, sigungu_cd, budget)
+        DIAG['sgis_sub_names'] = [nm for nm, _ in sub_rows[:8]]
         sub_level = _classify_sub_level(sub_rows)
 
         dong_names = []
@@ -472,6 +476,8 @@ def get_population_by_age(access_token, adm_cd, year=None):
             if total is None:
                 continue
             _POP_YEAR_CACHE['year'] = yr
+            DIAG['sgis_pop_keys'] = sorted(row.keys())
+            DIAG['sgis_pop_sample'] = {k: row.get(k) for k in list(row)[:6]}
             return {'raw': row, 'total': int(total), 'year': yr}
         except Exception as e:
             print(f"[SGIS POPULATION FAIL] adm_cd={adm_cd} year={yr}: {e}")

@@ -225,7 +225,14 @@ class PDFGenerator:
         c.setFont(FONT_REGULAR, 12)
         notes_str = f"  |  특이사항: {site['special_notes']}" if site.get('special_notes') else ""
         c.drawString(60, self.height - 230, f"• 대상 사업지: {site['full_address']}{notes_str}")
-        _cover_scope = f"{demo.get('district_scope_name') or site['sigungu']} 전체 (관할 행정동 {demo.get('district_dong_count', 0)}개 전수)" if demo.get('district_wide_analysis') else f"{site['sido']} {site['sigungu']} {target_dong} 반경 3km 생활권"
+        if demo.get('region_unverified'):
+            # 행정구역을 확인하지 못하면 지역등급 기반 수치를 신뢰할 수 없다.
+            # 숫자를 그대로 내보내지 않고 확인이 필요하다는 사실을 먼저 밝힌다.
+            _cover_scope = "행정구역 자동 확인 실패 — 마이파크 담당자 확인 후 재산정 필요"
+        elif demo.get('district_wide_analysis'):
+            _cover_scope = f"{demo.get('district_scope_name') or site['sigungu']} 전체 (관할 행정동 {demo.get('district_dong_count', 0)}개 전수)"
+        else:
+            _cover_scope = f"{site['sido']} {site['sigungu']} {target_dong} 반경 3km 생활권"
         c.drawString(60, self.height - 255, f"• 상권 분석 대상: {_cover_scope}")
         c.drawString(60, self.height - 280, f"• 출점 모델: {site['rooms']}타석 ({site['area_pyeong']}평형)  |  분석 기준일: {data.get('created_at', '2026.08')}")
 
@@ -1031,7 +1038,10 @@ class PDFGenerator:
         c.setFillColor(self.c_slate)
         c.drawString(56, content_bottom + 6, "위 5개 지표의 상세 근거는 앞선 1~5장(인구·상권·업종·경쟁·사업지 개요)을 참조하십시오.")
 
-        self._draw_page_summary(c, f"5개 지표 종합 {score['total_score']}점, {score['grade']}등급입니다. 각 점수의 산출 근거를 그대로 공개했으니 직접 확인해 보십시오.")
+        if demo.get('region_unverified'):
+            self._draw_page_summary(c, "행정구역을 자동으로 확인하지 못해 지역 기반 수치는 참고용입니다. 담당자가 정확한 주소로 다시 산정해 드립니다.")
+        else:
+            self._draw_page_summary(c, f"5개 지표 종합 {score['total_score']}점, {score['grade']}등급입니다. 각 점수의 산출 근거를 그대로 공개했으니 직접 확인해 보십시오.")
         self._draw_footer(c, f"MYPARK 5-Dimension Diamond Scoring Methodology ({score['total_score']}점 {score['grade']}등급)")
         c.showPage()
 

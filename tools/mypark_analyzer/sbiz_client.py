@@ -22,6 +22,7 @@ import urllib.request
 import urllib.parse
 
 SBIZ_API_KEY_ENV = "DATA_GO_KR_API_KEY"
+DIAG = {}  # [임시 진단] 확인 후 제거
 SBIZ_BASE = "https://apis.data.go.kr/B553077/api/open/sdsc2/storeListInRadius"
 
 # 스크린 파크골프 반경 경쟁사 탐지에 쓰는 업종 키워드
@@ -180,6 +181,9 @@ def industry_mix(x, y, radius=3000, top_n=8):
     items = search_stores_in_radius(x, y, radius=radius, num_rows=500)
     if items is None:
         return None
+    DIAG['sbiz_returned'] = len(items)
+    if items:
+        DIAG['sbiz_item_keys'] = sorted(items[0].keys())
     counts = {}
     for it in items:
         norm = _norm(it)
