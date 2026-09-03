@@ -84,11 +84,13 @@ DRIVING_RANGE_BENCHMARK = {
     'base_month': '2026년 6월',
     'national_monthly_sales_manwon': 1692,   # 전국 업소당 월평균 매출(만원)
     'national_store_count': 12354,           # 전국 골프 연습장 업소 수
-    'usage_scope': '광주 서구 사례',
-    'usage_male_ratio': 76.2,                # 남성 매출 비중(%)
-    'usage_age_40_50_ratio': 65.3,           # 40~50대 매출 비중(%)
-    'usage_evening_ratio': 33.7,             # 18~23시 매출 비중(%)
-    'usage_afternoon_ratio': 37.7,           # 14~18시 매출 비중(%)
+    # 아래 이용 특성은 광주 서구 한 곳의 조사 결과다. 지역마다 다른 값이므로
+    # 다른 지역 보고서에 그대로 실으면 그 사업지의 수치인 것처럼 오해된다.
+    # 그래서 보고서에는 싣지 않고, 종목 차이를 설명하는 내부 근거로만 남긴다.
+    # (보고서에 인용 가능한 것은 위 national_* 전국 집계값뿐이다.)
+    '_internal_usage_scope': '광주 서구 조사(참고용, 보고서 미노출)',
+    '_internal_usage_male_ratio': 76.2,
+    '_internal_usage_evening_ratio': 33.7,
 }
 
 # 반경 3km 생활권이 포함하는 행정동 수(가정값).

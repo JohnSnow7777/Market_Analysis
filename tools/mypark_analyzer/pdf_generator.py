@@ -113,35 +113,41 @@ class PDFGenerator:
         c.line(40, self.height - 74, self.width - 40, self.height - 74)
 
     def _draw_page_summary(self, c, text):
-        """페이지 맨 아래에 그 페이지의 핵심을 한 줄로 강조 표시한다.
+        """페이지 하단에 그 장의 결론을 한 문장으로 강조 표시한다.
 
-        보고서가 12페이지라 각 장이 무엇을 말하는지 한눈에 잡히도록,
-        본문 아래·출처 위에 배경을 깐 요약 줄을 둔다. 폭을 넘으면 잘라서
-        레이아웃이 밀리지 않게 한다.
+        12페이지 보고서라 각 장의 결론이 한눈에 들어와야 한다. 라벨은
+        '핵심 요약'처럼 보고서에 쓰는 표현을 쓰고, 글자를 키워 실제로 눈에
+        띄게 한다(작게 넣으면 강조의 의미가 없다).
+        문장은 수치 나열에 그치지 않고 '그래서 이 사업지가 어떻다'는 판단까지
+        담아, 그 한 줄만 읽어도 페이지를 설명할 수 있게 한다.
         """
-        bar_x, bar_y, bar_h = 40, 40, 17
+        bar_x, bar_y, bar_h = 40, 38, 26
         bar_w = self.width - 80
         c.setFillColor(self.c_tint_blue)
         c.setStrokeColor(self.c_mck_teal)
-        c.setLineWidth(0.8)
+        c.setLineWidth(1.0)
         c.rect(bar_x, bar_y, bar_w, bar_h, fill=1, stroke=1)
         c.setFillColor(self.c_mck_teal)
-        c.rect(bar_x, bar_y, 3.5, bar_h, fill=1, stroke=0)
+        c.rect(bar_x, bar_y, 5, bar_h, fill=1, stroke=0)
 
-        label = "이 페이지 요약  "
-        c.setFont(FONT_BOLD, 8)
-        c.setFillColor(self.c_mck_navy)
-        c.drawString(bar_x + 12, bar_y + 5.5, label)
-        _lx = bar_x + 12 + pdfmetrics.stringWidth(label, FONT_BOLD, 8)
-        avail = (bar_x + bar_w) - _lx - 10
-        body = text or ""
-        while body and pdfmetrics.stringWidth(body, FONT_REGULAR, 8) > avail:
+        label = "핵심 요약"
+        c.setFont(FONT_BOLD, 10)
+        c.setFillColor(self.c_mck_teal)
+        c.drawString(bar_x + 14, bar_y + 9, label)
+        _lx = bar_x + 14 + pdfmetrics.stringWidth(label, FONT_BOLD, 10) + 12
+
+        avail = (bar_x + bar_w) - _lx - 12
+        body = (text or "").strip()
+        size = 10.5
+        while size > 8.5 and pdfmetrics.stringWidth(body, FONT_BOLD, size) > avail:
+            size -= 0.25
+        while body and pdfmetrics.stringWidth(body, FONT_BOLD, size) > avail:
             body = body[:-1]
-        if body != (text or ""):
+        if body != (text or "").strip():
             body = body[:-1] + "…"
-        c.setFont(FONT_REGULAR, 8)
-        c.setFillColor(self.c_charcoal)
-        c.drawString(_lx, bar_y + 5.5, body)
+        c.setFont(FONT_BOLD, size)
+        c.setFillColor(self.c_mck_navy)
+        c.drawString(_lx, bar_y + 9, body)
 
     def _draw_footer(self, c, source_text="KOSIS & Small Enterprise Market Service Data"):
         c.setStrokeColor(self.c_line)
@@ -313,7 +319,7 @@ class PDFGenerator:
                 ("  └ 70대 이상 (실버)", f"{demo['pop_70_plus']:,}명", "", f"{demo['ratio_70_plus']}%"),
             ]
             if _apt.get('complex_count'):
-                _rows.append((f"  └ 배후 공동주택 (표본 {_apt.get('sample_count', 0)}개 조사)",
+                _rows.append((f"  └ 주변 아파트 (표본 {_apt.get('sample_count', 0)}개 조사)",
                               f"{_apt['complex_count']:,}개 단지",
                               f"표본 {_apt.get('total_households_sample', 0):,}세대", ""))
             _ry = col_y - 26
@@ -430,7 +436,7 @@ class PDFGenerator:
         _70s_share = demo['pop_70_plus'] / _senior_total * 100
         _insight_scope_txt = "구 전체 관할 행정동" if is_district_wide else "반경 3km 내"
         _insight_bullets = [
-            f"• 타겟 집적도: {_insight_scope_txt} 50대 이상 인구 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%) 확보로 안정적 고객 풀 형성",
+            f"• 고객층 규모: {_insight_scope_txt} 50대 이상이 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%)으로, 단골을 꾸준히 확보할 수 있는 규모입니다",
             f"• 60대 주력 고객군 {_60s_share:.0f}%: 은퇴 후 평일 낮 시간 여유가 있는 60대가 전체 시니어 중 {_60s_share:.0f}%를 차지하여 평일 낮 가동률 극대화",
             f"• 70대 실버 헬스케어 수요 {_70s_share:.0f}%: 관절 부담이 없는 파크골프 특성상 부부 동반 및 시니어 커뮤니티 공간으로 정착",
             "• 주간 집중 가동 구조: 평일 낮 7시간을 주력 시간대로 삼아 일일 회전수를 안정적으로 확보",
@@ -440,7 +446,7 @@ class PDFGenerator:
             yr_txt = f"{apt_sum['year_min']}년~{apt_sum['year_max']}년 준공" if apt_sum.get('year_min') else "준공년도 확인 중"
             # '61개 단지 / 5,507세대'처럼 나란히 적으면 61개 단지 전체의 세대수로
             # 읽힌다. 세대수는 표본 N개 단지만 합산한 값임을 문장 안에서 밝힌다.
-            _insight_bullets.append(f"• 배후 주거 기반: {apt_sum['scope_label']} 공동주택 {apt_sum['complex_count']}개 단지 확인 (이 중 {apt_sum['sample_count']}개 단지를 표본 조사한 결과 {apt_sum['total_households_sample']:,}세대, {yr_txt}) — 국토교통부 공동주택 기본정보 기준")
+            _insight_bullets.append(f"• 주변 아파트 현황: {apt_sum['scope_label']} 공동주택 {apt_sum['complex_count']}개 단지 확인 (이 중 {apt_sum['sample_count']}개 단지를 표본 조사한 결과 {apt_sum['total_households_sample']:,}세대, {yr_txt}) — 국토교통부 공동주택 기본정보 기준")
 
         # 박스 높이를 실제 불릿 수에 맞춰 계산한다 (아파트 정보 유무에 따라 줄 수가
         # 달라지는데 높이가 고정이면 하단에 죽은 여백이 크게 남는다).
@@ -472,7 +478,7 @@ class PDFGenerator:
             _src_note = "KOSIS National Statistics Portal (※ 행정동 추정 모델 적용)"
         else:
             _src_note = f"KOSIS National Statistics Portal ({demo.get('base_date', '2026.08')})"
-        self._draw_page_summary(c, f"{demo.get('district_scope_name') or site['sigungu']} 배후 50대 이상 {demo['senior_50_plus']:,}명(전체의 {demo['senior_ratio']}%) — 평일 낮 가동을 받쳐줄 시니어 수요가 확보된 상권입니다.")
+        self._draw_page_summary(c, f"50대 이상 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%)이 생활권 안에 있어, 평일 낮 시간대를 채워줄 고객층이 이미 형성된 지역입니다.")
         self._draw_footer(c, _src_note)
         c.showPage()
 
@@ -546,10 +552,10 @@ class PDFGenerator:
         c.drawString(56, 108, f"★ 인접 업종(골프 연습장) 비교 — 전국 업소당 월평균 매출 {_bm['national_monthly_sales_manwon']:,}만원 / 전국 {_bm['national_store_count']:,}개소")
         c.setFont(FONT_REGULAR, 9)
         c.setFillColor(self.c_charcoal)
-        c.drawString(56, 88, f"• 골프 연습장 이용 특성({_bm['usage_scope']}): 남성 {_bm['usage_male_ratio']}%, 40~50대 {_bm['usage_age_40_50_ratio']}%, 저녁 18~23시 {_bm['usage_evening_ratio']}% 집중")
+        c.drawString(56, 88, "• 골프 연습장은 남성·직장인 중심으로 저녁 시간대에 이용이 몰리는 업종입니다")
         c.drawString(56, 70, "• 마이파크는 시니어·주간 중심이라 고객층과 이용 시간대가 서로 달라 보완 관계로 공존할 수 있습니다")
 
-        self._draw_page_summary(c, f"소비 등급 {comm['spending_grade']}, 평일 10~17시 매출 비중 {comm['time_distribution']['주간_10_17시_비중']}% — 주간 영업만으로 매출을 만들 수 있는 구조입니다.")
+        self._draw_page_summary(c, f"이 지역 매출의 {comm['time_distribution']['주간_10_17시_비중']}%가 평일 낮 시간대에 발생합니다. 야간 영업 없이도 매출을 만들 수 있는 상권입니다.")
         self._draw_footer(c, f"MYPARK 지역등급 추정 모델 | 인접 업종 비교: {_bm['source']} ({_bm['base_month']} 기준)")
         c.showPage()
 
@@ -630,7 +636,7 @@ class PDFGenerator:
         c.drawString(56, 142, "• 일반 골프의 파크골프 전환: 일반 골프 비용/체력 부담을 느끼는 시니어층의 스크린 파크골프 유입 가속화")
         c.drawString(56, 116, "• 정착 단계: 시니어 여가 문화의 핵심 종목으로 자리 잡아 가는 성장 국면")
 
-        self._draw_page_summary(c, f"시니어 여가 수요 지수 1위 {_top_ind['name']}({_top_ind['growth']}), 골프 시설 집적도 전국 평균의 {comm['golf_industry_density']['multiple']}배 — 골프 수요층이 이미 형성된 지역입니다.")
+        self._draw_page_summary(c, f"골프 시설이 전국 평균의 {comm['golf_industry_density']['multiple']}배 모여 있습니다. 새로 수요를 만들 필요 없이 기존 골프 인구를 그대로 맞이할 수 있습니다.")
         self._draw_footer(c, "MYPARK Regional Tier Estimation Model")
         c.showPage()
 
@@ -793,7 +799,15 @@ class PDFGenerator:
             _comp_source = "Live POI Search (Kakao/TMap/Naver Cross-Verified)"
         else:
             _comp_source = "MYPARK Verified National Store Database"
-        self._draw_page_summary(c, _comp_summary)
+        # 경쟁 상황에 따라 결론 문장을 달리 쓴다(숫자만 옮기면 판단이 안 보인다).
+        _cnt5 = comm.get('competitor_verified_count')
+        if comm.get('is_blue_ocean'):
+            _page5_summary = "반경 내 파크골프 전문 매장이 확인되지 않았습니다. 이 지역 첫 매장으로 선점할 수 있는 위치입니다."
+        elif isinstance(_cnt5, int) and _cnt5 > 0:
+            _page5_summary = f"파크골프 매장 {_cnt5}곳이 운영 중입니다. 이미 수요가 확인된 상권이며, 시설 규모로 차별화할 여지가 있습니다."
+        else:
+            _page5_summary = "경쟁 매장은 담당자가 현장에서 직접 확인해 드립니다. 공개 데이터만으로 단정하지 않았습니다."
+        self._draw_page_summary(c, _page5_summary)
         self._draw_footer(c, _comp_source)
         c.showPage()
 
@@ -806,7 +820,7 @@ class PDFGenerator:
         if site.get('special_notes'):
             space_card_lines.append(f"• 고객 특이사항: {site['special_notes']}")
         space_card_lines += [
-            f"• 권장 면적: 전용 {site['area_pyeong']}평 ({site['rooms']}타석 + 카페/락커룸 최적 배치)",
+            f"• 권장 면적: 전용 {site['area_pyeong']}평 ({site['rooms']}타석 기준, 휴게 공간 포함)",
             f"• 층고 기준: {site['clear_height_spec']}",
             f"• 보/배관 간섭: 센서 투사 영역 및 스윙 궤적 내 장애물 사전 실측 필수",
             f"• 권장 층수: 고객 접근성 높은 지상 2~3층 권장 (쾌적한 지하 1층 가능)",
@@ -817,7 +831,7 @@ class PDFGenerator:
             (495, 260, 425, 240, "주차 및 차량 접근성 기준", [
                 f"• 주차 요건: {site['parking_spec']}",
                 f"• 고객 특성: 자차 이용 시니어 비중 80% 이상으로 편리한 진출입 필수",
-                f"• 진입 여건: 램프 폭 및 회전각 여유 있는 자주식 주차장 최우선",
+                f"• 주차가 부족한 경우: 인근 버스 정류장·지하철역까지의 도보 거리와 공영주차장 이용 가능 여부를 우선 확인",
                 f"• 도로 접면: 주요 간선도로 및 대단지 아파트 진입로 인접 우수",
                 f"• 보행 동선: 대중교통(버스/지하철) 도보 5~10분 생활권 완비",
                 f"• 승하차 편의: 주차장에서 매장 입구까지 단차 없는 완만한 동선"
@@ -862,7 +876,7 @@ class PDFGenerator:
                     y_l -= 13
                 y_l -= 5
 
-        self._draw_page_summary(c, f"{site['rooms']}타석 {site['area_pyeong']}평 출점에 필요한 층고 2.8m·주차 {max(8, int(site['rooms'] * 1.2))}대·전기 {max(25, site['rooms'] * 3)}kW 등 현장에서 확인할 항목을 정리했습니다.")
+        self._draw_page_summary(c, f"층고 2.8m·주차 {max(8, int(site['rooms'] * 1.2))}대·전기 {max(25, site['rooms'] * 3)}kW가 기준입니다. 계약 전 이 항목만 확인하시면 되고, 담당자가 현장에 동행합니다.")
         self._draw_footer(c, "Building Code & Field Inspection Checklist")
         c.showPage()
         # ---------------------------------------------------------------------
@@ -896,7 +910,9 @@ class PDFGenerator:
                          if isinstance(_infra.get(k), int)]
             if _cnt_bits:
                 _access_desc += " | " + ", ".join(_cnt_bits)
-        _access_desc += " / 실제 건물 주차면·도보거리는 본사 담당자와 현장 동행 시 정밀 산정"
+        _access_desc += (" — 이 점수는 상권 전체의 교통·생활 인프라만 반영합니다. "
+                         "해당 건물의 주차 대수·승강기·진입로 여건은 점수에 포함되지 않으며, "
+                         "담당자와 현장 동행 시 확인합니다.")
 
         # 공간 적합성 지표: 실제 채점에 사용된 타석당 평수 구간을 그대로 근거 문구에 반영
         _pyeong_per_room = site['area_pyeong'] / max(1, site['rooms'])
@@ -911,8 +927,8 @@ class PDFGenerator:
         _space_desc += " / 유효 층고 2.8m 이상 여부는 현장 동행 확인 시 정밀 산정"
 
         indicators = [
-            ("시니어 인구 밀집도", score['scores']['senior_population'], 25, f"{pop_source_tag}: {'구 전체' if is_district_wide else '반경 3km 내'} 50대 이상 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%) / 본 매장 운영에 필요한 단골 약 {score.get('senior_customers_needed', 1200):,}명은 배후 시니어의 {score.get('senior_penetration', 0)}% 수준", not demo.get('is_estimated', False)),
-            ("접근성 및 주차 인프라", score['scores']['accessibility_parking'], 25, _access_desc + " (※ 상권 단위 접근성 기준 — 건물별 주차·승강기는 현장 확인 대상)", score.get('infra_is_measured', False)),
+            ("시니어 인구 밀집도", score['scores']['senior_population'], 25, f"{pop_source_tag}: {'구 전체' if is_district_wide else '반경 3km 내'} 50대 이상 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%) / 매장 운영에 필요한 단골 약 {score.get('senior_customers_needed', 1200):,}명은 이 지역 시니어의 {score.get('senior_penetration', 0)}% 수준", not demo.get('is_estimated', False)),
+            ("상권 접근성 (대중교통·주변시설)", score['scores']['accessibility_parking'], 25, _access_desc + " (※ 상권 단위 접근성 기준 — 건물별 주차·승강기는 현장 확인 대상)", score.get('infra_is_measured', False)),
             ("공간 적합성 및 층고", score['scores']['space_efficiency'], 15, _space_desc if score.get('space_is_verified', True) else "룸/평수 미입력으로 표준값 대신 중립 점수 적용 (현장 실측 시 정밀 산정)", score.get('space_is_verified', True)),
             ("경쟁 매장 여유도", score['scores']['supply_gap'], 15, f"{comm.get('competitor_summary', '반경 3km 내 대형 플래그십 매장 공급 부족')}", score.get('gap_is_verified', False)),
             ("지역 소비력 및 여가지출", score['scores']['commercial_spending'], 20, f"MYPARK 지역등급(4단계 분류) 추정치: 시니어 여가 수요 지수 {comm['growth_rate']:.0f}점 및 스크린골프 상위 20% 월 {comm['top_20_sales']//10000:,}만원 상권 (동일 등급 지역은 동일 수치 적용, 개별 카드매출 실측 아님)", False),
@@ -1000,9 +1016,9 @@ class PDFGenerator:
         c.rect(40, content_bottom, bars_right - 40, summary_strip_h, fill=1, stroke=1)
         grade_summary_text = {
             'S': "본 사업지는 50~70대 풍부한 시니어 거주 인구와 우수한 교통/접근성을 갖추어, 평일 주간 정기 예약 및 동호회 리그 중심의 높은 가동률 창출에 최적화된 입지입니다.",
-            'A': "본 사업지는 시니어 배후 수요와 접근성 등 핵심 조건을 대체로 충족하여, 평일 주간 정기 예약 중심의 안정적 가동률을 기대할 수 있는 입지입니다.",
+            'A': "본 사업지는 시니어 고객층과 접근성 등 핵심 조건을 대체로 충족하여, 평일 주간 정기 예약 중심의 안정적 가동률을 기대할 수 있는 입지입니다.",
             'B': "본 사업지는 일부 지표에서 표준 기준을 충족하나 상대적으로 낮은 지표도 있어, 아래 세부 근거를 현장 실측과 함께 신중히 검토하시기를 권장합니다.",
-            'C': "본 사업지는 5대 지표 중 다수가 표준 기준에 미달하여, 출점 전 배후 수요·경쟁 환경에 대한 현장 재확인이 반드시 필요합니다.",
+            'C': "본 사업지는 5대 지표 중 다수가 표준 기준을 밑돌아, 출점 전 고객층 규모와 경쟁 환경을 현장에서 다시 확인하시기를 권합니다.",
         }
         summary_text = grade_summary_text.get(score['grade'], grade_summary_text['B'])
         c.setFont(FONT_REGULAR, 8.5)
@@ -1015,7 +1031,7 @@ class PDFGenerator:
         c.setFillColor(self.c_slate)
         c.drawString(56, content_bottom + 6, "위 5개 지표의 상세 근거는 앞선 1~5장(인구·상권·업종·경쟁·사업지 개요)을 참조하십시오.")
 
-        self._draw_page_summary(c, f"5개 지표 종합 {score['total_score']}점 {score['grade']}등급 — {score['grade_desc']}. 지표별 산출 근거는 위 표에 그대로 적었습니다.")
+        self._draw_page_summary(c, f"5개 지표 종합 {score['total_score']}점, {score['grade']}등급입니다. 각 점수의 산출 근거를 그대로 공개했으니 직접 확인해 보십시오.")
         self._draw_footer(c, f"MYPARK 5-Dimension Diamond Scoring Methodology ({score['total_score']}점 {score['grade']}등급)")
         c.showPage()
 
@@ -1161,7 +1177,7 @@ class PDFGenerator:
         c.setFont(FONT_REGULAR, 7.5)
         c.drawString(525, ay - 4, f"(기준: {site['rooms']}타석 {site['area_pyeong']}평 / 총투자금 {fmt_eok(inv['total_capex'])} / 점주 {site['staff_count']}인 상주 운영 모델)")
 
-        self._draw_page_summary(c, f"초기 투자금 {inv['total_capex']//10000:,}만원(장비·인테리어·부대설비) 기준이며, 냉난방과 임대료는 조건에 따라 달라지는 선택 항목입니다.")
+        self._draw_page_summary(c, f"초기 투자금은 {inv['total_capex']//10000:,}만원입니다. 기존 상가 설비를 승계하면 더 낮출 수 있고, 담당자가 비용 최적화를 함께 설계해 드립니다.")
         self._draw_footer(c, "MYPARK Standard Investment Criteria & Reference Notes")
         c.showPage()
 
@@ -1234,7 +1250,7 @@ class PDFGenerator:
         c.drawString(56, 142, f"• 부가 매출 2종: 파크골프 클럽/공/장갑 등 용품 판매(월 {scenarios['moderate']['goods_revenue']//10000:,}만원) + 음료/간식(월 {scenarios['moderate']['beverage_revenue']//10000:,}만원)")
         c.drawString(56, 116, "• 투명성 원칙: 레슨비, 락커룸 렌탈료 등 근거 없는 부가 항목을 일체 배제한 보수적이고 정직한 추정치")
 
-        self._draw_page_summary(c, f"가동률에 따라 월매출 {scenarios['conservative']['total_revenue']//10000:,}만~{scenarios['optimistic']['total_revenue']//10000:,}만원 — 보편 기준 {scenarios['moderate']['total_revenue']//10000:,}만원을 기준선으로 봅니다.")
+        self._draw_page_summary(c, f"가동률에 따라 월매출 {scenarios['conservative']['total_revenue']//10000:,}만~{scenarios['optimistic']['total_revenue']//10000:,}만원입니다. 근거 없는 부가 수입은 넣지 않고 게임비·용품·식음료만으로 계산했습니다.")
         self._draw_footer(c, "MYPARK Standard Financial Model (120 Pyeong, 10 Rooms)")
         c.showPage()
 
@@ -1295,7 +1311,7 @@ class PDFGenerator:
         c.drawString(56, 142, "• 낮은 변동비 구조: 원재료비 비중이 매우 낮아 매출이 늘수록 순이익이 빠르게 커지는 고마진 구조")
         c.drawString(56, 116, "• 고정비 방어력: 월 고정비가 낮아 비수기나 상권 초기 단계에서도 안정적 순영업이익 기반 유지")
 
-        self._draw_page_summary(c, f"월 고정비 {fin['owner_operated']['fixed_cost']//10000:,}만원 대비 보편 순영업이익 {scenarios['moderate']['operating_profit']//10000:,}만원(이익률 {scenarios['moderate']['profit_margin']}%) — 변동비 비중이 낮은 구조입니다.")
+        self._draw_page_summary(c, f"월 고정비 {fin['owner_operated']['fixed_cost']//10000:,}만원에 순영업이익 {scenarios['moderate']['operating_profit']//10000:,}만원(이익률 {scenarios['moderate']['profit_margin']}%)입니다. 원재료비가 적어 매출이 늘수록 이익이 빠르게 커집니다.")
         self._draw_footer(c, "MYPARK Cost Structure & Operating Profit Analysis")
         c.showPage()
 
@@ -1421,7 +1437,7 @@ class PDFGenerator:
         c.setFillColor(self.c_slate)
         c.drawString(56, 62, f"※ 타석 수를 줄이면 투자비는 낮아지나 인건비·관리비 등 고정비는 그대로 남아 회수기간이 오히려 길어집니다. 본 {site['rooms']}타석 모델이 고정비 분산 측면에서 유리한 구조입니다.")
 
-        self._draw_page_summary(c, f"타석당 하루 {inv['bep_turns_per_room']}회전이면 월 고정비를 모두 덮고, 보편 기준 {inv['payback_months_moderate']:.1f}개월에 투자금을 회수합니다.")
+        self._draw_page_summary(c, f"타석당 하루 {inv['bep_turns_per_room']}회전이면 고정비를 모두 덮습니다. 보편적 가동 기준 {inv['payback_months_moderate']:.1f}개월이면 투자금을 회수합니다.")
         self._draw_footer(c, "MYPARK BEP & Capital Payback Period Analysis")
         c.showPage()
 
@@ -1522,10 +1538,88 @@ class PDFGenerator:
         for ll in val_l_lines:
             cur_y = self._draw_multiline_text(c, ll, 511, cur_y, max_chars=26, line_height=10.5, max_lines=5, color=self.c_charcoal) - 3
 
-        self._draw_page_summary(c, f"5개년 누적 매출 {fin['five_year']['total_5yr_revenue']/100000000:.1f}억원·누적 순영업이익 {fin['five_year']['total_5yr_profit']/100000000:.1f}억원 전망 — 회수 이후 구간의 수익 흐름을 정리했습니다.")
+        self._draw_page_summary(c, f"투자금 회수 이후에도 5년간 누적 순영업이익 {fin['five_year']['total_5yr_profit']/100000000:.1f}억원이 남습니다. 회수로 끝나지 않고 계속 쌓이는 구조입니다.")
         self._draw_footer(c, "MYPARK 5-Year Financial Forecast & Final Strategic Recommendation")
         c.showPage()
 
+        # ---------------------------------------------------------------------
+        # Page 13: 12. 마이파크와 함께하는 이유 (클로징)
+        # 마지막 장은 독자에게 가장 오래 남는다. 지표를 한 번 더 나열하는 대신
+        # '왜 마이파크인가'와 '다음에 무엇을 하면 되는가'를 남긴다.
+        # ---------------------------------------------------------------------
+        self._draw_mckinsey_header(
+            c, "12. 마이파크와 함께하는 이유",
+            "창업은 시작일 뿐이며, 매출을 만드는 것은 운영입니다. 마이파크는 운영을 함께합니다.")
+
+        _cl_top = 500
+        _cl_h = 210
+        c.setFillColor(self.c_mck_navy)
+        c.rect(40, _cl_top - _cl_h, 380, _cl_h, fill=1, stroke=0)
+        c.setFont(FONT_BOLD, 12)
+        c.setFillColor(self.c_white)
+        c.drawString(60, _cl_top - 32, "혼자 알아보지 않으셔도 됩니다")
+        c.setFont(FONT_REGULAR, 9.5)
+        _cy = _cl_top - 60
+        for _t in [
+            "· 궁금한 점은 담당자가 직접 확인해 알려 드립니다.",
+            "· 상권·임대 조건·인허가를 대신 알아보고 정리해 드립니다.",
+            "· 초기 비용이 최적화되도록 함께 설계합니다.",
+            "· 이 보고서의 모든 수치는 상담에서 더 자세히 설명드립니다.",
+        ]:
+            for _ln in self._wrap_text_to_width(c, _t, FONT_REGULAR, 9.5, 340, max_lines=2):
+                c.setFillColor(self.c_white)
+                c.drawString(60, _cy, _ln)
+                _cy -= 15
+            _cy -= 6
+
+        c.setFillColor(self.c_box_bg)
+        c.setStrokeColor(self.c_line)
+        c.rect(436, _cl_top - _cl_h, self.width - 40 - 436, _cl_h, fill=1, stroke=1)
+        c.setFillColor(self.c_mck_teal)
+        c.rect(436, _cl_top - 28, self.width - 40 - 436, 28, fill=1, stroke=0)
+        c.setFont(FONT_BOLD, 10.5)
+        c.setFillColor(self.c_white)
+        c.drawString(452, _cl_top - 19, "매출을 만드는 것은 운영입니다 — 마이파크의 운영 지원")
+        c.setFont(FONT_REGULAR, 9.5)
+        _ry = _cl_top - 52
+        for _t in [
+            "· 마이파크 대학: 운영 노하우를 처음부터 교육합니다.",
+            "· 커뮤니티 형성 지원: 동호회·정기 리그를 함께 만들어 단골을 늘립니다.",
+            "· 용품 보증금 제도: 사입 부담 없이 용품을 갖출 수 있습니다.",
+            "· 본사·스폰서십 대회: 매장 매출로 이어지는 행사를 본사가 엽니다.",
+        ]:
+            for _ln in self._wrap_text_to_width(c, _t, FONT_REGULAR, 9.5, self.width - 40 - 436 - 32, max_lines=2):
+                c.setFillColor(self.c_charcoal)
+                c.drawString(452, _ry, _ln)
+                _ry -= 15
+            _ry -= 6
+
+        _cb_top = _cl_top - _cl_h - 20
+        c.setFillColor(self.c_box_bg)
+        c.setStrokeColor(self.c_line)
+        c.rect(40, _cb_top - 150, self.width - 80, 150, fill=1, stroke=1)
+        c.setFont(FONT_BOLD, 10.5)
+        c.setFillColor(self.c_mck_navy)
+        c.drawString(56, _cb_top - 26, "14년간 스크린 시뮬레이터를 만들어 온 회사입니다")
+        c.setFont(FONT_REGULAR, 9.5)
+        c.setFillColor(self.c_charcoal)
+        _by = _cb_top - 52
+        for _t in [
+            "· 스마일스퀘어는 14년간 스크린 시뮬레이터 사업을 이어 왔습니다.",
+            "· 내부 개발진이 직접 개발하며, 사용자 편의를 위한 앱 업데이트를 꾸준히 진행합니다.",
+            "· 매장과 고객의 피드백을 받아 소프트웨어·예약·결제 등 운영 편의성을 계속 개선합니다.",
+            "· 점주님이 운영에만 집중하실 수 있도록, 나머지는 본사가 맡습니다.",
+        ]:
+            for _ln in self._wrap_text_to_width(c, _t, FONT_REGULAR, 9.5, self.width - 130, max_lines=2):
+                c.drawString(56, _by, _ln)
+                _by -= 15
+            _by -= 5
+
+        self._draw_page_summary(
+            c, "지금 담당자와 상담하시면 이 보고서의 수치를 사업지 조건에 맞춰 다시 계산해 드립니다.")
+        self._draw_footer(c, "MYPARK Franchise Partnership")
+        c.showPage()
+
         c.save()
-        print(f"[PDF GENERATED 12P] {self.filename}")
+        print(f"[PDF GENERATED 13P] {self.filename}")
         return self.filename

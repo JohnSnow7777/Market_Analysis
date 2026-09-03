@@ -279,7 +279,7 @@ class PPTXGenerator:
         _60s_share3 = demo['pop_60s'] / _senior_total3 * 100
         _70s_share3 = demo['pop_70_plus'] / _senior_total3 * 100
         insights3 = [
-            f"• 압도적인 타겟 집적도: 반경 3km 내 50대 이상 인구 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%) 확보로 안정적 단골 풀 형성",
+            f"• 고객층 규모: 반경 3km 내 50대 이상이 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%)으로, 단골을 꾸준히 확보할 수 있는 규모입니다",
             f"• 60대 주력 고객군 {_60s_share3:.0f}%: 은퇴 후 평일 낮 시간 여유가 있는 60대가 전체 시니어 중 {_60s_share3:.0f}%를 차지하여 평일 주간 가동률 극대화",
             f"• 70대 실버 헬스케어 수요 {_70s_share3:.0f}%: 관절 부담이 없는 파크골프 특성상 부부 동반 및 시니어 커뮤니티 공간으로 정착",
             "• 주간 집중 가동 구조: 평일 낮 7시간을 주력 시간대로 삼아 일일 회전수를 안정적으로 확보"
@@ -341,7 +341,7 @@ class PPTXGenerator:
             f"• 시간대: 주간(10~17시) {comm['time_distribution']['주간_10_17시_비중']}% 집중 가동\n"
             f"• 인구 특성: 주거 {comm['residential_pop_ratio']}% / 직장 {comm['workplace_pop_ratio']}%\n"
             f"• 인접 업종 비교(골프 연습장): 전국 업소당 월평균 {_bm4['national_monthly_sales_manwon']:,}만원, "
-            f"{_bm4['usage_scope']} 남성 {_bm4['usage_male_ratio']}%·저녁 {_bm4['usage_evening_ratio']}% 집중\n"
+            f"남성·직장인 중심으로 저녁 시간대 이용 집중\n"
             f"  → 마이파크는 시니어·주간 중심이라 고객층·시간대가 겹치지 않아 보완 관계 "
             f"({_bm4['source']}, {_bm4['base_month']} 기준)")
         p_sub2.font.size = Pt(8.8)
@@ -564,7 +564,7 @@ class PPTXGenerator:
         
         base_bullets = [
             f"• 대상 주소: {site['full_address']}",
-            f"• 권장 면적: 전용 {site['area_pyeong']}평 ({site['rooms']}타석 + 카페/락커룸 최적 배치)",
+            f"• 권장 면적: 전용 {site['area_pyeong']}평 ({site['rooms']}타석 기준, 휴게 공간 포함)",
             f"• 층고 기준: {site['clear_height_spec']}",
             f"• 보/배관 간섭: 센서 투사 영역 및 스윙 궤적 내 장애물 사전 실측 필수",
             f"• 권장 층수: 고객 접근성 높은 지상 2~3층 권장 (쾌적한 지하 1층 가능)",
@@ -578,7 +578,7 @@ class PPTXGenerator:
             (Inches(6.8), Inches(1.45), Inches(5.9), Inches(2.72), "■ 주차 및 차량 접근성 기준", [
                 f"• 주차 요건: {site['parking_spec']}",
                 f"• 고객 특성: 자차 이용 시니어 비중 80% 이상으로 편리한 진출입 필수",
-                f"• 진입 여건: 램프 폭 및 회전각 여유 있는 자주식 주차장 최우선",
+                f"• 주차가 부족한 경우: 인근 버스 정류장·지하철역까지의 도보 거리와 공영주차장 이용 가능 여부를 우선 확인",
                 f"• 도로 접면: 주요 간선도로 및 대단지 아파트 진입로 인접 우수",
                 f"• 보행 동선: 대중교통(버스/지하철) 도보 5~10분 생활권 완비",
                 f"• 승하차 편의: 주차장에서 매장 입구까지 단차 없는 완만한 동선"
@@ -660,7 +660,9 @@ class PPTXGenerator:
                       if isinstance(_infra.get(k), int)]
             if _bits8:
                 _access_desc += " | " + ", ".join(_bits8)
-        _access_desc += " / 실제 건물 주차면·도보거리는 본사 담당자와 현장 동행 시 정밀 산정"
+        _access_desc += (" — 이 점수는 상권 전체의 교통·생활 인프라만 반영합니다. "
+                         "해당 건물의 주차 대수·승강기·진입로 여건은 점수에 포함되지 않으며, "
+                         "담당자와 현장 동행 시 확인합니다.")
 
         # 공간 적합성: 룸/평수 미입력 시(is_auto_estimated) 표준값 대신 중립 점수를
         # 적용한 것이므로 산출근거 문구도 그 사실을 그대로 반영한다.
@@ -680,7 +682,7 @@ class PPTXGenerator:
 
         indicators = [
             ("1) 시니어 인구 밀집도", score['scores']['senior_population'], 25,
-             f"{pop_source_tag}: 반경 3km 내 50대 이상 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%) / 본 매장 운영에 필요한 단골 약 {score.get('senior_customers_needed', 1200):,}명은 배후 시니어의 {score.get('senior_penetration', 0)}% 수준",
+             f"{pop_source_tag}: 반경 3km 내 50대 이상 {demo['senior_50_plus']:,}명({demo['senior_ratio']}%) / 매장 운영에 필요한 단골 약 {score.get('senior_customers_needed', 1200):,}명은 이 지역 시니어의 {score.get('senior_penetration', 0)}% 수준",
              not demo.get('is_estimated', False)),
             ("2) 접근성 및 주차 인프라", score['scores']['accessibility_parking'], 25, _access_desc, False),
             ("3) 공간 적합성 및 층고", score['scores']['space_efficiency'], 15, _space_desc, score.get('space_is_verified', True)),
@@ -733,7 +735,7 @@ class PPTXGenerator:
         
         grade_summary_lines_pptx = {
             'S': "본 사업지는 50~70대 풍부한 시니어 수요와 우수한 접근성을 갖추어 출점에 최적화된 입지입니다.",
-            'A': "본 사업지는 시니어 배후 수요와 접근성 등 핵심 조건을 대체로 충족하는 안정적인 입지입니다.",
+            'A': "본 사업지는 시니어 고객층과 접근성 등 핵심 조건을 대체로 충족하는 안정적인 입지입니다.",
             'B': "본 사업지는 일부 지표가 표준 기준에 못 미쳐, 아래 세부 근거를 현장 실측과 함께 신중히 검토해야 합니다.",
             'C': "본 사업지는 5대 지표 중 다수가 표준 기준에 미달하여, 출점 전 현장 재확인이 반드시 필요합니다.",
         }

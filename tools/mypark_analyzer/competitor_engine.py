@@ -350,6 +350,39 @@ class CompetitorEngine:
         return kept
 
     @staticmethod
+    def resolve_region_by_geocode(address):
+        """주소를 카카오 지오코딩해 시/도·시군구·행정동을 모두 확인한다. 실패 시 None.
+
+        '안골로48번길14'처럼 시/도 없이 도로명만 입력하는 경우가 실제로 많다.
+        이때 문자열만으로는 지역을 알 수 없어 지역등급이 '지방 중소도시'로
+        떨어지고, 그 등급이 매출·임대료·소비력 수치를 전부 좌우해 분당구가
+        지방 상권으로 표기되는 문제가 있었다.
+        이름 조각으로 추측하는 대신 지도 API가 돌려주는 실제 행정구역을 쓴다.
+        반환: {'sido','sigungu','dong'} 또는 None
+        """
+        api_key = os.environ.get(KAKAO_API_KEY_ENV)
+        if not api_key or not address:
+            return None
+        try:
+            url = "https://dapi.kakao.com/v2/local/search/address.json?query=" + urllib.parse.quote(address)
+            req = urllib.request.Request(url, headers={'Authorization': f'KakaoAK {api_key}'})
+            with urllib.request.urlopen(req, timeout=4) as resp:
+                data = json.loads(resp.read().decode('utf-8'))
+            docs = data.get('documents', [])
+            if not docs:
+                return None
+            addr = docs[0].get('address') or docs[0].get('road_address') or {}
+            sido = (addr.get('region_1depth_name') or '').strip()
+            sigungu = (addr.get('region_2depth_name') or '').strip()
+            dong = (addr.get('region_3depth_h_name') or addr.get('region_3depth_name') or '').strip()
+            if not sido:
+                return None
+            return {'sido': sido, 'sigungu': sigungu, 'dong': dong}
+        except Exception as e:
+            print(f"[KAKAO REGION RESOLVE FAIL] {address}: {e}")
+            return None
+
+    @staticmethod
     def resolve_dong_by_geocode(address):
         """도로명 주소를 카카오 지오코딩해 실제 행정동/법정동 이름을 얻는다. 실패 시 None.
 
@@ -447,12 +480,27 @@ class CompetitorEngine:
         x, y = CompetitorEngine.geocode_address(address)
         if x is None:
             return None
-        ok1, docs = CompetitorEngine._kakao_keyword_search('스크린파크골프', x, y, radius, api_key)
-        if not docs:
-            ok2, docs = CompetitorEngine._kakao_keyword_search('파크골프 스크린', x, y, radius, api_key)
-            # 두 번의 호출이 모두 실패했다면 '0건'이 아니라 '판정 불가'로 처리
-            if not (ok1 or ok2):
-                return None
+        # 검색어를 '스크린파크골프' 하나로 두면 상호에 '스크린'이 없는 매장이
+        # 통째로 빠진다(실제로 3km 안의 '마실파크골프 분당점'이 검색되지 않았다).
+        # '파크골프'까지 넓혀 조회하고, 결과는 아래에서 파크골프 업태만 남긴다.
+        merged, any_ok = [], False
+        _seen = set()
+        for _q in ('스크린파크골프', '파크골프'):
+            _ok, _docs = CompetitorEngine._kakao_keyword_search(_q, x, y, radius, api_key)
+            any_ok = any_ok or _ok
+            for _d in (_docs or []):
+                _key = (_d.get('place_name', ''), _d.get('address_name', ''))
+                if _key in _seen:
+                    continue
+                _seen.add(_key)
+                merged.append(_d)
+        if not any_ok:
+            # 호출 자체가 모두 실패 — '0건'이 아니라 '판정 불가'
+            return None
+        # 파크골프 업태만 남긴다. 골프존파크 등 스크린골프 브랜드는 종목이 달라
+        # 경쟁매장이 아니다(이름에 '파크'가 들어가 혼동되기 쉬움).
+        docs = [d for d in merged
+                if sbiz_client.is_park_golf(d.get('place_name', ''), d.get('category_name', ''))]
         if not docs:
             return []
         stores = []
@@ -489,8 +537,11 @@ class CompetitorEngine:
         def _run_tmap():
             if x is None:  # TMap도 좌표가 있어야 반경검색 가능 (카카오 지오코딩 공유)
                 return None
-            ok, docs = map_clients.tmap_poi_search('스크린파크골프', x, y, radius_km=max(1, radius // 1000))
-            return docs if ok else None
+            ok, docs = map_clients.tmap_poi_search('파크골프', x, y, radius_km=max(1, radius // 1000))
+            if not ok:
+                return None
+            return [d for d in (docs or [])
+                    if sbiz_client.is_park_golf(d.get('name', ''), d.get('category', ''))]
 
         def _run_naver():
             # 네이버 지역검색은 좌표 반경 필터가 없어 키워드로만 지역을 좁힌다.
@@ -500,11 +551,13 @@ class CompetitorEngine:
             #        (2) 돌아온 결과의 주소를 다시 지역 기준으로 걸러낸다.
             _r = AddressResolver.resolve(address)
             _hint = ' '.join(t for t in (_r.get('sido', ''), _r.get('sigungu', '')) if t)
-            ok, docs = map_clients.naver_local_search('스크린파크골프', region_hint=_hint)
+            ok, docs = map_clients.naver_local_search('파크골프', region_hint=_hint)
             if not ok:
                 return None
-            return CompetitorEngine._filter_docs_by_region(
+            _regional = CompetitorEngine._filter_docs_by_region(
                 docs, _r.get('sido', ''), _r.get('sigungu', ''))
+            return [d for d in (_regional or [])
+                    if sbiz_client.is_park_golf(d.get('name', ''), d.get('category', ''))]
 
         with ThreadPoolExecutor(max_workers=3) as executor:
             f_kakao = executor.submit(_run_kakao)

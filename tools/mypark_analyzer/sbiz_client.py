@@ -26,11 +26,33 @@ SBIZ_BASE = "https://apis.data.go.kr/B553077/api/open/sdsc2/storeListInRadius"
 
 # 스크린 파크골프 반경 경쟁사 탐지에 쓰는 업종 키워드
 # (표준산업분류/상권업종 명칭에 아래 키워드가 들어가면 경쟁/유사 업종으로 간주)
-# 직접 경쟁: 스크린 파크골프와 같은 실내 시뮬레이터 업태
-DIRECT_KEYWORDS = ['파크골프', '스크린골프', '스크린 골프', '실내골프', '골프연습장']
-# 참고 업종: '골프'가 이름/업종에 들어가지만 업태가 다른 곳
-# (골프용품 소매업, 골프의류 등). 경쟁매장으로 세면 안 되고 참고로만 쓴다.
+# 직접 경쟁 = '파크골프' 종목을 다루는 곳만.
+#
+# 파크골프와 스크린골프는 다른 종목이다. 규칙·클럽·타겟 연령·이용 시간대가
+# 모두 다르므로 스크린골프 매장을 경쟁매장으로 세면 안 된다.
+# (실제로 '골프존파크 수내JUN스크린점'처럼 골프존의 스크린골프 브랜드가
+#  경쟁사로 실렸던 사례가 있었다. '골프존파크'는 파크골프장이 아니다.)
+DIRECT_KEYWORDS = ['파크골프', '파크 골프']
+
+# 이름에 '파크'가 들어가지만 파크골프가 아닌 스크린골프 브랜드/업태.
+# 이 목록에 걸리면 파크골프 키워드가 있어도 직접 경쟁에서 제외한다.
+EXCLUDE_BRANDS = ['골프존파크', '골프존 파크', 'GDR', '골프존조이마루']
+
+# 참고 업종: 골프 수요는 보여주지만 업태가 다른 곳
+# (스크린골프, 골프연습장, 골프용품 소매업 등). 경쟁매장으로 세지 않는다.
 GOLF_KEYWORDS = ['골프']
+
+
+def is_park_golf(name, category=''):
+    """이름/업종이 실제 '파크골프' 업태인지 판정.
+
+    스크린골프 브랜드를 걸러내는 것이 핵심이다. 파크골프 키워드가 있어도
+    제외 브랜드에 해당하면 파크골프장이 아니다.
+    """
+    blob = f"{name or ''} {category or ''}"
+    if any(b in blob for b in EXCLUDE_BRANDS):
+        return False
+    return any(kw in blob for kw in DIRECT_KEYWORDS)
 
 
 def search_stores_in_radius(x, y, radius=3000, page_no=1, num_rows=100):
@@ -119,7 +141,7 @@ def find_golf_competitors(x, y, radius=3000):
             'status': '공공DB 등록 확인',
             'category': norm['category'] or '',
         }
-        if any(kw in blob for kw in DIRECT_KEYWORDS):
+        if is_park_golf(norm['name'], norm['category']):
             direct.append(entry)
         elif any(kw in blob for kw in GOLF_KEYWORDS):
             related.append(entry)
@@ -136,7 +158,7 @@ def find_related_golf_businesses(x, y, radius=3000):
     for it in items:
         norm = _norm(it)
         blob = (norm['category'] or '') + ' ' + (norm['name'] or '')
-        if any(kw in blob for kw in DIRECT_KEYWORDS):
+        if is_park_golf(norm['name'], norm['category']):
             continue
         if any(kw in blob for kw in GOLF_KEYWORDS):
             out.append({'name': norm['name'], 'address': norm['address'],

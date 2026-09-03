@@ -288,23 +288,30 @@ def validate_address(raw_address):
     if resolved.get('sido'):
         return resolved
 
+    # 시/도를 파악하지 못했으면 지도 API로 실제 행정구역을 확인한다.
+    # 지역등급(매출·임대료·소비력 수치의 기준)이 여기서 정해지므로, 시/도가
+    # 비면 분당구 주소가 '지방 중소도시'로 떨어지는 등 결과가 크게 어긋난다.
     try:
         from .competitor_engine import CompetitorEngine
-        x, y = CompetitorEngine.geocode_address(raw_address)
+        region = CompetitorEngine.resolve_region_by_geocode(raw_address)
     except Exception:
-        x = None
-    if x is not None:
-        # 좌표는 나왔으므로 실재하는 주소다. 행정구역명을 카카오 응답에서 보완한다.
-        try:
-            from .competitor_engine import CompetitorEngine
-            geo_dong = CompetitorEngine.resolve_dong_by_geocode(raw_address)
-            if geo_dong:
-                resolved['dong'] = geo_dong
-                resolved['admin_level'] = 'dong'
-                resolved['is_resolved'] = True
-                return resolved
-        except Exception:
-            pass
+        region = None
+    if region and region.get('sido'):
+        resolved['sido'] = region['sido']
+        resolved['sigungu'] = region.get('sigungu') or resolved.get('sigungu', '')
+        if region.get('dong'):
+            resolved['dong'] = region['dong']
+            resolved['admin_level'] = 'dong'
+        elif resolved.get('road_name'):
+            resolved['admin_level'] = 'road'
+        else:
+            resolved['admin_level'] = 'sigungu'
+        resolved['is_resolved'] = True
+        # 표기용 주소도 확인된 행정구역을 앞에 붙여 어디인지 알 수 있게 한다.
+        _full = resolved.get('full_address') or raw_address
+        if region['sido'] not in _full:
+            resolved['full_address'] = f"{region['sido']} {region.get('sigungu','')} {_full}".strip()
+        return resolved
 
     raise AddressNotResolvedError(
         "입력하신 주소에서 행정구역(시/도 · 시군구)을 확인하지 못했습니다. "
