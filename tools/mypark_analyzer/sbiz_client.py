@@ -41,6 +41,13 @@ DIRECT_KEYWORDS = ['파크골프', '파크 골프']
 # 이 목록에 걸리면 파크골프 키워드가 있어도 직접 경쟁에서 제외한다.
 EXCLUDE_BRANDS = ['골프존파크', '골프존 파크', 'GDR', '골프존조이마루']
 
+# 매장이 아닌 단체·행정 조직. 지도에 '파크골프'로 등록돼 있어도 영업 매장이
+# 아니므로 경쟁 대상이 아니다.
+# (2026-09-03 실측: 광주 서구 조회에 '국제파크골프연합회', '대한파크골프연맹
+#  광주사무국'이 경쟁매장으로 실렸다.)
+EXCLUDE_ORGS = ['협회', '연맹', '연합회', '사무국', '조합', '진흥원', '체육회',
+                '위원회', '재단', '지회', '지부']
+
 # 참고 업종: 골프 수요는 보여주지만 업태가 다른 곳
 # (스크린골프, 골프연습장, 골프용품 소매업 등). 경쟁매장으로 세지 않는다.
 GOLF_KEYWORDS = ['골프']
@@ -87,6 +94,8 @@ def is_park_golf(name, category=''):
     """
     blob = f"{name or ''} {category or ''}"
     if any(b in blob for b in EXCLUDE_BRANDS):
+        return False
+    if any(b in blob for b in EXCLUDE_ORGS):
         return False
     return any(kw in blob for kw in DIRECT_KEYWORDS)
 

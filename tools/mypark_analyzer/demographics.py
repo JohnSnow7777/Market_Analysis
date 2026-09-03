@@ -280,6 +280,19 @@ class DemographicsEngine:
                 _nm = (_d.get('name') or '').strip()
                 if _nm and _d.get('total', 0) > 0:
                     _sgis_dong_pop[_nm] = _d['total']
+            # 통계청은 '화정1동'·'화정2동'처럼 세분해 돌려주는데 우리 대상 목록은
+            # '화정동'으로 적혀 있는 경우가 있다. 이름이 정확히 없으면 같은 이름으로
+            # 시작하는 동들을 합쳐서 그 동의 인구로 쓴다.
+            # (2026-09-03 실측: 광주 서구가 이 불일치로 통계청 값을 못 쓰고 있었다.)
+            for _t_sido, _t_sigungu, _t_dong in target_dongs:
+                if _t_dong in _sgis_dong_pop or not _t_dong.endswith('동'):
+                    continue
+                _stem = _t_dong[:-1]
+                _parts = [v for k, v in _sgis_dong_pop.items()
+                          if k.startswith(_stem) and k != _t_dong
+                          and k[len(_stem):-1].isdigit()]
+                if _parts:
+                    _sgis_dong_pop[_t_dong] = sum(_parts)
 
         # 연령 비중은 SGIS 응답에 없다(응답 필드는 adm_cd/adm_nm/population 3개뿐).
         # 총인구만 실측으로 바꾸고 비중은 체급 추정치를 곱한다.
