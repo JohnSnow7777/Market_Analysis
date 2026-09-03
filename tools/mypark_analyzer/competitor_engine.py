@@ -529,7 +529,8 @@ class CompetitorEngine:
         if not docs:
             return []
         stores = []
-        for d in docs[:4]:
+        for d in docs:
+            _venue = sbiz_client.classify_venue(d.get('place_name', ''), d.get('category_name', ''))
             dist_m = d.get('distance')
             dist_txt = f"약 {float(dist_m)/1000:.1f}km" if dist_m else '거리 확인 불가'
             phone_txt = d.get('phone') or '확인되지 않음'
@@ -539,7 +540,9 @@ class CompetitorEngine:
                 'system': '스크린 시뮬레이터 (사양 현장 확인)',
                 'rooms': 0,
                 'features': f"사업지 기준 {dist_txt} 거리에 위치한 업체로 확인됩니다. 문의처: {phone_txt}",
-                'status': '실시간 검색 확인'
+                'status': '실시간 검색 확인',
+                'venue': _venue,
+                'category': d.get('category_name', ''),
             })
         return stores
 
@@ -565,8 +568,11 @@ class CompetitorEngine:
             ok, docs = map_clients.tmap_poi_search('파크골프', x, y, radius_km=max(1, radius // 1000))
             if not ok:
                 return None
-            return [d for d in (docs or [])
+            _out = [d for d in (docs or [])
                     if sbiz_client.is_park_golf(d.get('name', ''), d.get('category', ''))]
+            for _d in _out:
+                _d['venue'] = sbiz_client.classify_venue(_d.get('name', ''), _d.get('category', ''))
+            return _out
 
         def _run_naver():
             # 네이버 지역검색은 좌표 반경 필터가 없어 키워드로만 지역을 좁힌다.
@@ -581,8 +587,11 @@ class CompetitorEngine:
                 return None
             _regional = CompetitorEngine._filter_docs_by_region(
                 docs, _r.get('sido', ''), _r.get('sigungu', ''))
-            return [d for d in (_regional or [])
+            _out = [d for d in (_regional or [])
                     if sbiz_client.is_park_golf(d.get('name', ''), d.get('category', ''))]
+            for _d in _out:
+                _d['venue'] = sbiz_client.classify_venue(_d.get('name', ''), _d.get('category', ''))
+            return _out
 
         with ThreadPoolExecutor(max_workers=3) as executor:
             f_kakao = executor.submit(_run_kakao)
@@ -610,6 +619,18 @@ class CompetitorEngine:
         merged = map_clients.merge_dedup(*succeeded)
         if not merged:
             return []
+        # 실외 파크골프 구장은 업태가 달라 경쟁매장에서 분리한다.
+        # 대신 그 지역에 파크골프 인구가 있다는 수요 근거로 따로 남긴다.
+        _indoor, _outdoor = [], []
+        for m in merged:
+            _v = m.get('venue') or sbiz_client.classify_venue(m.get('name', ''), m.get('category', ''))
+            m['venue'] = _v
+            (_outdoor if _v == 'outdoor' else _indoor).append(m)
+        SOURCE_STATE['outdoor_courses'] = [
+            {'name': x.get('name', ''), 'address': x.get('address', '')} for x in _outdoor]
+        merged = _indoor
+        if not merged:
+            return []
         stores = []
         for m in merged[:4]:
             src = m.get('source', '지도')
@@ -621,8 +642,14 @@ class CompetitorEngine:
                 # src가 이미 '지도'를 포함하면 '지도 지도'가 되므로 소스명만 앞에 붙인다.
                 'features': f"{src} 데이터에서 실제 운영 중인 업체로 확인되었습니다." if src.endswith('지도')
                             else f"{src} 지도 데이터에서 실제 운영 중인 업체로 확인되었습니다.",
-                'status': '실시간 검색 확인'
+                'status': '실시간 검색 확인',
+                'venue': m.get('venue', 'unknown'),
+                'category': m.get('category', ''),
             })
+        # 상호·업종만으로 실내 여부가 갈리지 않는 곳은 단정하지 않고 표시한다.
+        for _s in stores:
+            if _s.get('venue') == 'unknown':
+                _s['features'] += ' 실내 스크린 운영 여부는 현장 확인이 필요합니다.'
         return stores
 
     @staticmethod
@@ -715,16 +742,23 @@ class CompetitorEngine:
 
             _merged = _merged[:4]
             _live_cnt = len([1 for x in _merged if x.get('status') == '지도 확인'])
-            summary_txt = (f"{scope_label} 파크골프 매장 {len(_merged)}곳을 확인했습니다"
+            summary_txt = (f"{scope_label} 실내 스크린 파크골프 매장 {len(_merged)}곳을 확인했습니다"
                            f"(지도에서 현재 운영이 확인된 곳 {_live_cnt}곳).")
+            _outdoor = SOURCE_STATE.get('outdoor_courses') or []
+            if _outdoor:
+                summary_txt += (f" 같은 범위에 실외 파크골프 구장 {len(_outdoor)}곳이 함께 확인되어,"
+                                f" 이 지역에 파크골프를 즐기는 인구가 이미 형성되어 있습니다.")
             if is_self_location:
                 summary_txt = f"현재 이 주소에서 운영 중인 '{_merged[0]['name']}' 매장을 대상으로, 리뉴얼 및 상권 경쟁력 강화 관점에서 분석했습니다."
             return {
                 'region_key': s_sigungu,
                 'stores': _merged,
                 'count': len(_merged),
-                'verified_count': len(_merged),
-                'is_verified': True,
+                # 지도에서 실제로 확인된 매장만 '검증됨'으로 센다. 코드 내장
+                # 목록에만 있는 매장은 최신 여부가 확인되지 않았으므로 제외한다.
+                'verified_count': _live_cnt,
+                'is_verified': _live_cnt > 0,
+                'outdoor_courses': SOURCE_STATE.get('outdoor_courses') or [],
                 'is_blue_ocean': False,
                 'summary': summary_txt
             }
