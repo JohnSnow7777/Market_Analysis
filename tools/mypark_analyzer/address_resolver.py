@@ -253,7 +253,39 @@ class AddressResolver:
                 'is_resolved': True
             }
 
-        # 7. 최종 fallback: 모르면 비워 둔다 (추측으로 채우지 않는다)
+        # 7. 문자열만으로는 시/도를 알 수 없는 경우(도로명만 입력 등)
+        # 지도 API로 실제 행정구역을 조회한다. 이름 조각으로 추측하는 것이 아니라
+        # 실제 좌표 기반 조회이므로 지어내는 것이 아니다.
+        #
+        # 이 보완을 resolve() 안에서 하는 이유: 사업지 정보·인구·경쟁사 모듈이
+        # 각각 resolve()를 다시 호출하기 때문에, 상위에서 한 번 보완해도 그 값이
+        # 버려진다(실제로 '안골로48번길14' 입력 시 분당구가 계속 지방 상권으로
+        # 분류되던 원인). 조회 결과는 캐시되어 반복 호출 비용이 없다.
+        _geo = _geocode_region(clean)
+        if _geo and _geo.get('sido'):
+            _g_sigungu = _geo.get('sigungu', '')
+            _g_dong = _geo.get('dong', '')
+            _g_road = next((t for t in tokens if _is_road_token(t)), '')
+            if _g_dong:
+                _lvl = 'dong'
+            elif _g_road:
+                _lvl = 'road'
+            else:
+                _lvl = 'sigungu'
+            _g_full = clean
+            if _geo['sido'] not in _g_full:
+                _g_full = f"{_geo['sido']} {_g_sigungu} {clean}".strip()
+            return {
+                'sido': _geo['sido'],
+                'sigungu': _g_sigungu,
+                'dong': _g_dong,
+                'road_name': _g_road,
+                'admin_level': _lvl,
+                'full_address': _g_full,
+                'is_resolved': True,
+            }
+
+        # 8. 최종 fallback: 모르면 비워 둔다 (추측으로 채우지 않는다)
         return {
             'sido': '',
             'sigungu': '',
@@ -264,6 +296,19 @@ class AddressResolver:
             'is_resolved': False,
             'fallback_warning': '시/도를 식별하지 못해 행정구역 매핑 미확인 (지오코딩 단계에서 좌표 확인 필요)'
         }
+
+
+def _geocode_region(address):
+    """지도 API로 (시/도, 시군구, 행정동)을 확인한다. 키 없음/실패 시 None.
+
+    competitor_engine을 모듈 최상단에서 import 하면 순환 참조가 되므로
+    호출 시점에 가져온다. 결과는 그쪽 캐시를 그대로 활용한다.
+    """
+    try:
+        from .competitor_engine import CompetitorEngine
+        return CompetitorEngine.resolve_region_by_geocode(address)
+    except Exception:
+        return None
 
 
 class AddressNotResolvedError(ValueError):
@@ -288,29 +333,15 @@ def validate_address(raw_address):
     if resolved.get('sido'):
         return resolved
 
-    # 시/도를 파악하지 못했으면 지도 API로 실제 행정구역을 확인한다.
-    # 지역등급(매출·임대료·소비력 수치의 기준)이 여기서 정해지므로, 시/도가
-    # 비면 분당구 주소가 '지방 중소도시'로 떨어지는 등 결과가 크게 어긋난다.
+    # resolve()가 이미 지도 API 보완까지 시도한다. 여기서는 좌표로 실재 여부만
+    # 한 번 더 확인해, 지도에 있는 주소인데 행정구역 파싱만 실패한 경우를 구제한다.
     try:
         from .competitor_engine import CompetitorEngine
-        region = CompetitorEngine.resolve_region_by_geocode(raw_address)
+        x, _y = CompetitorEngine.geocode_address(raw_address)
     except Exception:
-        region = None
-    if region and region.get('sido'):
-        resolved['sido'] = region['sido']
-        resolved['sigungu'] = region.get('sigungu') or resolved.get('sigungu', '')
-        if region.get('dong'):
-            resolved['dong'] = region['dong']
-            resolved['admin_level'] = 'dong'
-        elif resolved.get('road_name'):
-            resolved['admin_level'] = 'road'
-        else:
-            resolved['admin_level'] = 'sigungu'
+        x = None
+    if x is not None:
         resolved['is_resolved'] = True
-        # 표기용 주소도 확인된 행정구역을 앞에 붙여 어디인지 알 수 있게 한다.
-        _full = resolved.get('full_address') or raw_address
-        if region['sido'] not in _full:
-            resolved['full_address'] = f"{region['sido']} {region.get('sigungu','')} {_full}".strip()
         return resolved
 
     raise AddressNotResolvedError(
